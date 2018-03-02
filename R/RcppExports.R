@@ -72,6 +72,22 @@ log_full <- function(Y, eta_star, Q, p, theta, psi) {
     .Call('_rewind_log_full', PACKAGE = 'rewind', Y, eta_star, Q, p, theta, psi)
 }
 
+#' check whether a vector is equal to a unit vector with the one at a particular
+#' position
+#'
+#' This function is used in updating Q matrix if we constrain the updates within
+#' the identifiability assumption
+#'
+#' @param v the vector (a binary vector)
+#' @param k the index that is being checked if \code{v[k]} is the only one in
+#' vector \code{v}. \code{k} must be smaller than or equal to the length of k
+#' @return TRUE if \eqn{v = \mathbf{e}_k}; FALSE otherwise.
+#' @examples
+#'  equal_unit_vec(c(1,0,0,0,0,0),1)
+#'  equal_unit_vec(c(1,0,0,0,0,0),2)
+#'  equal_unit_vec(c(0,0,2,0,0,0),3)
+#'  equal_unit_vec(c(0,0,1,0,0,0),3)
+#' @export
 equal_unit_vec <- function(v, k) {
     .Call('_rewind_equal_unit_vec', PACKAGE = 'rewind', v, k)
 }

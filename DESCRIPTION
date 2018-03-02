@@ -19,11 +19,12 @@ Description: This package implememnts a Bayesian hierarchical model that represe
     Monte Carlo which makes a list of molecular machine profiles with uncertainty 
     quantification as well as patient-specific posterior probability of having each machine.
 Depends:
-    R(>= 3.2)
+    R(>= 3.4.0)
 Imports:
     matrixStats(>= 0.52.2),
     RcppArmadillo(>= 0.8.300.1.0),
     Rcpp(>= 0.12.15),
+    ars(>= 0.5)
 Suggests:
     knitr,
     testthat,

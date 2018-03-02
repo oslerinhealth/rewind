@@ -133,6 +133,22 @@ arma::vec log_full(arma::mat Y,arma::mat eta_star,arma::mat Q,
   //return(exp(res-logsumexp(res))); // exponentiated.
 }
 
+//' check whether a vector is equal to a unit vector with the one at a particular
+//' position
+//'
+//' This function is used in updating Q matrix if we constrain the updates within
+//' the identifiability assumption
+//'
+//' @param v the vector (a binary vector)
+//' @param k the index that is being checked if \code{v[k]} is the only one in
+//' vector \code{v}. \code{k} must be smaller than or equal to the length of k
+//' @return TRUE if \eqn{v = \mathbf{e}_k}; FALSE otherwise.
+//' @examples
+//'  equal_unit_vec(c(1,0,0,0,0,0),1)
+//'  equal_unit_vec(c(1,0,0,0,0,0),2)
+//'  equal_unit_vec(c(0,0,2,0,0,0),3)
+//'  equal_unit_vec(c(0,0,1,0,0,0),3)
+//' @export
 // [[Rcpp::export]]
 bool equal_unit_vec(arma::vec v,int k){
   int M = v.n_elem;
@@ -164,24 +180,6 @@ double compute_Q_condpr(arma::mat Q, arma::mat H, arma::vec Yl,
   return(exp(log_lkd[1]-logsumexp(log_lkd)));
 }
 
-// do_update_Q <- function(Q){
-//   M <- nrow(Q)
-//   L <- ncol(Q)
-//   test <- array(NA,c(M,L,3))
-//   ind_unit_Q <- colSums(Q)==1
-//   for (k in 1:M){
-//     for (l in 1:L){
-//       test[k,l,1] <- equal_unit_vec(Q[,l],k)
-//       test[k,l,2] <- (sum(Q[k,])==3) && (Q[k,l]==1)
-//       Q_cand      <- Q[,ind_unit_Q,drop=FALSE]
-//       test[k,l,3] <- (Q[k,l]==0) && sum(Q[,l])==1 &&
-//         (sum(sapply(1:ncol(Q_cand), function(c) equal_unit_vec(Q_cand[,c],which(Q[,l]==1))))==2)
-//     }
-//   }
-//   apply(test,c(1,2),function(v) !any(v))
-// }
-// if ( abs(sum(Q.col(l)-1)) < 0.001){}
-
 // // [[Rcpp::export]]
 // arma::mat do_update_Q(arma::mat Q){
 //   int M = Q.n_rows, L=Q.n_cols;
@@ -210,53 +208,7 @@ double compute_Q_condpr(arma::mat Q, arma::mat H, arma::vec Yl,
 // }
 //
 //
-// update_Q <- function(Y,H,Q_old,theta,psi){
-//   M  <- nrow(Q_old)
-//   N  <- nrow(Y)
-//   L  <- ncol(Y)
-//   for (k in 1:M){
-//     for (l in 1:L){ # begin iteration over elements.
-//       if(do_update_Q(Q_old)[k,l]){ # begin an update if needed.
-//       Q_cand <- Q_old
-//         Q_cand[k,l] <- 1 # set to 1:
-//         xi <- (H%*%Q_cand>0.5)+1
-//       n11 <- sum(xi[,l]*Y[,l])
-//         n10 <- sum(xi[,l]*(1-Y[,l]))
-//         n01 <- sum((1-xi[,l])*Y[,l])
-//         n00 <- sum((1-xi[,l])*(1-Y[,l]))
-//         log_lkd1 <- n11*log(theta[l])+n10*log(1-theta[l])+n01*log(psi[l])+n00*log(1-psi[l])
-//
-//         Q_cand[k,l] <- 0 # set to 0:
-//         xi <- (H%*%Q_cand>0.5)+1
-//       n11 <- sum(xi[,l]*Y[,l])
-//         n10 <- sum(xi[,l]*(1-Y[,l]))
-//         n01 <- sum((1-xi[,l])*Y[,l])
-//         n00 <- sum((1-xi[,l])*(1-Y[,l]))
-//         log_lkd0 <- n11*log(theta[l])+n10*log(1-theta[l])+n01*log(psi[l])+n00*log(1-psi[l])
-//
-//
-//         curr_prob       <- exp(log_lkd1-matrixStats::logSumExp(c(log_lkd1,log_lkd0)))
-//         if (Q_old[k,l]==1){
-//           if (curr_prob <= 0.5) {
-//             alpha <- 1
-//           } else{
-//             alpha <- exp(log(1-curr_prob) - log(curr_prob))
-//           }
-//           Q_old[k,l] <- rbinom(1,1,prob=1-alpha)
-//         } else{
-//           if (curr_prob >= 0.5){
-//             alpha <- 1
-//           } else{
-//             alpha <- exp(log(curr_prob) - log(1-curr_prob))
-//           }
-//           Q_old[k,l] <- rbinom(1,1,prob=alpha)
-//         } #end flipping.
-//       } # end an update if needed.
-//     }
-//   }  #end iteration over elements.
-//   order_mat_byrow(Q_old)
-// }
-//
+
 // // // [[Rcpp::export]]
 // arma::mat update_Q(arma::mat Y, arma::mat H, arma::mat Q_old, arma::vec, arma::vec psi){
 //   int M = Q_old.n_rows, N = Y.n_rows, L = Y.n_cols;
@@ -266,9 +218,5 @@ double compute_Q_condpr(arma::mat Q, arma::mat H, arma::vec Yl,
 //     }
 //   }
 // }
-//
-//
-//
-//
-//
+
 

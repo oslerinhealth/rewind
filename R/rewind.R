@@ -29,7 +29,7 @@
 #'
 #'
 #' @section rewind functions:
-#' \code{\link{bfa_sampler}}
+#' \code{\link{sampler}}
 #'
 #' @useDynLib rewind
 #' @importFrom Rcpp sourceCpp

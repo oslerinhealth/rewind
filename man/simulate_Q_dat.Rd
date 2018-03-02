@@ -4,7 +4,7 @@
 \alias{simulate_Q_dat}
 \title{Randomly generate a Q matrix within the identifying conditions driven by data}
 \usage{
-simulate_Q_dat(M, dat, p = 0.1)
+simulate_Q_dat(M, dat, p = 0.1, frac = 1/5)
 }
 \arguments{
 \item{M}{the number of factors (machines)}
@@ -12,6 +12,9 @@ simulate_Q_dat(M, dat, p = 0.1)
 \item{dat}{a matrix of binary data (rows for observations, columns for dimensions)}
 
 \item{p}{the Bernoulli probability of an one in the Q matrix}
+
+\item{frac}{only initialize those dimension with at least \code{frac}*100%
+of subjects having a positive response.}
 }
 \value{
 a binary matrix of dimension M by L

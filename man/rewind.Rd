@@ -30,7 +30,7 @@ quantification as well as patient-specific posterior probability of having each 
 }
 \section{rewind functions}{
 
-\code{\link{bfa_sampler}}
+\code{\link{sampler}}
 }
 
 \references{
