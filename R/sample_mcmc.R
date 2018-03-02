@@ -742,6 +742,9 @@ sampler <- function(dat,model_options,mcmc_options){
       cat("==[rewind] iteration: ", iter, "==\n");
       cat("==[rewind] factor indicators (machines usages) for t=",t," clusters:==\n")
       print(H_star[,colSums(H_star)!=0,drop=FALSE])
+      print(nrow(H_star))
+      print(H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE])
+      print(nrow(H_star_merge))
       image(Q[colSums(H_star)!=0,drop=FALSE,])
     }
     # update cluster indicators z for all subjects - one complete Gibbs scan to refine clusters:
@@ -815,7 +818,7 @@ sampler <- function(dat,model_options,mcmc_options){
           H_star_redun[mylist[j],m] <- 0
           L0            <- log_full(dat[z==mylist[j],,drop=FALSE],
                                     H_star_redun[mylist[j],,drop=FALSE],Q,p,theta,psi)
-          H_star_samp[mylist[j],m,iter] <- 1
+          H_star_redun[mylist[j],m] <- 1
           L1            <- log_full(dat[z==mylist[j],,drop=FALSE],
                                     H_star_redun[mylist[j],,drop=FALSE],Q,p,theta,psi)
           curr_eta_p    <- exp(L1-matrixStats::logSumExp(c(L0,L1)))
@@ -827,6 +830,31 @@ sampler <- function(dat,model_options,mcmc_options){
 
     H_star_samp[,,iter] <- H_star_redun
     H_star <- H_star_redun[mylist[1:t],,drop=FALSE]
+    # note that the H_star definition below needs not be repeated if we don't
+    # want to monitor the number of active factors collapsed!
+    H_star <- H_star[,colSums(H_star)!=0,drop=FALSE] # <-- no zero columns.
+
+    # merge rows (pseudo clusters to scientific clusters defined by \bEta_j):
+    pat_H_star    <- apply(H_star,1,paste,collapse="")
+    curr_merge    <- merge_map(pat_H_star,unique(pat_H_star))
+    H_star_merge  <- curr_merge$uniq_pat
+    if (nrow(H_star_merge)<nrow(H_star)){
+      cat("==[rewind] absorbed ",nrow(H_star)-nrow(H_star_merge)," pseudo clusters.==\n")
+    }
+
+    # merge columns (combine factors that are present or absent at the same time):
+    pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
+    curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge))
+    H_star_merge  <- t(curr_merge_col$uniq_pat)
+    print(ncol(H_star))
+    print(ncol(H_star_merge))
+    if (ncol(H_star_merge)<ncol(H_star)){
+      cat("==[rewind] absorbed ",ncol(H_star)-ncol(H_star_merge)," partner factors==\n")
+    }
+
+    # put the zeros back into H_star.
+    H_star <- H_star_redun[mylist[1:t],,drop=FALSE] # <------ allow zero columns.
+
 
     # update Q:
     if (is.null(model_options$Q)){
@@ -907,7 +935,10 @@ sampler <- function(dat,model_options,mcmc_options){
   res
 }
 
-#  slice sampler for a unknown number of machines:
+##
+##  slice sampler for a unknown number of machines:
+##
+
 #' compute the log of density of inactive probability given
 #' the previous one (Teh et al., 07')
 #'
@@ -968,6 +999,49 @@ log_f_logprima <- function(log_p0,alpha,t){
     alpha*res
 }
 
+
+
+#' Merge mapping
+#'
+#' This function combines pseudo-clusters by the current H_star samples.
+#'
+#' @param pseudo_pat a vector of character strings for
+#' binary patterns that might not be unique
+#' @param uniq_pat a vector of character strings of distinct binary codes
+#'
+#' @return a list \itemize{
+#' \item \code{map} a vector of integer of identical length to \code{pseudo_pat}; takes values
+#' from 1 to \code{length(uniq_pat)}
+#' \item \code{uniq_pat} a matrix of unique binary patterns (# rows =  \code{length(uniq_pat)},
+#' # columns = number of 1/0s for each element in \code{uniq_pat})
+#' }
+#' @export
+#'
+#' @examples
+#'
+#' tmp <-  simu$H_star[c(1,1,2,2,2,3,4,5,6,7,8),]
+#' uid <- unique(apply(tmp,1,paste,collapse=""))
+#' merge_map(apply(tmp,1,paste,collapse=""),uid)
+merge_map <- function(pseudo_pat,uniq_pat){
+  if (length(pseudo_pat)<length(uniq_pat)){stop("==[rewind] more pseudo patterns than unique patterns.==")}
+  map <- sapply(1:length(pseudo_pat),function(i){which(uniq_pat==pseudo_pat[i])})
+  uniq_pat <- do.call("rbind",lapply(sapply(uniq_pat,strsplit,""),as.numeric))
+  list(map=map,uniq_pat=uniq_pat)
+}
+
+
+# bin2dec_vec <- function(mat){# This is the log version:
+#   #mat <- Q_col_ordered[sample(1:M),]
+#   L <- ncol(mat)
+#   M <- nrow(mat)
+#   v <- log(as.matrix(2^{(L-1):0},ncol=1))
+#   diag_v <- matrix(0,nrow=L,ncol=L)
+#   diag(diag_v) <- v
+#   tmp_prod <- mat%*%diag_v
+#   permute_M_vec <- sapply(1:M,function(i){matrixStats::logSumExp(tmp_prod[i,mat[i,]!=0])})
+#   permute_M_vec[rev(order(permute_M_vec))]
+# }
+
 #' MCMC sampling designed for binary factor analysis (unknown number of factors)
 #'
 #' This function performs MCMC sampling with user-specified options.
@@ -1024,8 +1098,8 @@ slice_sampler <- function(dat,model_options,mcmc_options){
 
   if (is.null(model_options$m_plus)){
     m_plus_samp <- m0_samp <- rep(NA,n_total) # what does m_plus mean?
-    m_plus <- 3 # initialization.
-    m0     <- 0 # initialization.
+    m_plus <- mcmc_options$m_plus_init # initialization.
+    m0     <- mcmc_options$m0_init # initialization.
     m_both <- m_plus+m0
   } else{
     m_plus <- model_options$m_plus
@@ -1100,6 +1174,9 @@ slice_sampler <- function(dat,model_options,mcmc_options){
       cat("==[rewind] iteration: ", iter, "==\n");
       cat("==[rewind] factor indicators (machines usages) for t=",t," clusters:==\n")
       print(H_star[,colSums(H_star)!=0,drop=FALSE])
+      print(nrow(H_star))
+      print(H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE])
+      print(nrow(H_star_merge))
       image(Q[colSums(H_star)!=0,drop=FALSE,])
     }
     # update cluster indicators z for all subjects - one complete Gibbs scan to refine clusters:
@@ -1209,8 +1286,17 @@ slice_sampler <- function(dat,model_options,mcmc_options){
       }
     }
 
+    H_star <- H_star_redun[mylist[1:t],1:m_both,drop=FALSE] # <-- this is different from
+    # sampler(); here needs 1:m_both.
     H_star_samp[,,iter] <- H_star_redun
-    H_star <- H_star_redun[mylist[1:t],1:m_both,drop=FALSE]
+
+    pat_H_star    <- apply(H_star,1,paste,collapse="")
+    curr_merge    <- merge_map(pat_H_star,unique(pat_H_star))
+    H_star_merge  <- curr_merge$uniq_pat
+
+    # pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
+    # curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge))
+    # H_star_merge  <- t(curr_merge_col$uniq_pat)
 
     # update Q:
     if (is.null(model_options$Q)){
@@ -1258,6 +1344,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
       p0 <- c(p0, exp(curr_log_p0_samp))
       count <- count + 1
     }
+    p0  <- p0[-count]
     if (length(p0)>1){
       p0 <- p0[-1]
       m0 <- length(p0)
@@ -1288,7 +1375,8 @@ slice_sampler <- function(dat,model_options,mcmc_options){
 
     # update true/false positive rates - theta/psi:
     if (is.null(model_options$theta) && is.null(model_options$psi)){
-      res_update_pr <- update_positive_rate(dat,H_star_samp[z,1:m_both,iter],Q,a_theta,a_psi)
+      res_update_pr <- update_positive_rate(dat,H_star_redun[z,1:m_both,drop=FALSE],#H_star_samp[z,1:m_both,iter]
+                                            Q,a_theta,a_psi)
       theta <- res_update_pr$theta
       psi   <- res_update_pr$psi
     }
@@ -1329,7 +1417,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
         Q_samp[1:m_both,,keep_index] <- Q
       }
     }
-    }# END mcmc iterations.
+  }# END mcmc iterations.
 
   res <- list(t_samp=t_samp,N_samp=N_samp,z_samp=z_samp,keepers=keepers,
               H_star_samp = H_star_samp,

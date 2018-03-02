@@ -8,7 +8,8 @@
 B\strong{in}ary \strong{D}ecomposition}
 \description{
 \code{rewind} is designed for analyzing multivariate binary data via
-binary factor analyses. It is motivated by analyzing the multivariate presence or absence
+binary factor analyses, with or without pre-specified number of factors,
+and without specifying the number of clusters in the data. It is motivated by analyzing the multivariate presence or absence
 of a list of antigens in serum samples collected from autoimmune disease patients.
 This package provides a tool for statistical inference of a model that assumes human body generates antibodies to
 a small number of protein complexes (or, machines), each comprised of a few important antigens.

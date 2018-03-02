@@ -58,21 +58,26 @@ simulate_data <- function(options_sim, SETSEED=FALSE){
   #     eta_atom[k,m] <- rbinom(1,1,p[m])
   #   }
   # }
-  #eta_atom <- matrix(c(1,0,1),nrow=K,ncol=M,byrow=TRUE)
 
-  # eta_atom <- matrix(c(0,0,0,1,0,
-  #                      1,1,0,1,0,
-  #                      1,0,0,1,0,
-  #                      1,1,1,0,0,
-  #                      0,0,1,1,1),nrow=K,ncol=M,byrow=TRUE)
-  #
-  # eta_atom <- matrix(c(0,0,0,1,0,0,0,0,1,0,
-  #                      1,1,0,1,0,1,1,0,1,0,
-  #                      1,0,0,1,0,1,0,0,1,0,
-  #                      1,1,1,0,0,1,1,1,0,0,
-  #                      0,0,1,1,1,0,0,1,1,1),nrow=K,ncol=M,byrow=TRUE)
+  if (K==1){
+    eta_atom <- matrix(c(1,0,1),nrow=K,ncol=M,byrow=TRUE)
+  } else{
 
-  eta_atom <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)
+    if (K==5){eta_atom <- matrix(c(0,0,0,1,0,
+                                   1,1,0,1,0,
+                                   1,0,0,1,0,
+                                   1,1,1,0,0,
+                                   0,0,1,1,1),nrow=K,ncol=M,byrow=TRUE)
+    }
+    #
+    # eta_atom <- matrix(c(0,0,0,1,0,0,0,0,1,0,
+    #                      1,1,0,1,0,1,1,0,1,0,
+    #                      1,0,0,1,0,1,0,0,1,0,
+    #                      1,1,1,0,0,1,1,1,0,0,
+    #                      0,0,1,1,1,0,0,1,1,1),nrow=K,ncol=M,byrow=TRUE)
+
+    if (K>=8){eta_atom <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
+  }
 
   Z  <- sample(1:K,N,prob=rep(1/K,K),replace=TRUE)
   res_ord_tmp <- order_mat_byrow(eta_atom[Z,,drop=FALSE])

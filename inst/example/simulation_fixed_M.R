@@ -8,7 +8,7 @@ L0 <- 100
 options_sim0  <- list(N = 200,  # sample size.
                       M = 3,   # true number of machines.
                       L = L0,   # number of antibody landmarks.
-                      K = 8,    # number of true components.,
+                      K = 2^3,    # number of true components.,
                       theta = rep(0.99,L0), # true positive rates
                       psi   = rep(0.01,L0), # false positive rates
                       alpha1 = 1 # half of the people have the first machine.
@@ -28,13 +28,13 @@ simu_dat <- simu$datmat
 model_options0 <- list(
   n   = nrow(simu_dat),
   t_max  = 40,
-  m_max  = 3,
+  m_max  = 10,
   b  = 1, # Dirichlet hyperparameter; in the functions above, we used "b" - also can be called "gamma".
   #Q  = simu$Q,
-  a_theta = c(99,1),
-  a_psi   = c(1,99),
-  #theta = options_sim0$theta,
-  #psi   = options_sim0$psi,
+  #a_theta = c(99,1),
+  #a_psi   = c(1,99),
+  theta = options_sim0$theta,
+  psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
   #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
   log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1). Prior for the number of components.

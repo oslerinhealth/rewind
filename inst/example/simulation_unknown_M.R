@@ -4,14 +4,14 @@ library(matrixStats)
 library(ars)
 # ---------------------------------------------
 # SIMULATIONS
-#
+# 1. setting m_plus_init = 10 gets the true factors down to three.
 
 # simulate data:
 L0 <- 100
 options_sim0  <- list(N = 200,  # sample size.
                       M = 3,   # true number of machines.
                       L = L0,   # number of antibody landmarks.
-                      K = 8,    # number of true components.,
+                      K = 2^3,    # number of true components.,
                       theta = rep(0.99,L0), # true positive rates
                       psi   = rep(0.01,L0), # false positive rates
                       alpha1 = 1 # half of the people have the first machine.
@@ -56,6 +56,8 @@ mcmc_options0 <- list(
   n_keep  = 200,
   n_split = 5,
   print_mode = 10,
+  m_plus_init = 10,
+  m0_init = 0,
   block_update_H = !TRUE,# NULL is also okay - because truncation level m_both can
   # be very large, using block updating is very expensive (2^m_both
   # multivariate binary patterns)
