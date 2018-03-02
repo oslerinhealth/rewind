@@ -2,7 +2,7 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{slice_sampler}
 \alias{slice_sampler}
-\title{main function for MCMC sampling designed for binary factor analysis}
+\title{MCMC sampling designed for binary factor analysis (unknown number of factors)}
 \usage{
 slice_sampler(dat, model_options, mcmc_options)
 }
@@ -87,8 +87,11 @@ posterior samples for quantities of interest. It is a list comprised of the foll
 }
 \description{
 This function performs MCMC sampling with user-specified options.
-NB: 1) add flexibility to specify other parameters as fixed. 2) sample component-specific
-parameters. 3) sample other model parameters. 4) add timing and printing functionality.
+NB: 1) add flexibility to specify other parameters as fixed.
+2) sample component-specific
+parameters.
+3) sample other model parameters.
+4) add timing and printing functionality.
 5) add posterior summary functions.
 }
 \examples{

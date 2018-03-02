@@ -2,7 +2,8 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{log_f_logprima}
 \alias{log_f_logprima}
-\title{compute the deriviative of the log of density of inactive probability given the previous one (Teh 07')}
+\title{compute the deriviative of the log of density of inactive probability given
+the previous one (Teh et al., 07')}
 \usage{
 log_f_logprima(log_p0, alpha, t)
 }
@@ -19,13 +20,6 @@ a value corresponding to the derivative of the log density d/du f(log_p0)
 \description{
 This function is used in sampling infinite number of columns in H
 }
-\examples{
-
-y <- ars(n_grid,log_f_logden,log_f_logprima,
-c(-6,-4,-2,-1),m=4,
-ub=TRUE,xub=0,alpha=5,t=8)
-hist(exp(y),breaks="Scott",main='ARS',freq=FALSE)
-points(density(y),type="l",col="blue")
-points(p0_grid,exp(y_den-rewind:::logsumexp(y_den)-log(diff(p0_grid)[2])),type="l",col="red") # <-- true density.
-
+\seealso{
+\code{\link{log_f_logden}} provides an example
 }

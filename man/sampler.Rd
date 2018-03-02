@@ -2,7 +2,7 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{sampler}
 \alias{sampler}
-\title{main function for MCMC sampling designed for binary factor analysis}
+\title{MCMC sampling designed for binary factor analysis (pre-specified number of factors)}
 \usage{
 sampler(dat, model_options, mcmc_options)
 }

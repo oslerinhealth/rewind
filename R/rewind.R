@@ -35,9 +35,14 @@
 #' @importFrom Rcpp sourceCpp
 #' @docType package
 #' @name rewind
-#' @references This package adapts Julia programs used in
+#' @references
+#' \itemize{
+#' \item This package partly adapts Julia programs used in
 #' Miller, J.W. and Harrison, M.T., 2017. Mixture models with a prior on the number of components.
 #' Journal of the American Statistical Association, pp.1-17. \url{https://github.com/jwmi/BayesianMixtures.jl}
+#' \item Slice sampler for Indian Buffet Process priors: Teh, Y. W., Grür, D., and Ghahramani, Z. (2007).
+#' Stick-breaking construction for the indian buffet process. In Artificial Intelligence and Statistics, pages 556–563.
+#' }
 NULL
 #> NULL
 
