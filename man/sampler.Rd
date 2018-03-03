@@ -88,6 +88,7 @@ This function performs MCMC sampling with user-specified options.
 NB: 1) add flexibility to specify other parameters as fixed. 2) sample component-specific
 parameters. 3) sample other model parameters. 4) add timing and printing functionality.
 5) add posterior summary functions.
+6) edit verbose contents.
 }
 \examples{
 rm(list=ls())

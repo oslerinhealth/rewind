@@ -12,7 +12,7 @@ options_sim0  <- list(N = 200,  # sample size.
                       M = 3,   # true number of machines.
                       L = L0,   # number of antibody landmarks.
                       K = 2^3,    # number of true components.,
-                      theta = rep(0.99,L0), # true positive rates
+                      theta = rep(0.8,L0), # true positive rates
                       psi   = rep(0.01,L0), # false positive rates
                       alpha1 = 1 # half of the people have the first machine.
 )
@@ -34,7 +34,7 @@ model_options0 <- list(
   m_max  = 100,
   b  = 1, # Dirichlet hyperparameter; in the functions above, we used "b" - also can be called "gamma".
   #Q  = simu$Q,
-  a_theta = c(99,1),
+  a_theta = c(9,1),
   a_psi   = c(1,99),
   a_alpha = 1, # hyperparameter for IBP alpha.
   b_alpha = 1,

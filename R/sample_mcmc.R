@@ -575,6 +575,7 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' NB: 1) add flexibility to specify other parameters as fixed. 2) sample component-specific
 #' parameters. 3) sample other model parameters. 4) add timing and printing functionality.
 #' 5) add posterior summary functions.
+#' 6) edit verbose contents.
 #'
 #' @param dat multivariate binary data (row for observations and column for dimensions4)
 #' @param model_options Specifying assumed model options:
@@ -740,7 +741,7 @@ sampler <- function(dat,model_options,mcmc_options){
   for (iter in 1:n_total){
     if (iter%%mcmc_options$print_mod==0){
       cat("==[rewind] iteration: ", iter, "==\n");
-      cat("==[rewind] factor indicators (machines usages) for t=",t," clusters:==\n")
+      cat(":: factor indicators (machines usages) for t=",t," clusters:==\n")
       print(H_star[,colSums(H_star)!=0,drop=FALSE])
       print(nrow(H_star))
       print(H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE])
@@ -794,7 +795,7 @@ sampler <- function(dat,model_options,mcmc_options){
     c_next <- ordered_next(mylist)
     if(t>t_max) {stop("==[rewind]Sampled t has exceeded t_max. Increast t_max and retry.==")}
 
-    cat("==[rewind]#subjects for t=",t," clusters:", N[N!=0],"==\n")
+    cat(":: #subjects for t=",t," clusters:", N[N!=0],"==\n")
 
     ## Simulate xi for posterior predictive checking:
     # #if (is.null(model_options$Q)){
@@ -839,7 +840,7 @@ sampler <- function(dat,model_options,mcmc_options){
     curr_merge    <- merge_map(pat_H_star,unique(pat_H_star))
     H_star_merge  <- curr_merge$uniq_pat
     if (nrow(H_star_merge)<nrow(H_star)){
-      cat("==[rewind] absorbed ",nrow(H_star)-nrow(H_star_merge)," pseudo clusters.==\n")
+      cat(":: absorbed ",nrow(H_star)-nrow(H_star_merge)," pseudo clusters.==\n")
     }
 
     # merge columns (combine factors that are present or absent at the same time):
@@ -849,7 +850,7 @@ sampler <- function(dat,model_options,mcmc_options){
     print(ncol(H_star))
     print(ncol(H_star_merge))
     if (ncol(H_star_merge)<ncol(H_star)){
-      cat("==[rewind] absorbed ",ncol(H_star)-ncol(H_star_merge)," partner factors==\n")
+      cat(":: absorbed ",ncol(H_star)-ncol(H_star_merge)," partner factors==\n")
     }
 
     # put the zeros back into H_star.
@@ -1051,6 +1052,8 @@ merge_map <- function(pseudo_pat,uniq_pat){
 #' 3) sample other model parameters.
 #' 4) add timing and printing functionality.
 #' 5) add posterior summary functions.
+#' 6) merge machines
+#' 7) record row and colum merge mappings
 #'
 #' @inheritParams sampler
 #'
@@ -1170,14 +1173,15 @@ slice_sampler <- function(dat,model_options,mcmc_options){
 
   cat("==[rewind] Start MCMC: ==\n")
   for (iter in 1:n_total){
-    if (iter%%mcmc_options$print_mod==0){
-      cat("==[rewind] iteration: ", iter, "==\n");
-      cat("==[rewind] factor indicators (machines usages) for t=",t," clusters:==\n")
-      print(H_star[,colSums(H_star)!=0,drop=FALSE])
-      print(nrow(H_star))
-      print(H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE])
-      print(nrow(H_star_merge))
-      image(Q[colSums(H_star)!=0,drop=FALSE,])
+    VERBOSE <- iter%%mcmc_options$print_mod==0
+    if (VERBOSE){
+      cat("\n==[rewind] iteration: ", iter, "==\n");
+      cat("> # of (active, inactive) factors (M+, M0) = (",m_plus,", ",m0,"); Active factors may be duplicated or zeros.==\n")
+      cat("> factor indicators (machines usages) for t=",t," pseudo-clusters of sizes: ",N[N!=0],"==\n")
+      print(H_star[,colSums(H_star)!=0,drop=FALSE]) # <-- remove all zero columns.
+      print(H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE]) # remove all zero columns.
+      cat("> IBP hyperparameter: alpha = ", alpha,"==\n")
+      image(Q[colSums(H_star)!=0,drop=FALSE,],main=paste0("Q matrix at iteration ",iter))
     }
     # update cluster indicators z for all subjects - one complete Gibbs scan to refine clusters:
     for (i in 1:n){ # iterate over subjects:
@@ -1225,8 +1229,6 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     mylist <- res_split_merge$mylist
     c_next <- ordered_next(mylist)
     if(t>t_max) {stop("==[rewind]Sampled t has exceeded t_max. Increast t_max and retry.==")}
-
-    cat("==[rewind]#subjects for t=",t," clusters:", N[N!=0],"==\n")
 
     # update machine usage profile given clusters: (check here for sampling H)
     # H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_both)),ncol=m_both) # all binary patterns for machine usage profiles. 2^m_max of them.
@@ -1288,11 +1290,32 @@ slice_sampler <- function(dat,model_options,mcmc_options){
 
     H_star <- H_star_redun[mylist[1:t],1:m_both,drop=FALSE] # <-- this is different from
     # sampler(); here needs 1:m_both.
-    H_star_samp[,,iter] <- H_star_redun
+    H_star_samp[,1:m_both,iter] <- H_star_redun[,1:m_both,drop=FALSE]
 
+    # note that the H_star definition below needs not be repeated if we don't
+    # want to monitor the number of active factors collapsed!
+    H_star <- H_star[,colSums(H_star)!=0,drop=FALSE] # <-- no zero columns.
+
+    # merge rows (pseudo clusters to scientific clusters defined by \bEta_j):
     pat_H_star    <- apply(H_star,1,paste,collapse="")
-    curr_merge    <- merge_map(pat_H_star,unique(pat_H_star))
+    curr_merge    <- merge_map(pat_H_star,unique(pat_H_star)) #<-- can get the mapping from pseudo clusters to scientific clusters.
     H_star_merge  <- curr_merge$uniq_pat
+    if (VERBOSE && nrow(H_star_merge)<nrow(H_star)){
+      cat("> absorbed ",nrow(H_star)-nrow(H_star_merge)," pseudo clusters, giving ", nrow(H_star_merge), "scientific clusters.==\n")
+    }
+
+    # merge columns (combine factors that are present or absent at the same time):
+    pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
+    curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge)) # <-- can get the mapping from partner machines to final merged machines.
+    H_star_merge  <- t(curr_merge_col$uniq_pat)
+    #print(ncol(H_star))
+    #print(ncol(H_star_merge))
+    if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
+      cat("> absorbed ",ncol(H_star)-ncol(H_star_merge)," partner factors, giving ", ncol(H_star_merge), "machines. ==\n")
+    }
+
+    # put the zeros back into H_star.
+    H_star <- H_star_redun[mylist[1:t],1:m_both,drop=FALSE] # <------ allow zero columns.
 
     # pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
     # curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge))
@@ -1317,8 +1340,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     # drop inactive ones and add newly active ones:
     ind_plus <- which(colSums(H_star)!=0)
     m_plus   <- length(ind_plus)  # <-- what if ind_plus is empty?
-    if (m_plus==0){stop("==[rewind] no active factors (machines), initialize Q with more
-                        plausible values and retry.==")}
+    if (m_plus==0){stop("==[rewind]no active factors (machines) - H all zeros, initialize Q with more plausible values and retry.==")}
     H_star <- H_star[,ind_plus,drop=FALSE]
 
     # deal with inactive parts to be added to columns of H_star:
@@ -1329,14 +1351,15 @@ slice_sampler <- function(dat,model_options,mcmc_options){
       p[m] <- rbeta(1,sm,1+t-sm)
     }
     s      <- runif(1,0,min(p)) # <---- p for active ones. we have already just focused on active ones.
-    cat("s = ",s," ==\n")
+    if (VERBOSE){cat("> slice variable: s = ",s," ==\n")}
     # sample inactive p0 from 1 to m0 (adaptive rejection sampling):
     p0    <- 1
     count <- 1
-    curr_alpha <- alpha
-    curr_t     <- t
-    cat("alpha = ", alpha,"==\n")
+
+
     while (p0[count] >= s){
+      curr_alpha <- alpha
+      curr_t     <- t # <-- the two rows above works because ars cannot simply accept alpha or t.
       curr_log_p0_samp <- ars(1,log_f_logden,log_f_logprima,
                               log(c(p0[count]/10,p0[count]/2,p0[count]/10*9)),m=3,
                               lb=TRUE,xlb=log(0.00001),
@@ -1353,9 +1376,8 @@ slice_sampler <- function(dat,model_options,mcmc_options){
       p0 <- m0 <- 0
     }
     m_both <- m_plus + m0 # <- what if both are zero? A: will show an error meesage above.
-    print(m_plus)
-    print(m0)
-    if (m_both > m_max){stop("==[rewind] total #factors (machines) exceeds m_max=",m_max,", increase m_max and retry.==")}
+
+    if (m_both > m_max){stop("==[rewind]total #factors (machines) exceeds m_max=",m_max,", increase m_max and retry.==")}
 
     Q <- Q[ind_plus,,drop=FALSE]
     if (m0>0){
@@ -1366,12 +1388,6 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     # sample p given the newly updated active feature matrix H_star_samp:
     # 1. The p vector corresponds to those probabilities greater than s (given the slice).
     # 2. When integrating over xi_il, we only need to consider these p.
-
-    #
-    # how to change H_star here?????
-    #
-
-
 
     # update true/false positive rates - theta/psi:
     if (is.null(model_options$theta) && is.null(model_options$psi)){
