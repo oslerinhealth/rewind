@@ -1221,8 +1221,9 @@ slice_sampler <- function(dat,model_options,mcmc_options){
       curr_t     <- t # <-- the two rows above works because ars cannot simply accept alpha or t.
       curr_log_p0_samp <- ars::ars(1,log_f_logden,log_f_logprima,
                               log(c(p0[count]/10,p0[count]/2,p0[count]/10*9)),m=3,
-                              lb=TRUE,xlb=log(0.00001),
-                              ub=TRUE,xub=log(p0[count]),alpha=curr_alpha,t=curr_t)
+                              lb=TRUE,xlb=-1e10,
+                              ub=TRUE,xub=log(p0[count]),
+                              alpha=curr_alpha,t=curr_t)
       p0 <- c(p0, exp(curr_log_p0_samp))
       count <- count + 1
     }
