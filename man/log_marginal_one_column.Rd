@@ -2,7 +2,7 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{log_marginal_one_column}
 \alias{log_marginal_one_column}
-\title{R Function to compute the cluster-specific marginal likelihood}
+\title{Compute the cluster-specific marginal likelihood}
 \usage{
 log_marginal_one_column(Yl, Ql, p, thetal, psil)
 }
@@ -27,7 +27,6 @@ log_marginal_one_column(Yl, Ql, p, thetal, psil)
 
 \item{psi}{true positive rates
 
-
 # simulate data:
 L0 <- 100
 options_sim0  <- list(N = 200,  # sample size.
@@ -48,7 +47,7 @@ log_marginal_one_column(Y[,l], Q[,l], p, theta[l], psi[l])}
 \value{
 log of marginal likelihood given other model parameters.
 
-R Function to compute the cluster-specific marginal likelihood
+Compute the cluster-specific marginal likelihood
 
 This R function computes the marginal likelihood by integrating over
 the distribution of component specific parameter (e.g., machine usage profiles).

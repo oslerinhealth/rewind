@@ -7,13 +7,13 @@
 log_pr_Qml_cond(Yl, eta_star, Ql, thetal, psil)
 }
 \arguments{
+\item{Yl}{a column of the multivariate binary data}
+
 \item{eta_star}{a matrix of machine usage indicators, rows for clusters, columns for M machines}
 
 \item{Ql}{l-th column of the Q matrix}
 
 \item{thetal, psil}{True and false positive rate (both are numbers between 0 and 1)}
-
-\item{Y}{data}
 
 \item{p}{prevalence of machines; a vector of length identical to the columns of H.}
 }

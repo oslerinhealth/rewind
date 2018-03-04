@@ -2,7 +2,7 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{update_Q}
 \alias{update_Q}
-\title{Element-wise update the Q matrix}
+\title{update the Q matrix element-wise}
 \usage{
 update_Q(Y, Q_old, H, z, t, mylist, p, theta, psi, constrained = FALSE)
 }
