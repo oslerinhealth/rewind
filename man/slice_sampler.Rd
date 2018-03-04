@@ -98,7 +98,7 @@ parameters.
 7) record row and colum merge mappings
 }
 \examples{
-\dontrun{
+#\dontrun{
 rm(list=ls())
 library(rewind)
 library(matrixStats)
@@ -215,5 +215,5 @@ for (k in 1:options_sim0$K){
   abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
 }
 
-}
+#}
 }
