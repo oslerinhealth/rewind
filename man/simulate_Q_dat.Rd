@@ -26,6 +26,18 @@ few ones in the data
 }
 \examples{
 
+#' # simulate data:
+L0 <- 100
+options_sim0  <- list(N = 200,  # sample size.
+                     M = 3,   # true number of machines.
+                     L = L0,   # number of antibody landmarks.
+                     K = 8,    # number of true components.,
+                     theta = rep(0.8,L0), # true positive rates
+                     psi   = rep(0.01,L0), # false positive rates
+                     alpha1 = 1 # half of the people have the first machine.
+)
+
+#image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
 simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 simu_dat <- simu$datmat
 simulate_Q_dat(5,simu_dat)

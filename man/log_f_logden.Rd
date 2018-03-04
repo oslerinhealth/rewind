@@ -22,18 +22,20 @@ This function is used in sampling infinite number of columns in H
 }
 \examples{
 
+library(ars)
 n_grid  <- 10000
 p0_grid <- seq(log(0.001),0,len=n_grid)
 y_den  <- log_f_logden(p0_grid,5,8)
 
-y <- ars(n_grid,log_f_logden,log_f_logprima,
+y <- ars::ars(n_grid,log_f_logden,log_f_logprima,
 c(-6,-4,-2,-1),m=4,
 ub=TRUE,xub=0,alpha=5,t=8)
 hist(y,breaks="Scott",main='Adaptive Rjection Sampling',freq=FALSE)
 rug(y)
 points(density(y),type="l",col="blue")
 points(p0_grid,exp(y_den-rewind:::logsumexp(y_den)-log(diff(p0_grid)[2])),
-      type="l",col="red") # <-- true density; log_f_logden is only correct upto a proportionality constant.
+      type="l",col="red") # <-- true density; log_f_logden is only
+                         #  correct upto a proportionality constant.
 
 legend("topleft",c("Sample Density","True Density"),lty=c(1,1),col=c("blue","red"),
       bty="n")

@@ -98,6 +98,7 @@ parameters.
 7) record row and colum merge mappings
 }
 \examples{
+\dontrun{
 rm(list=ls())
 library(rewind)
 library(matrixStats)
@@ -137,7 +138,8 @@ model_options0 <- list(
   n   = nrow(simu_dat),
   t_max  = 40,
   m_max  = 100,
-  b  = 1, # Dirichlet hyperparameter; in the functions above, we used "b" - also can be called "gamma".
+  b  = 1, # Dirichlet hyperparameter; in the functions above, we used "b" -
+          # also can be called "gamma".
   #Q  = simu$Q,
   a_theta = c(9,1),
   a_psi   = c(1,9),
@@ -147,11 +149,12 @@ model_options0 <- list(
   #psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
   #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
-  log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1). Prior for the number of components.
+  log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
+                                   #Prior for the number of components.
 )
 
 # pre-compute the log of coefficients in MFM:
-model_options0$log_v <- mfm_coefficients(eval(parse(text=model_options0$log_pk)),
+model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
                                          model_options0$gamma,
                                          model_options0$n,
                                          model_options0$t_max+1)
@@ -164,10 +167,14 @@ mcmc_options0 <- list(
   m_plus_init = 10,
   m0_init = 0,
   constrained = TRUE,
-  block_update_H = TRUE,# NULL is also okay - because the conditional distribution of z_jm depends on p_min^+, it is not obvious how to do block updating.
-  block_update_Q = !TRUE, # NULL is also okay - slice_sampler() do not use block updating
+  block_update_H = TRUE,# NULL is also okay - because the conditional
+                        # distribution of z_jm depends on p_min^+,
+                        # it is not obvious how to do block updating.
+  block_update_Q = !TRUE, # NULL is also okay - slice_sampler() do not
+                          # use block updating
                          # of Q, because truncation level m_both can
-                          # be very large, using block updating is very expensive (2^m_both
+                          # be very large, using block updating is very
+                          # expensive (2^m_both
                           # multivariate binary patterns)
   hmcols = hmcols
 )
@@ -195,7 +202,8 @@ image(simu$datmat,main="Data",col=hmcols)
 image(simu$xi,main="True presence/absence of proteins)",col=hmcols)
 image(order_mat_byrow(simu$Q)$res,main="True Q (ordered)",col=hmcols)
 Q_merged <- out$Q_merge_samp[,,ind_post_mode]
-image(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res,main="Sampled Q (merged & ordered)",col=hmcols)
+image(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res,
+      main="Sampled Q (merged & ordered)",col=hmcols)
 #dev.off()
 
 # co-clustering:
@@ -207,4 +215,5 @@ for (k in 1:options_sim0$K){
   abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
 }
 
+}
 }

@@ -24,7 +24,20 @@ from 1 to \code{length(uniq_pat)}
 This function combines pseudo-clusters by the current H_star samples.
 }
 \examples{
+#' # simulate data:
+L0 <- 100
+options_sim0  <- list(N = 200,  # sample size.
+                     M = 3,   # true number of machines.
+                     L = L0,   # number of antibody landmarks.
+                     K = 8,    # number of true components.,
+                     theta = rep(0.8,L0), # true positive rates
+                     psi   = rep(0.01,L0), # false positive rates
+                     alpha1 = 1 # half of the people have the first machine.
+)
 
+#image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
+
+simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 tmp <-  simu$H_star[c(1,1,2,2,2,3,4,5,6,7,8),]
 uid <- unique(apply(tmp,1,paste,collapse=""))
 merge_map(apply(tmp,1,paste,collapse=""),uid)

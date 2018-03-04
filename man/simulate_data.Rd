@@ -44,5 +44,4 @@ options_sim0  <- list(N = 200,  # sample size.
 image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
 simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 simu_dat <- simu$datmat
-datmat = res,Q=Q,H_star= eta_atom,Z=Z,xi=xi,Eta=H
 }

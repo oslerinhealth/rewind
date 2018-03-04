@@ -6,14 +6,22 @@
 \usage{
 update_alpha(H_star, t, M, a = 1, b = 1, show_density = FALSE)
 }
-\description{
-Function to sample the parameters from a grid
+\arguments{
+\item{H_star}{the matrix of machine usage profiles across clusters}
+
+\item{t}{number of clusters}
+
+\item{M}{number of machines}
+
+\item{a, b}{hyperparameter for beta distribution over reparameterized alpha.}
+
+\item{show_density}{Default to FALSE - not showing the full conditional density of alpha
+given other unknown parameters; TRUE otherwise.}
 }
-\details{
-@param H_star the matrix of machine usage profiles across clusters
- @param t number of clusters
- @param M number of machines
- @param a,b hyperparameter for beta distribution over reparameterized alpha.
- @param show_density Default to FALSE - not showing the full conditional density of alpha
- given other unknown parameters; TRUE otherwise.
+\value{
+an updated alpha value (positive)
+}
+\description{
+Function to sample the parameters from a grid (this is used only for model
+with pre-specified #factors M)
 }

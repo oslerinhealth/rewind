@@ -7,25 +7,13 @@
 log_marginal_one_column(Yl, Ql, p, thetal, psil)
 }
 \arguments{
-\item{p}{prevalence parameter for each machine; should be a vector of dimension M.}
+\item{Yl}{a column of the multivariate binary data}
 
-\item{Y}{the data for the current cluster (a subset of observations.)}
+\item{Ql}{l-th column of the Q matrix}
 
-\item{Q}{Q-matrix}
+\item{p}{prevalence of machines; a vector of length identical to the columns of H.}
 
-\item{theta}{true positive rates}
-
-\item{psi}{true positive rates}
-
-\item{Y}{the data for the current cluster (a subset of observations.)}
-
-\item{Q}{Q-matrix}
-
-\item{p}{prevalence parameter for each machine; should be a vector of dimension M.}
-
-\item{theta}{true positive rates}
-
-\item{psi}{true positive rates
+\item{thetal, psil}{True and false positive rate (both are numbers between 0 and 1)
 
 # simulate data:
 L0 <- 100
@@ -46,42 +34,10 @@ log_marginal_one_column(Y[,l], Q[,l], p, theta[l], psi[l])}
 }
 \value{
 log of marginal likelihood given other model parameters.
-
-Compute the cluster-specific marginal likelihood
-
-This R function computes the marginal likelihood by integrating over
-the distribution of component specific parameter (e.g., machine usage profiles).
-This function conditions upon a few model parameters: the true and false positive
-rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
-
-log of marginal likelihood given other model parameters.
 }
 \description{
 This R function computes the marginal likelihood by integrating over
 the distribution of component specific parameter (e.g., machine usage profiles).
 This function conditions upon a few model parameters: the true and false positive
 rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
-}
-\examples{
-# simulate data:
-L0 <- 100
-options_sim0  <- list(N = 200,  # sample size.
-                     M = 3,   # true number of machines.
-                     L = L0,   # number of antibody landmarks.
-                     K = 8,    # number of true components.,
-                     theta = rep(0.8,L0), # true positive rates
-                     psi   = rep(0.01,L0), # false positive rates
-                     alpha1 = 1 # half of the people have the first machine.
-)
-
-simu     <- simulate_data(options_sim0, SETSEED=TRUE)
-simu_dat <- simu$datmat
-Y <- simu_dat
- Q <- simu$Q
- p <- c(0.5,0.25,0.1,0.02,0.05)
- theta <- options_sim0$theta
- psi   <- options_sim0$psi
-
-log_marginal0(Y, Q, p, theta, psi)
-# log_marginal(Y, Q, p, theta, psi) # <-- this is the Rcpp implementation.
 }

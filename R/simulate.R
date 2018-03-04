@@ -23,7 +23,6 @@
 #' image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
 #' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 #' simu_dat <- simu$datmat
-#' datmat = res,Q=Q,H_star= eta_atom,Z=Z,xi=xi,Eta=H
 #' @return \itemize{
 #' \item \code{datmat} a matrix for multivariate binary observations from the assumed boolean
 #' matrix factorization,
@@ -89,7 +88,7 @@ simulate_data <- function(options_sim, SETSEED=FALSE){
   res <- matrix(NA,nrow=N,ncol=L)
   for (n in 1:N){
     for (l in 1:L){
-      res[n,l] <- rbinom(1,1,prob=xi[n,l]*theta[l]+(1-xi[n,l])*psi[l])
+      res[n,l] <- stats::rbinom(1,1,prob=xi[n,l]*theta[l]+(1-xi[n,l])*psi[l])
     }
   }
   list(datmat = res,Q=Q,H_star= eta_atom,Z=Z,xi=xi,Eta=H)

@@ -14,8 +14,6 @@ log_pr_Qml_cond(Yl, eta_star, Ql, thetal, psil)
 \item{Ql}{l-th column of the Q matrix}
 
 \item{thetal, psil}{True and false positive rate (both are numbers between 0 and 1)}
-
-\item{p}{prevalence of machines; a vector of length identical to the columns of H.}
 }
 \value{
 log conditional probability of Q_ml given other unknown parameters

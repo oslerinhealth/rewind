@@ -15,7 +15,7 @@
 #' @return a binary matrix of dimension M by L
 #' @export
 simulate_Q <- function(M,L,p=0.1){
-  Q_col_ordered <-cbind(diag(1,M),diag(1,M),matrix(rbinom(M*(L-2*M),1,p),nrow=M))
+  Q_col_ordered <-cbind(diag(1,M),diag(1,M),matrix(stats::rbinom(M*(L-2*M),1,p),nrow=M))
   Q_col_ordered[which(rowSums(Q_col_ordered[,-(1:(2*M))]) == 0), sample((2*M+1):(L),1)] <- 1
   Q_col_ordered[,sample(1:L)]
 }
@@ -33,6 +33,18 @@ simulate_Q <- function(M,L,p=0.1){
 #' of subjects having a positive response.
 #' @examples
 #'
+#'#' # simulate data:
+#' L0 <- 100
+#' options_sim0  <- list(N = 200,  # sample size.
+#'                      M = 3,   # true number of machines.
+#'                      L = L0,   # number of antibody landmarks.
+#'                      K = 8,    # number of true components.,
+#'                      theta = rep(0.8,L0), # true positive rates
+#'                      psi   = rep(0.01,L0), # false positive rates
+#'                      alpha1 = 1 # half of the people have the first machine.
+#')
+#'
+#' #image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
 #' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 #' simu_dat <- simu$datmat
 #' simulate_Q_dat(5,simu_dat)
@@ -51,52 +63,7 @@ simulate_Q_dat <- function(M,dat,p=0.1,frac=1/5){
 
 # compute likelihood:
 
-#' Compute the cluster-specific marginal likelihood
-#'
-#' This R function computes the marginal likelihood by integrating over
-#' the distribution of component specific parameter (e.g., machine usage profiles).
-#' This function conditions upon a few model parameters: the true and false positive
-#' rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
-#'
-#' @param Y the data for the current cluster (a subset of observations.)
-#' @param Q Q-matrix
-#' @param p prevalence parameter for each machine; should be a vector of dimension M.
-#' @param theta true positive rates
-#' @param psi true positive rates
-#'
-#' @examples
-#' # simulate data:
-#' L0 <- 100
-#' options_sim0  <- list(N = 200,  # sample size.
-#'                      M = 3,   # true number of machines.
-#'                      L = L0,   # number of antibody landmarks.
-#'                      K = 8,    # number of true components.,
-#'                      theta = rep(0.8,L0), # true positive rates
-#'                      psi   = rep(0.01,L0), # false positive rates
-#'                      alpha1 = 1 # half of the people have the first machine.
-#')
-#'
-#' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
-#' simu_dat <- simu$datmat
-#' Y <- simu_dat
-#'  Q <- simu$Q
-#'  p <- c(0.5,0.25,0.1,0.02,0.05)
-#'  theta <- options_sim0$theta
-#'  psi   <- options_sim0$psi
-#'
-#' log_marginal0(Y, Q, p, theta, psi)
-#' # log_marginal(Y, Q, p, theta, psi) # <-- this is the Rcpp implementation.
-#' @return log of marginal likelihood given other model parameters.
-#'
-# log_marginal0 <- function(Y, Q, p, theta, psi){
-#   n1 <- apply(Y,2,sum,na.rm=T)
-#   n0 <- apply(1-Y,2,sum,na.rm=T)
-#   p_xi <- 1-exp(matrix(log(1-p),nrow=1)%*%Q) # length L.
-#
-#   mat <- rbind(n1*log(psi)+n0*log(1-psi),
-#                n1*log(theta)+n0*log(1-theta))+rbind(log(1-p_xi),log(p_xi))
-#   sum(matrixStats::colLogSumExps(mat)) # can remove stuff including and before ::.
-# }
+
 
 
 #' Compute the cluster-specific marginal likelihood
@@ -106,11 +73,10 @@ simulate_Q_dat <- function(M,dat,p=0.1,frac=1/5){
 #' This function conditions upon a few model parameters: the true and false positive
 #' rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
 #'
-#' @param Y the data for the current cluster (a subset of observations.)
-#' @param Q Q-matrix
-#' @param p prevalence parameter for each machine; should be a vector of dimension M.
-#' @param theta true positive rates
-#' @param psi true positive rates
+#' @param Yl a column of the multivariate binary data
+#' @param Ql l-th column of the Q matrix
+#' @param p prevalence of machines; a vector of length identical to the columns of H.
+#' @param thetal,psil True and false positive rate (both are numbers between 0 and 1)
 #'
 #' # simulate data:
 #' L0 <- 100
@@ -146,40 +112,11 @@ log_marginal_one_column <- function(Yl, Ql, p, thetal, psil){
            n1*log(thetal)+n0*log(1-thetal))+
     c(log(1-p_xil),
       log(p_xil))
-  logSumExp(mat) # can remove stuff including and before ::.
+  matrixStats::logSumExp(mat) # can remove stuff including and before ::.
 }
 
 # mat_times_vec_by_col0 <- function(m,v){m * rep(v, rep(nrow(m),length(v)))}
 
-#' Function to compute the full cluster-specific likelihood given latent variables
-#'
-#' This function computes the likelihood WITHOUT integrating over
-#' the distribution of component specific parameter (e.g., machine usage profiles).
-#' This function conditions upon a few model parameters: the true and false positive
-#' rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
-#'
-#' @param Y the data for the current cluster (a subset of observations.)
-#' @param eta_star A matrix of M columns (of machines). Multivariate binary indicators of presence or absence of
-#' protein landmarks (could be a matrix with rows for multiple )
-#' @param Q Q-matrix
-#' @param p prevalence parameter for each machine; should be a vector of dimension M.
-#' @param theta true positive rates
-#' @param psi true positive rates
-#'
-#' @importFrom matrixStats colLogSumExps
-#' @return log of marginal likelihood given other model parameters.
-log_full0 <- function(Y,eta_star,Q, p, theta, psi){# eta_star must be a matrix of M columns.
-  n1 <- apply(Y,2,sum,na.rm=T)
-  n0 <- apply(1-Y,2,sum,na.rm=T)
-  xi <- matrix((eta_star%*%Q > 0.5)+0,ncol=ncol(Q))
-  prior <- rowSums(mat_times_vec_by_col(eta_star,log(p))+
-                     mat_times_vec_by_col(1-eta_star,log(1-p)))
-  PR_mat <- rbind(n1*log(psi)+n0*log(1-psi),
-                  n1*log(theta)+n0*log(1-theta))
-  likelihood_mat <-mat_times_vec_by_col(1-xi,PR_mat[1,])+
-    mat_times_vec_by_col(xi,PR_mat[2,])
-  prior+rowSums(likelihood_mat)
-}
 
 # update parameters:
 
@@ -205,22 +142,27 @@ update_positive_rate <- function(Y,H,Q,a_theta,a_psi){
   psi_a2   <- colSums((1-xi)*(1-Y))+a_psi[2]
   theta_a1 <- colSums(xi*Y)+a_theta[1]
   theta_a2 <- colSums(xi*(1-Y))+a_theta[2]
-  theta_samp <- sapply(1:ncol(Q),function(i) {rbeta(1,theta_a1[i],theta_a2[i])})
-  psi_samp   <- sapply(1:ncol(Q),function(i) {rbeta(1,psi_a1[i],psi_a2[i])})
+  theta_samp <- sapply(1:ncol(Q),function(i) {stats::rbeta(1,theta_a1[i],theta_a2[i])})
+  psi_samp   <- sapply(1:ncol(Q),function(i) {stats::rbeta(1,psi_a1[i],psi_a2[i])})
   #list(theta=theta_samp,psi=rep(0.1,ncol(Q)))
   list(theta=theta_samp,psi=psi_samp)
 }
 
 #' sample alpha - hyperparameter for prevalences p_m
 #'
-#'  Function to sample the parameters from a grid
+#'Function to sample the parameters from a grid (this is used only for model
+#'with pre-specified #factors M)
 #'
-#'  @param H_star the matrix of machine usage profiles across clusters
-#'  @param t number of clusters
-#'  @param M number of machines
-#'  @param a,b hyperparameter for beta distribution over reparameterized alpha.
-#'  @param show_density Default to FALSE - not showing the full conditional density of alpha
-#'  given other unknown parameters; TRUE otherwise.
+#'@param H_star the matrix of machine usage profiles across clusters
+#'@param t number of clusters
+#'@param M number of machines
+#'@param a,b hyperparameter for beta distribution over reparameterized alpha.
+#'@param show_density Default to FALSE - not showing the full conditional density of alpha
+#'given other unknown parameters; TRUE otherwise.
+#'
+#'@return an updated alpha value (positive)
+#'
+#'@export
 update_alpha<-function(H_star,t,M,a=1,b=1,show_density=FALSE) {
   th    <- seq(0.001,.999,length=5000)
   sm    <- apply(H_star,2,sum,na.rm=T)
@@ -228,12 +170,12 @@ update_alpha<-function(H_star,t,M,a=1,b=1,show_density=FALSE) {
   for (m in 1:M){
     part1 <- part1+lgamma(th/(1-th)/M+sm[m])
   }
-  tmp    <- dbeta(th,a,b,log=T)+M*log(th/(1-th))+part1-M*lgamma(th/(1-th)/M+t+1)
+  tmp    <- stats::dbeta(th,a,b,log=T)+M*log(th/(1-th))+part1-M*lgamma(th/(1-th)/M+t+1)
   tmp    <- exp(tmp-max(tmp))
   rtheta <- sample(th,1,prob=tmp)
   if (show_density){
-    plot(th,tmp,type="l")
-    abline(v=rtheta,col="red",lty=2)
+    graphics::plot(th,tmp,type="l")
+    graphics::abline(v=rtheta,col="red",lty=2)
   }
   (rtheta)/(1-rtheta)
 }
@@ -253,51 +195,8 @@ update_alpha<-function(H_star,t,M,a=1,b=1,show_density=FALSE) {
 update_prevalence <- function(H_star,alpha,M){
   n1_star <- apply(H_star,2,sum,na.rm=T)
   n0_star <- apply(1-H_star,2,sum,na.rm=T)
-  sapply(1:ncol(H_star),function(i) {rbeta(1,n1_star[i]+alpha/M, n0_star[i]+1)})
+  sapply(1:ncol(H_star),function(i) {stats::rbeta(1,n1_star[i]+alpha/M, n0_star[i]+1)})
 }
-
-#' check whether a vector is equal to a unit vector with the one at a particular
-#' position
-#'
-#' @param v the vector (a binary vector)
-#' @param k the index that is being checked if \code{v[k]} is the only one in
-#' vector \code{v}. \code{k} must be smaller than or equal to the length of k
-#' @return true for \eqn{v = \mathbf{e}_k}
-#' @examples
-# equal_unit_vec0(c(1,0,0,0,0,0),1)
-# equal_unit_vec0 <- function(v,k){
-#   if(k>length(v)){stop("==[rewind]length of vector v is shorter than k!==")}
-#   e <- rep(0,length(v))
-#   e[k] <- 1
-#   (sum(abs(e-v)) == 0)
-# }
-
-#' determine to update the current element of Q_ml or not
-#'
-#'
-#' Function to test whether we need to update the current element of Q_ml. This
-#' is needed in the constrained Gibbs sampler.
-#'
-#' @param Q a matrix with rows being machines and columns being protein landmarks (dimension)
-#'
-#' @return a matrix filled with logical values of dimensions identical to Q. TRUE for updating
-#' in constrained Gibbs sampler, FALSE for skipping the updating.
-# do_update_Q <- function(Q){
-#   M <- nrow(Q)
-#   L <- ncol(Q)
-#   test <- array(NA,c(M,L,3))
-#   ind_unit_Q <- colSums(Q)==1
-#   for (k in 1:M){
-#     for (l in 1:L){
-#       test[k,l,1] <- equal_unit_vec(Q[,l],k) # THIS MEANS A 1 IN E_M NEVER GETS UPDATED.
-#       test[k,l,2] <- (sum(Q[k,])==3) && (Q[k,l]==1)
-#       Q_cand      <- Q[,ind_unit_Q,drop=FALSE]
-#       test[k,l,3] <- (Q[k,l]==0) && sum(Q[,l])==1 &&
-#         (sum(sapply(1:ncol(Q_cand), function(c) equal_unit_vec(Q_cand[,c],which(Q[,l]==1))))==2)
-#     }
-#   }
-#   apply(test,c(1,2),function(v) !any(v))
-# }
 
 #' determine to update the current element of Q_ml or not
 #'
@@ -320,71 +219,6 @@ do_update_Q_one <- function(Q,k,l){ # this saves lots of speed:
   !any(test)
 }
 
-#' update the Q matrix element by element
-#'
-#' this function updates Q matrix by constrained Gibbs sampler
-#' NB: - do we need M here? do we modify M after collapsing partner machines.
-#'     - need to speed up.
-#'
-#' @param Y data
-#' @param H matrix of machine usage indicators, rows for N subjects, columns for M machines
-#' @param Q_old the Q matrix from the last scan in Gibbs sampler (of dimension M by L)
-#' @param p prevalence of machines; a vector of length identical to the columns of H.
-#' @param theta,psi True and false positive rates. Both are vectors of length L
-#'
-#' @return \itemize{
-#' \item \code{datmat} a matrix for multivariate binary observations from the assumed boolean
-#' matrix factorization,
-#' \item \code{Q} A Q-matrix,
-#' \item \code{H_star} A binary matrix of dimension K by M, for K clusters, and M factors,
-#' \item \code{Z} A vector of length N for individual cluster indicators,
-#' \item \code{xi} a binary matrix of dimension N by L for true presence or absence of proteins
-#' \item \code{Eta} A binary matrix of dimension N by M for presence or absence of factors among
-#' all subejcts.
-#' }
-update_Q_no_H <- function(Y,Q_old,z,t,mylist,p,theta,psi){
-  M  <- nrow(Q_old)
-  N  <- nrow(Y)
-  L  <- ncol(Y)
-  for (k in sample(1:M,replace=FALSE)){
-    for (l in sample(1:L,replace=FALSE)){ # begin iteration over elements.
-      #if(do_update_Q_one(Q_old,k,l)){ # begin an update if needed.
-      L0 <- L1 <- 0
-      Q_old[k,l] <- 0
-      for (j in 1:t){
-        L0 <- L0 + log_marginal_one_column(Y[z==mylist[j],l,drop=FALSE],Q_old[,l,drop=FALSE],p,theta[l],psi[l])
-      }
-      Q_old[k,l] <- 1
-      for (j in 1:t){
-        L1 <- L1 + log_marginal_one_column(Y[z==mylist[j],l,drop=FALSE],Q_old[,l,drop=FALSE],p,theta[l],psi[l])
-      }
-      curr_prob <- exp(L1- logSumExp(c(L0,L1)))
-      #print(curr_prob)
-      Q_old[k,l] <- rbinom(1,1,prob = curr_prob)
-      #} # end an update if needed.
-    }
-  }  #end iteration over elements.
-  Q_old#list(res = Q_old, ord = NA)#order_mat_byrow(Q_old)
-}
-
-metrop_flip <- function(x,curr_prob){
-  if (x==1){
-    if (curr_prob <= 0.5) {
-      alpha <- 1
-    } else{
-      alpha <- exp(log(1-curr_prob) - log(curr_prob))
-    }
-    res <- rbinom(1,1,prob=1-alpha)
-  } else{
-    if (curr_prob >= 0.5){
-      alpha <- 1
-    } else{
-      alpha <- exp(log(curr_prob) - log(1-curr_prob))
-    }
-    res <- rbinom(1,1,prob=alpha)
-  } #end flipping.
-  res
-}
 
 #' compute the full conditional probability of Q_ml given others
 #'
@@ -394,7 +228,6 @@ metrop_flip <- function(x,curr_prob){
 #' @param Yl a column of the multivariate binary data
 #' @param eta_star a matrix of machine usage indicators, rows for clusters, columns for M machines
 #' @param Ql l-th column of the Q matrix
-#' @param p prevalence of machines; a vector of length identical to the columns of H.
 #' @param thetal,psil True and false positive rate (both are numbers between 0 and 1)
 #'
 #' @return log conditional probability of Q_ml given other unknown parameters
@@ -445,10 +278,10 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
             L1 <- L1 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
                                        H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
           }
-          curr_prob <- exp(L1- logSumExp(c(L0,L1)))
+          curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1)))
           #print(curr_prob)
           #Q_old[k,l] <- metrop_flip(Q_old[k,l],curr_prob) # <-- if doing metroplized flipping.
-          Q_old[k,l] <- rbinom(1,1,prob = curr_prob)
+          Q_old[k,l] <- stats::rbinom(1,1,prob = curr_prob)
         }# end an update if needed.
       }
     }  #end iteration over elements.
@@ -466,11 +299,11 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
             L1 <- L1 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
                                        H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
           }
-          curr_prob <- exp(L1- logSumExp(c(L0,L1)))
+          curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1)))
           #print(curr_prob)
 
           #Q_old[k,l] <- metrop_flip(Q_old[k,l],curr_prob)
-          Q_old[k,l] <- rbinom(1,1,prob = curr_prob)
+          Q_old[k,l] <- stats::rbinom(1,1,prob = curr_prob)
       }
     }  #end iteration over elements.
   }
@@ -482,10 +315,9 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
 #' Function to compute the log full conditional density for all patterns of the
 #' l-th column of Q. This function is used in \link{update_Q_col_block}.
 #'
-#' @param Y data
+#' @param Yl a column of the multivariate binary data
 #' @param eta_star a matrix of machine usage indicators, rows for clusters, columns for M machines
 #' @param Ql_enumerate l-th column of the Q matrix
-#' @param p prevalence of machines; a vector of length identical to the columns of H.
 #' @param thetal,psil True and false positive rates. Both are vectors of length L
 #'
 #' @return a vector of log conditional probability of column Q_l taking each of
@@ -527,7 +359,7 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
       L_enum <- L_enum + log_pr_Qml_cond_enum(Y[z==mylist[j],l,drop=FALSE],
                                               H[j,,drop=FALSE],Ql_enum,theta[l],psi[l])
     }
-    curr_prob <- exp(L_enum-logSumExp(L_enum))
+    curr_prob <- exp(L_enum-matrixStats::logSumExp(L_enum))
     Q_old[,l] <- Ql_enum[,sample(1:2^M,1,prob = curr_prob)]
   }
   Q_old
@@ -681,14 +513,14 @@ sampler <- function(dat,model_options,mcmc_options){
   if (is.null(model_options$theta)){
     theta_samp <- matrix(0,nrow=ncol(dat),ncol=n_keep)
     a_theta <- model_options$a_theta
-    theta <- sapply(1:L,function(i){rbeta(1,a_theta[1],a_theta[2])}) # initialization.
+    theta <- sapply(1:L,function(i){stats::rbeta(1,a_theta[1],a_theta[2])}) # initialization.
   } else{
     theta   <- model_options$theta # use specified true positive rates.
   }
   if (is.null(model_options$psi)){
     psi_samp   <- matrix(0,nrow=ncol(dat),ncol=n_keep)
     a_psi      <- model_options$a_psi
-    psi <- sapply(1:L,function(i){rbeta(1,a_psi[1],a_psi[2])}) # initialization.
+    psi <- sapply(1:L,function(i){stats::rbeta(1,a_psi[1],a_psi[2])}) # initialization.
   } else{
     psi     <- model_options$psi # use specified false positive rates.
   }
@@ -769,7 +601,7 @@ sampler <- function(dat,model_options,mcmc_options){
     for (j in 1:t){
       if (block_update_H){
         curr_pattern_log_p   <- log_full(dat[z==mylist[j],,drop=FALSE],H_star_enumerate,Q,p,theta,psi)
-        curr_pattern_p       <- exp(curr_pattern_log_p-logSumExp(curr_pattern_log_p))
+        curr_pattern_p       <- exp(curr_pattern_log_p-matrixStats::logSumExp(curr_pattern_log_p))
         curr_ind             <- sample(1:(2^m_max),1,prob=curr_pattern_p)
         H_star_redun[mylist[j],] <- H_star_enumerate[curr_ind,]
       } else{
@@ -781,7 +613,7 @@ sampler <- function(dat,model_options,mcmc_options){
           L1            <- log_full(dat[z==mylist[j],,drop=FALSE],
                                     H_star_redun[mylist[j],,drop=FALSE],Q,p,theta,psi)
           curr_eta_p    <- exp(L1-matrixStats::logSumExp(c(L0,L1)))
-          H_star_redun[mylist[j],m] <-rbinom(1,1,curr_eta_p)
+          H_star_redun[mylist[j],m] <-stats::rbinom(1,1,curr_eta_p)
           #H_star_samp[mylist[j],m,iter] <- metrop_flip(H_star_samp[mylist[j],m,iter],curr_eta_p)
         }
       }
@@ -845,8 +677,8 @@ sampler <- function(dat,model_options,mcmc_options){
       print_mat <-H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("scientific-cluster",rep("",nrow(print_mat)-1)),1:nrow(print_mat),sep=" "); colnames(print_mat) <- paste(c("merged factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
       print(print_mat) # removed all zero columns.
       cat("> Finite IBP hyperparameter: alpha = ", alpha,"\n")
-      image(Q[colSums(H_star)!=0,,drop=FALSE],main=paste0("Q matrix at iteration ",iter),col=hmcols)
-      image(Q_merge[rowSums(Q_merge)!=0,],main=paste0("merged Q matrix at iteration ",iter),col=hmcols)
+      graphics::image(Q[colSums(H_star)!=0,,drop=FALSE],main=paste0("Q matrix at iteration ",iter),col=hmcols)
+      graphics::image(Q_merge[rowSums(Q_merge)!=0,],main=paste0("merged Q matrix at iteration ",iter),col=hmcols)
     }
 
     # update true/false positive rates - theta/psi:
@@ -932,18 +764,20 @@ sampler <- function(dat,model_options,mcmc_options){
 #' @return a value corresponding to the log density f(log_p0)
 #' @examples
 #'
+#' library(ars)
 #' n_grid  <- 10000
 #' p0_grid <- seq(log(0.001),0,len=n_grid)
 #' y_den  <- log_f_logden(p0_grid,5,8)
 #'
-#' y <- ars(n_grid,log_f_logden,log_f_logprima,
+#' y <- ars::ars(n_grid,log_f_logden,log_f_logprima,
 #' c(-6,-4,-2,-1),m=4,
 #' ub=TRUE,xub=0,alpha=5,t=8)
 #' hist(y,breaks="Scott",main='Adaptive Rjection Sampling',freq=FALSE)
 #' rug(y)
 #' points(density(y),type="l",col="blue")
 #' points(p0_grid,exp(y_den-rewind:::logsumexp(y_den)-log(diff(p0_grid)[2])),
-#'       type="l",col="red") # <-- true density; log_f_logden is only correct upto a proportionality constant.
+#'       type="l",col="red") # <-- true density; log_f_logden is only
+#'                          #  correct upto a proportionality constant.
 #'
 #' legend("topleft",c("Sample Density","True Density"),lty=c(1,1),col=c("blue","red"),
 #'       bty="n")
@@ -999,7 +833,20 @@ log_f_logprima <- function(log_p0,alpha,t){
 #' @export
 #'
 #' @examples
+#' #' # simulate data:
+#' L0 <- 100
+#' options_sim0  <- list(N = 200,  # sample size.
+#'                      M = 3,   # true number of machines.
+#'                      L = L0,   # number of antibody landmarks.
+#'                      K = 8,    # number of true components.,
+#'                      theta = rep(0.8,L0), # true positive rates
+#'                      psi   = rep(0.01,L0), # false positive rates
+#'                      alpha1 = 1 # half of the people have the first machine.
+#')
 #'
+#' #image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
+#'
+#' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 #' tmp <-  simu$H_star[c(1,1,2,2,2,3,4,5,6,7,8),]
 #' uid <- unique(apply(tmp,1,paste,collapse=""))
 #' merge_map(apply(tmp,1,paste,collapse=""),uid)
@@ -1147,14 +994,14 @@ slice_sampler <- function(dat,model_options,mcmc_options){
   if (is.null(model_options$theta)){
     theta_samp <- matrix(0,nrow=ncol(dat),ncol=n_keep)
     a_theta <- model_options$a_theta
-    theta <- sapply(1:L,function(i){rbeta(1,a_theta[1],a_theta[2])}) # initialization.
+    theta <- sapply(1:L,function(i){stats::rbeta(1,a_theta[1],a_theta[2])}) # initialization.
   } else{
     theta   <- model_options$theta # use specified true positive rates.
   }
   if (is.null(model_options$psi)){
     psi_samp   <- matrix(0,nrow=ncol(dat),ncol=n_keep)
     a_psi      <- model_options$a_psi
-    psi <- sapply(1:L,function(i){rbeta(1,a_psi[1],a_psi[2])}) # initialization.
+    psi <- sapply(1:L,function(i){stats::rbeta(1,a_psi[1],a_psi[2])}) # initialization.
   } else{
     psi     <- model_options$psi # use specified false positive rates.
   }
@@ -1236,7 +1083,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
           L1            <- log_full(dat[z==mylist[j],,drop=FALSE],
                                     H_star_redun[mylist[j],1:m_both,drop=FALSE],Q,p,theta,psi)
           curr_eta_p    <- exp(L1-matrixStats::logSumExp(c(L0,L1)))
-          H_star_redun[mylist[j],m] <- rbinom(1,1,curr_eta_p)
+          H_star_redun[mylist[j],m] <- stats::rbinom(1,1,curr_eta_p)
           #H_star_samp[mylist[j],m,iter] <- metrop_flip(H_star_samp[mylist[j],m,iter],curr_eta_p)
         }
       }
@@ -1270,7 +1117,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
           L1            <- -log(min(p[ind_prop_mplus]))+log_full(dat[z==mylist[j],,drop=FALSE],
                                                                  H_star_redun[mylist[j],1:m_both,drop=FALSE],Q,p,theta,psi)
           curr_eta_p    <- exp(L1-matrixStats::logSumExp(c(L0,L1)))
-          H_star_redun[mylist[j],m] <- rbinom(1,1,curr_eta_p)
+          H_star_redun[mylist[j],m] <- stats::rbinom(1,1,curr_eta_p)
           #H_star_samp[mylist[j],m,iter] <- metrop_flip(H_star_samp[mylist[j],m,iter],curr_eta_p)
         }
         # curr_pattern_log_p   <- log_full(dat[z==mylist[j],,drop=FALSE],H_star_enumerate,Q,p,theta,psi)
@@ -1343,8 +1190,8 @@ slice_sampler <- function(dat,model_options,mcmc_options){
       print_mat <-H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("scientific-cluster",rep("",nrow(print_mat)-1)),1:nrow(print_mat),sep=" "); colnames(print_mat) <- paste(c("merged factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
       print(print_mat) # removed all zero columns.
       cat("> Infinite IBP hyperparameter: alpha = ", alpha,"\n")
-      image(Q[colSums(H_star)!=0,,drop=FALSE],main=paste0("Q matrix at iteration ",iter),col=hmcols)
-      image(Q_merge,main=paste0("merged Q matrix at iteration ",iter),col=hmcols)
+      graphics::image(Q[colSums(H_star)!=0,,drop=FALSE],main=paste0("Q matrix at iteration ",iter),col=hmcols)
+      graphics::image(Q_merge,main=paste0("merged Q matrix at iteration ",iter),col=hmcols)
     }
     # pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
     # curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge))
@@ -1361,9 +1208,9 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     p <- rep(NA,m_plus)
     for (m in 1:(m_plus)){
       sm <- sum(H_star[,m]) # number of clusters using machine m.
-      p[m] <- rbeta(1,sm,1+t-sm)
+      p[m] <- stats::rbeta(1,sm,1+t-sm)
     }
-    s      <- runif(1,0,min(p)) # <---- p for active ones. we have already just focused on active ones.
+    s      <- stats::runif(1,0,min(p)) # <---- p for active ones. we have already just focused on active ones.
     if (VERBOSE){cat("> slice variable: s = ",s," \n")}
     # sample inactive p0 from 1 to m0 (adaptive rejection sampling):
     p0    <- 1
@@ -1372,7 +1219,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     while (p0[count] >= s){
       curr_alpha <- alpha
       curr_t     <- t # <-- the two rows above works because ars cannot simply accept alpha or t.
-      curr_log_p0_samp <- ars(1,log_f_logden,log_f_logprima,
+      curr_log_p0_samp <- ars::ars(1,log_f_logden,log_f_logprima,
                               log(c(p0[count]/10,p0[count]/2,p0[count]/10*9)),m=3,
                               lb=TRUE,xlb=log(0.00001),
                               ub=TRUE,xub=log(p0[count]),alpha=curr_alpha,t=curr_t)
@@ -1411,7 +1258,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
 
     # update hyperparameter for {p_m}:
     if (is.null(model_options$alpha)){ # gamma hyperparameters for IBP (Knowles and Zoubin AOAS).
-      alpha <- rgamma(1,shape=model_options$a_alpha+m_plus,
+      alpha <- stats::rgamma(1,shape=model_options$a_alpha+m_plus,
                       rate= model_options$b_alpha+sum(1/(1:t)))
       alpha_samp[iter] <- alpha
     }

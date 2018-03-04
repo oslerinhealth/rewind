@@ -43,7 +43,7 @@ order_mat_byrow <- function(mat){
   diag_v <- matrix(0,nrow=L,ncol=L)
   diag(diag_v) <- v
   tmp_prod <- mat%*%diag_v
-  permute_M_vec <- sapply(1:M,function(i){logSumExp(tmp_prod[i,mat[i,]!=0])})
+  permute_M_vec <- sapply(1:M,function(i){matrixStats::logSumExp(tmp_prod[i,mat[i,]!=0])})
   list(res = mat[rev(order(permute_M_vec)),,drop=FALSE],
        ord = rev(order(permute_M_vec)))
 }

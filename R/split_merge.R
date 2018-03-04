@@ -132,7 +132,7 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
 
       # if we need to update the assignment indicators:
       if (active){
-        zsb[k] <- ifelse(runif(1) < Pi, cib, cjb)
+        zsb[k] <- ifelse(stats::runif(1) < Pi, cib, cjb)
       }
       if (zsb[k]==cib){
         ni <- ni+1
@@ -211,7 +211,7 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
   for (ks in 1:ns){# start with a uniformly chosen split:
     k <- S[ks]
     if (k !=i && k!= j){
-      if (runif(1)<0.5){
+      if (stats::runif(1)<0.5){
         zs[k] <- ci
         ni<- ni+1 # need adjoin function to collect observations in the same cluster.
       } else{
@@ -249,7 +249,7 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
     p_accept <- min(1,exp(log_prop_ba-log_prop_ab+log_prior_b-log_prior_a+log_lik_ratio))
 
     # accept or reject:
-    if (runif(1)<p_accept){#accept split:
+    if (stats::runif(1)<p_accept){#accept split:
       for (ks in 1:ns){
         z[S[ks]] <- zs[S[ks]]
       }
@@ -279,7 +279,7 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
     p_accept <- min(1,log_prop_ba-log_prop_ab+log_prior_b-log_prior_a+log_lik_ratio)
 
     #accept or reject:
-    if (runif(1)<p_accept){
+    if (stats::runif(1)<p_accept){
       for (ks in 1:ns){
         z[S[ks]] <- cm
       }

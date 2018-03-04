@@ -1,3 +1,4 @@
+\dontrun{
 rm(list=ls())
 library(rewind)
 library(matrixStats)
@@ -18,7 +19,7 @@ options_sim0  <- list(N = 200,  # sample size.
                       alpha1 = 1 # half of the people have the first machine.
 )
 
-image(simulate_data(options_sim0,SETSEED = TRUE)$datmat,hmcols)
+image(simulate_data(options_sim0,SETSEED = TRUE)$datmat,col=hmcols)
 simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 simu_dat <- simu$datmat
 
@@ -33,7 +34,8 @@ model_options0 <- list(
   n   = nrow(simu_dat),
   t_max  = 40,
   m_max  = 10,
-  b  = 1, # Dirichlet hyperparameter; in the functions above, we used "b" - also can be called "gamma".
+  b  = 1, # Dirichlet hyperparameter; in the functions above,
+          # we used "b" - also can be called "gamma".
   #Q  = simu$Q,
   a_theta = c(9,1),
   a_psi   = c(1,9),
@@ -41,11 +43,12 @@ model_options0 <- list(
   #psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
   #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
-  log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1). Prior for the number of components.
+  log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
+                         #Prior for the number of components.
 )
 
 # pre-compute the log of coefficients in MFM:
-model_options0$log_v <- mfm_coefficients(eval(parse(text=model_options0$log_pk)),
+model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
                                          model_options0$gamma,
                                          model_options0$n,
                                          model_options0$t_max+1)
@@ -81,7 +84,8 @@ image(simu$datmat,main="Data",col=hmcols)
 image(simu$xi,main="True presence/absence of proteins)",col=hmcols)
 image(order_mat_byrow(simu$Q)$res,main="True Q (ordered)",col=hmcols)
 Q_merged <- out$Q_merge_samp[,,ind_post_mode]
-image(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res,main="Sampled Q (merged & ordered)",col=hmcols)
+image(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res,
+      main="Sampled Q (merged & ordered)",col=hmcols)
 #dev.off()
 
 # co-clustering:
@@ -93,3 +97,4 @@ for (k in 1:options_sim0$K){
   abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
 }
 
+}

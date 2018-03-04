@@ -7,15 +7,13 @@
 log_pr_Qml_cond_enum(Yl, eta_star, Ql_enumerate, thetal, psil)
 }
 \arguments{
+\item{Yl}{a column of the multivariate binary data}
+
 \item{eta_star}{a matrix of machine usage indicators, rows for clusters, columns for M machines}
 
 \item{Ql_enumerate}{l-th column of the Q matrix}
 
 \item{thetal, psil}{True and false positive rates. Both are vectors of length L}
-
-\item{Y}{data}
-
-\item{p}{prevalence of machines; a vector of length identical to the columns of H.}
 }
 \value{
 a vector of log conditional probability of column Q_l taking each of
