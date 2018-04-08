@@ -17,21 +17,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// log_marginal
-double log_marginal(NumericMatrix Y, NumericMatrix Q, NumericVector p, NumericVector theta, NumericVector psi);
-RcppExport SEXP _rewind_log_marginal(SEXP YSEXP, SEXP QSEXP, SEXP pSEXP, SEXP thetaSEXP, SEXP psiSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type Q(QSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type psi(psiSEXP);
-    rcpp_result_gen = Rcpp::wrap(log_marginal(Y, Q, p, theta, psi));
-    return rcpp_result_gen;
-END_RCPP
-}
 // mat_times_vec_by_col
 arma::mat mat_times_vec_by_col(arma::mat m, arma::vec v);
 RcppExport SEXP _rewind_mat_times_vec_by_col(SEXP mSEXP, SEXP vSEXP) {
@@ -57,6 +42,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
     rcpp_result_gen = Rcpp::wrap(log_full(Y, eta_star, Q, p, theta, psi));
+    return rcpp_result_gen;
+END_RCPP
+}
+// log_marginal
+double log_marginal(arma::mat Y, arma::mat eta_star_enumerate, arma::mat Q, arma::vec p, arma::vec theta, arma::vec psi);
+RcppExport SEXP _rewind_log_marginal(SEXP YSEXP, SEXP eta_star_enumerateSEXP, SEXP QSEXP, SEXP pSEXP, SEXP thetaSEXP, SEXP psiSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type eta_star_enumerate(eta_star_enumerateSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Q(QSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type p(pSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_marginal(Y, eta_star_enumerate, Q, p, theta, psi));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -92,9 +93,9 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rewind_logsumexp", (DL_FUNC) &_rewind_logsumexp, 1},
-    {"_rewind_log_marginal", (DL_FUNC) &_rewind_log_marginal, 5},
     {"_rewind_mat_times_vec_by_col", (DL_FUNC) &_rewind_mat_times_vec_by_col, 2},
     {"_rewind_log_full", (DL_FUNC) &_rewind_log_full, 6},
+    {"_rewind_log_marginal", (DL_FUNC) &_rewind_log_marginal, 6},
     {"_rewind_equal_unit_vec", (DL_FUNC) &_rewind_equal_unit_vec, 2},
     {"_rewind_compute_Q_condpr", (DL_FUNC) &_rewind_compute_Q_condpr, 7},
     {NULL, NULL, 0}

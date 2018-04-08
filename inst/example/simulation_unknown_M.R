@@ -14,11 +14,11 @@ hmcols    <- colorRampPalette(YlGnBu5)(256)
 
 # simulate data:
 L0 <- 100
-options_sim0  <- list(N = 200,  # sample size.
+options_sim0  <- list(N = 50,  # sample size.
                       M = 3,   # true number of machines.
                       L = L0,   # number of antibody landmarks.
                       K = 2^3,    # number of true components.,
-                      theta = rep(0.8,L0), # true positive rates
+                      theta = rep(0.9,L0), # true positive rates
                       psi   = rep(0.1,L0), # false positive rates
                       alpha1 = 1 # half of the people have the first machine.
 )

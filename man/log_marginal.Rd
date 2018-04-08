@@ -4,10 +4,12 @@
 \alias{log_marginal}
 \title{R Function to compute the cluster-specific marginal likelihood}
 \usage{
-log_marginal(Y, Q, p, theta, psi)
+log_marginal(Y, eta_star_enumerate, Q, p, theta, psi)
 }
 \arguments{
 \item{Y}{the data for the current cluster (a subset of observations.)}
+
+\item{eta_star_enumerate}{fixed binary matrix of 2^M rows and M columns. Need to be prespecified.}
 
 \item{Q}{Q-matrix}
 
@@ -45,8 +47,9 @@ options_sim0  <- list(N = 200,  # sample size.
  p <- c(0.5,0.25,0.1,0.02,0.05)
  theta <- options_sim0$theta
  psi   <- options_sim0$psi
+ H_enumerate <- as.matrix(expand.grid(rep(list(0:1), options_sim0$M)),ncol=options_sim0$M)
 
 #log_marginal0(Y, Q, p, theta, psi)
-log_marginal(Y, Q, p, theta, psi) # <-- this is the Rcpp implementation.
+log_marginal(Y,H_enumerate, Q, p, theta, psi) # <-- this is the Rcpp implementation.
 
 }

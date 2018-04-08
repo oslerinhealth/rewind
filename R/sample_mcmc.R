@@ -480,9 +480,9 @@ sampler <- function(dat,model_options,mcmc_options){
     Q      <- model_options$Q # suppose we are given Q.
   }
 
-  if (block_update_H){
+  #if (block_update_H){
     H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_max)),ncol=m_max) # all binary patterns for machine usage profiles. 2^m_max of them.
-  }
+  #}
   # initialize the sampling chain:
   t <- 1        # number of clusters.
   z <- rep(1,n) # z[i] is the cluster ID for observation i.
@@ -556,10 +556,10 @@ sampler <- function(dat,model_options,mcmc_options){
       # to a cluster.
       for (j in 1:t){
         cc       <- mylist[j]
-        log_p[j] <- log_Nb[N[cc]]+log_marginal(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),Q,p,theta,psi)-
-          log_marginal(dat[(z==cc)[-i],,drop=FALSE],Q,p, theta,psi) # existing cluster.
+        log_p[j] <- log_Nb[N[cc]]+log_marginal(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),H_star_enumerate,Q,p,theta,psi)-
+          log_marginal(dat[(z==cc)[-i],,drop=FALSE],H_star_enumerate,Q,p, theta,psi) # existing cluster.
       }
-      log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],Q,p,theta,psi) # new cluster.
+      log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],H_star_enumerate,Q,p,theta,psi) # new cluster.
 
       j <- sample(t+1,1,prob = exp(log_p[1:(t+1)]))
 
@@ -1038,10 +1038,10 @@ slice_sampler <- function(dat,model_options,mcmc_options){
       # to a cluster.
       for (j in 1:t){
         cc       <- mylist[j]
-        log_p[j] <- log_Nb[N[cc]]+log_marginal(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),Q,p,theta,psi)-
-          log_marginal(dat[(z==cc)[-i],,drop=FALSE],Q,p, theta,psi) # existing cluster.
+        log_p[j] <- log_Nb[N[cc]]+log_marginal(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),H_star_enumerate,Q,p,theta,psi)-
+          log_marginal(dat[(z==cc)[-i],,drop=FALSE],H_star_enumerate,Q,p, theta,psi) # existing cluster.
       }
-      log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],Q,p,theta,psi) # new cluster.
+      log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],H_star_enumerate,Q,p,theta,psi) # new cluster.
 
       j <- sample(t+1,1,prob = exp(log_p[1:(t+1)]))
 

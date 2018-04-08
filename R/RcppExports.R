@@ -5,6 +5,31 @@ logsumexp <- function(logv_arma) {
     .Call('_rewind_logsumexp', PACKAGE = 'rewind', logv_arma)
 }
 
+mat_times_vec_by_col <- function(m, v) {
+    .Call('_rewind_mat_times_vec_by_col', PACKAGE = 'rewind', m, v)
+}
+
+#' Function to compute the full cluster-specific likelihood given latent variables
+#'
+#' This function computes the likelihood WITHOUT integrating over
+#' the distribution of component specific parameter (e.g., machine usage profiles).
+#' This function conditions upon a few model parameters: the true and false positive
+#' rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
+#'
+#' @param Y the data for the current cluster (a subset of observations.)
+#' @param eta_star A matrix of M columns (of machines). Multivariate binary indicators of presence or absence of
+#' protein landmarks (could be a matrix with rows for multiple )
+#' @param Q Q-matrix
+#' @param p prevalence parameter for each machine; should be a vector of dimension M.
+#' @param theta true positive rates
+#' @param psi true positive rates
+#'
+#' @return a vector of likelihood values (one per cluster) given other model parameters.
+#' @export
+log_full <- function(Y, eta_star, Q, p, theta, psi) {
+    .Call('_rewind_log_full', PACKAGE = 'rewind', Y, eta_star, Q, p, theta, psi)
+}
+
 #' R Function to compute the cluster-specific marginal likelihood
 #'
 #' This R function computes the marginal likelihood by integrating over
@@ -13,6 +38,7 @@ logsumexp <- function(logv_arma) {
 #' rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
 #'
 #' @param Y the data for the current cluster (a subset of observations.)
+#' @param eta_star_enumerate fixed binary matrix of 2^M rows and M columns. Need to be prespecified.
 #' @param Q Q-matrix
 #' @param p prevalence parameter for each machine; should be a vector of dimension M.
 #' @param theta true positive rates
@@ -37,39 +63,15 @@ logsumexp <- function(logv_arma) {
 #'  p <- c(0.5,0.25,0.1,0.02,0.05)
 #'  theta <- options_sim0$theta
 #'  psi   <- options_sim0$psi
+#'  H_enumerate <- as.matrix(expand.grid(rep(list(0:1), options_sim0$M)),ncol=options_sim0$M)
 #'
 #' #log_marginal0(Y, Q, p, theta, psi)
-#' log_marginal(Y, Q, p, theta, psi) # <-- this is the Rcpp implementation.
+#' log_marginal(Y,H_enumerate, Q, p, theta, psi) # <-- this is the Rcpp implementation.
 #'
 #' @return log of marginal likelihood given other model parameters.
 #' @export
-log_marginal <- function(Y, Q, p, theta, psi) {
-    .Call('_rewind_log_marginal', PACKAGE = 'rewind', Y, Q, p, theta, psi)
-}
-
-mat_times_vec_by_col <- function(m, v) {
-    .Call('_rewind_mat_times_vec_by_col', PACKAGE = 'rewind', m, v)
-}
-
-#' Function to compute the full cluster-specific likelihood given latent variables
-#'
-#' This function computes the likelihood WITHOUT integrating over
-#' the distribution of component specific parameter (e.g., machine usage profiles).
-#' This function conditions upon a few model parameters: the true and false positive
-#' rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
-#'
-#' @param Y the data for the current cluster (a subset of observations.)
-#' @param eta_star A matrix of M columns (of machines). Multivariate binary indicators of presence or absence of
-#' protein landmarks (could be a matrix with rows for multiple )
-#' @param Q Q-matrix
-#' @param p prevalence parameter for each machine; should be a vector of dimension M.
-#' @param theta true positive rates
-#' @param psi true positive rates
-#'
-#' @return a vector of likelihood values (one per cluster) given other model parameters.
-#' @export
-log_full <- function(Y, eta_star, Q, p, theta, psi) {
-    .Call('_rewind_log_full', PACKAGE = 'rewind', Y, eta_star, Q, p, theta, psi)
+log_marginal <- function(Y, eta_star_enumerate, Q, p, theta, psi) {
+    .Call('_rewind_log_marginal', PACKAGE = 'rewind', Y, eta_star_enumerate, Q, p, theta, psi)
 }
 
 #' check whether a vector is equal to a unit vector with the one at a particular

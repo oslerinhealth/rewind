@@ -117,6 +117,8 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
   # ??need to update the observations to be in sync with zs.
   # ?? i must be different from j?
   log_p <- 0 # variable for log transition probabilities.
+  M <- nrow(Q)
+  H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)
   for (ks in 1:ns){ # beging iteration over observations in S.
     k <- S[ks]
     if (k!=i && k!=j){
@@ -125,9 +127,10 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
       } else{
         nj <- nj-1 # <--mod
       }
+
       # compute probability to assign observation k to the cluster to which obs i belongs:
-      Li <- log_marginal(rbind(Y[(zsa==cia)[-k],,drop=FALSE],Y[k,]),Q,p,theta,psi) - log_marginal(Y[(zsa==cia)[-k],,drop=FALSE],Q,p,theta,psi) # from restaurant process.
-      Lj <- log_marginal(rbind(Y[(zsa==cja)[-k],,drop=FALSE],Y[k,]),Q,p,theta,psi) - log_marginal(Y[(zsa==cja)[-k],,drop=FALSE],Q,p,theta,psi)
+      Li <- log_marginal(rbind(Y[(zsa==cia)[-k],,drop=FALSE],Y[k,]),H_enumerate,Q,p,theta,psi) - log_marginal(Y[(zsa==cia)[-k],,drop=FALSE],H_enumerate,Q,p,theta,psi) # from restaurant process.
+      Lj <- log_marginal(rbind(Y[(zsa==cja)[-k],,drop=FALSE],Y[k,]),H_enumerate,Q,p,theta,psi) - log_marginal(Y[(zsa==cja)[-k],,drop=FALSE],H_enumerate,Q,p,theta,psi)
       Pi <- exp(log(ni+b)+Li- matrixStats::logSumExp(c(log(ni+b)+Li,log(nj+b)+Lj))) # the (ni+b) also comes from restaurant process.
 
       # if we need to update the assignment indicators:
@@ -177,6 +180,8 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
 split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
   # for non-conjugate sampler, there needs to be n_merge
   n <- nrow(Y)
+  M <- nrow(Q)
+  H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)
   # randomly choose a pair of indices:
   rand_pair <- sample(n,2,replace=FALSE)
   i <- rand_pair[1]
@@ -244,8 +249,8 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
     # compute MH acceptance probability
     log_prior_b <- log_v[t+1]+lgamma(ni+b)+lgamma(nj+b)-2*lgamma(b)
     log_prior_a <- log_v[t] + lgamma(ns+b)-lgamma(b)
-    log_lik_ratio <- log_marginal(Y[zs==ci,,drop=FALSE],Q,p,theta,psi)+log_marginal(Y[zs==cj,,drop=FALSE],Q,p,theta,psi)-
-      log_marginal(Y[z==ci0,,drop=FALSE],Q,p,theta,psi)
+    log_lik_ratio <- log_marginal(Y[zs==ci,,drop=FALSE],H_enumerate,Q,p,theta,psi)+log_marginal(Y[zs==cj,,drop=FALSE],H_enumerate,Q,p,theta,psi)-
+      log_marginal(Y[z==ci0,,drop=FALSE],H_enumerate,Q,p,theta,psi)
     p_accept <- min(1,exp(log_prop_ba-log_prop_ab+log_prior_b-log_prior_a+log_lik_ratio))
 
     # accept or reject:
@@ -274,8 +279,8 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
     # compute acceptance probability:
     log_prior_b <- log_v[t-1]+lgamma(ns+b)-lgamma(b)
     log_prior_a <- log_v[t]+lgamma(ni+b)+lgamma(nj+b)-2*lgamma(b)
-    log_lik_ratio <- log_marginal(Y[S,,drop=FALSE],Q,p,theta,psi) -
-      log_marginal(Y[z==ci0,,drop=FALSE],Q,p,theta,psi)-log_marginal(Y[z==cj0,,drop=FALSE],Q,p,theta,psi) # computed for original (not launch state) and proposed states.
+    log_lik_ratio <- log_marginal(Y[S,,drop=FALSE],H_enumerate,Q,p,theta,psi) -
+      log_marginal(Y[z==ci0,,drop=FALSE],H_enumerate,Q,p,theta,psi)-log_marginal(Y[z==cj0,,drop=FALSE],H_enumerate,Q,p,theta,psi) # computed for original (not launch state) and proposed states.
     p_accept <- min(1,log_prop_ba-log_prop_ab+log_prior_b-log_prior_a+log_lik_ratio)
 
     #accept or reject:
