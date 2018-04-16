@@ -95,7 +95,7 @@ myentropy <- function(z){
   n <- length(z)
   tb <- table(z)
   log(n) - sum(tb*log(tb))/n
-  }
+}
 
 z2comat <- function(z){
   n <- length(z)
@@ -122,9 +122,10 @@ z_Em <- rep(NA,nsamp_C)
 for (iter in 1:nsamp_C){
   z_Em[iter] <- norm(z2comat(out$z_samp[,iter])-comat,"F")
 }
-plot(z_Em,type="o",main="|S-E[S|Y]|")
+ind_dahl <- which.min(z_Em)
+plot(z_Em,type="l",main="|S-E[S|Y]|")
 image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(out$z_samp[,which.min(z_Em)]),col=hmcols,
+      z2comat(out$z_samp[,ind_dahl]),col=hmcols,
       main="clustering at the minimized Z")
 for (k in 1:options_sim0$K){
   abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
@@ -134,54 +135,44 @@ for (k in 1:options_sim0$K){
 #3 approach 1:
 for (iter in 1:nsamp_C){
   z_Em[iter] <- myentropy(out$z_samp[,iter])
-  }
+}
 
 bd <- HDInterval::hdi(z_Em)
 z_Em[which(z_Em==bd[1])]
 z_Em[which(z_Em==bd[2])]
 which(z_Em == median(z_Em))
 
-# lower:
+# coarser:
+ind_coarser <- which(z_Em==bd[1])
 image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(out$z_samp[,which(z_Em==bd[1])[1]]),col=hmcols,
-      main="clustering at the lower entropy quantile")
+      z2comat(out$z_samp[,ind_coarser[1]]),col=hmcols,
+      main="coarser clustering at the lower entropy quantile")
+for (k in 1:options_sim0$K){
+  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+}
 
-# upper:
+# refined:
+ind_refined <- which(z_Em==bd[2])
 image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(out$z_samp[,which(z_Em==bd[2])]),col=hmcols,
-      main="clustering at the upper entropy quantile")
+      z2comat(out$z_samp[,ind_refined]),col=hmcols,
+      main="granular clustering at the upper entropy quantile")
+for (k in 1:options_sim0$K){
+  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+}
 
 # median:
+ind_median <- which(abs(z_Em-median(z_Em))<1e-3)
 image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(out$z_samp[,which(z_Em == median(z_Em))[3]]),col=hmcols,
-      main="clustering at the minimized Z")
+      z2comat(out$z_samp[,ind_median]),col=hmcols,
+      main="median entropy clustering")
 
 for (k in 1:options_sim0$K){
   abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
   abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
 }
 
-## summarize H*:
-##
-## If we compare it to H, then the clustering matters too, not
-## just H^*.
-##
-##  compute the error |HH' - E[HH'|Y]|_Frobneious
-##
-nsamp_H <- dim(out$z_samp)[2]
-H_Em <- rep(NA,nsamp_H)
-for (iter in 1:nsamp_H){
-  H_Em[iter] <- trans_squared_error(out$H_star_merge_samp[out$z_samp[,iter],,iter],
-                                    simu$H_star[simu$Z,])
-}
-plot(H_Em,type="o",main="|HH'-E[H0H0'|Y]|")
-
-min_H_Em <- which.min(H_Em) # select the one with minimal squared error.
-image(1:options_sim0$N,1:model_options0$m_max,out$H_star_merge_samp[out$z_samp[,min_H_Em],,min_H_Em],
-      col=hmcols,xlab="subjects",ylab="latent states")
-for (k in 1:options_sim0$K){
-  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-}
 
 ## summarize Q (first need to transpose it)
 ##
@@ -191,24 +182,69 @@ for (k in 1:options_sim0$K){
 ##            P(\sum_m Q_ml >= 1, \sum_m Q_ml' >= 1) -
 ##             This is invariant to the relabeling of latent states, or cluster labels.
 nsamp_Q <- dim(out$Q_merge_samp)[3]
+EQQ <- matrix(0,nrow=dim(out$Q_merge_samp)[2], ncol=dim(out$Q_merge_samp)[2])
+for (iter in 1:nsamp_Q){
+  A <- t(out$Q_merge_samp[,,iter])
+  EQQ <- (A%*%t(A)+EQQ*(iter-1))/iter
+}
 Q_Em <- rep(NA,nsamp_Q)
 for (iter in 1:nsamp_Q){
-  Q_Em[iter] <- trans_squared_error(t(out$Q_merge_samp[,,iter]), t(simu$Q))
+  A <- t(out$Q_merge_samp[,,iter])
+  Q_Em[iter] <- norm(A%*%t(A) - EQQ,"F")
 }
-plot(Q_Em,type="o",main="|QQ'-E[Q0Q0'|Y]|")
+plot(Q_Em,type="o",main="||QQ'-E[QQ'|Y]||")
 
 # comparing true Q to sampled Q:
-ind_post_mode <- mcmc_options0$n_total#which.max(table(pats))
+#ind_of_Q <- ind_median[which.min(Q_Em[ind_median])]#which.max(table(pats))
+ind_of_Q <- which(Q_Em==min(Q_Em))#which.max(table(pats))
+#ind_post_mode <- mcmc_options0$n_total#which.max(table(pats))
 #pdf("diagnosticsQ.pdf",width=12,height=6)
 par(mfrow=c(1,4))
 image(simu$datmat,main="Data",col=hmcols)
 image(simu$xi,main="True presence/absence of proteins)",col=hmcols)
 image(order_mat_byrow(simu$Q)$res,main="True Q (ordered)",col=hmcols)
-Q_merged <- out$Q_merge_samp[,,ind_post_mode]
+Q_merged <- out$Q_merge_samp[,,ind_of_Q]
 image(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res,
       main="Sampled Q (merged & ordered)",col=hmcols)
 #dev.off()
 
+## summarize H*:
+##
+## If we compare it to H, then the clustering matters too, not
+## just H^*.
+##
+##  compute the error |HH' - E[HH'|Y]|_Frobneious
+##
+nsamp_H <- dim(out$z_samp)[2]
+# H_Em <- rep(NA,nsamp_H)
+# for (iter in 1:nsamp_H){
+#   H_Em[iter] <- trans_squared_error(out$H_star_merge_samp[out$z_samp[,iter],,iter],
+#                                     simu$H_star[simu$Z,])
+# }
+# plot(H_Em,type="o",main="|HH'-E[H0H0'|Y]|")
 
+H_res <- matrix(0,nrow=nrow(simu$datmat),ncol=model_options0$m_max)
+H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=length(ind_of_Q))
+for (l in seq_along(ind_of_Q)){
+  tmp_mylist <- out$mylist_samp[,ind_of_Q[l]]
+  tmp <- out$H_star_merge_samp[match(out$z_samp[,ind_of_Q[l]],tmp_mylist),,ind_of_Q[l]]
+  H_pat_res[,l] <- bin2dec_vec(tmp,LOG=FALSE)
+  H_res <- (tmp + H_res*(l-1))/l
+}
+apply(H_pat_res,1,table)
 
+image(H_res)
+
+Q_res <- matrix(0,nrow=model_options0$m_max,ncol=ncol(simu$Q))
+for (l in seq_along(ind_of_Q)){
+  Q_res <- (out$Q_merge_samp[,,ind_of_Q[l]] + Q_res*(l-1))/l
+}
+
+#min_H_Em <- which.min(Q_Em) # select the one with minimal squared error.
+image(1:options_sim0$N,1:model_options0$m_max,
+      H_res,
+      col=hmcols,xlab="subjects",ylab="latent states")
+for (k in 1:options_sim0$K){
+  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+}
 #}

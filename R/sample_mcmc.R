@@ -521,6 +521,8 @@ sampler <- function(dat,model_options,mcmc_options){
   H_star_samp <- array(0,c(t_max+3,m_max,n_total))# component-specific machine profiles.
   H_star_merge_samp <- H_star_samp
 
+  mylist_samp <- matrix(0,nrow=length(mylist),ncol=n_total) # need it to retrieve the correct latent state vector.
+
   if (is.null(model_options$theta)){
     theta_samp <- matrix(0,nrow=ncol(dat),ncol=n_keep)
     a_theta <- model_options$a_theta
@@ -661,20 +663,30 @@ sampler <- function(dat,model_options,mcmc_options){
     if (VERBOSE && nrow(H_star_merge)<nrow(H_star)){
       string_merge1 <- paste0(">> absorbed ",nrow(H_star)-nrow(H_star_merge)," pseudo clusters, giving ", nrow(H_star_merge), " scientific clusters.\n")
     }
-
-    # merge columns (combine factors that are present or absent at the same time; partner latent states):
-    pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
-    curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge)) # <-- can get the mapping from partner machines to final merged machines.
-    H_star_merge  <- t(curr_merge_col$uniq_pat)
-    string_merge2 <- NULL
-    if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
-      string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)," `partner` latent states, giving ", ncol(H_star_merge), " latent states. \n")
-    }
+    # print(H_star_merge)
+    # print(length(H_star_merge))
+    # H_tmp <- H_star_merge
+    # if(length(H_tmp)>0){
+      # merge columns (combine factors that are present or absent at the same time; partner latent states):
+      pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
+      curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge)) # <-- can get the mapping from partner machines to final merged machines.
+      H_star_merge  <- t(curr_merge_col$uniq_pat)
+      string_merge2 <- NULL
+      if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
+        string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)," `partner` latent states, giving ", ncol(H_star_merge), " latent states. \n")
+      }
+    # }else{
+    #   H_star_merge <- matrix(0,nrow=t_max+3,ncol=m_max)
+    # }
 
     # put the zeros back into H_star.
     H_star <- H_star_redun[mylist[1:t],,drop=FALSE] # <------ allow zero columns.
 
-    Q_merge <- merge_Q(Q[colSums(H_star)!=0,,drop=FALSE],curr_merge_col$map)
+    #if(length(H_tmp)>0){
+      Q_merge <- merge_Q(Q[colSums(H_star)!=0,,drop=FALSE],curr_merge_col$map)
+    #} else{
+    #  Q_merge <- simulate_Q_dat(m_max,dat,0.5)
+    #}
 
     if (VERBOSE){
       cat("\n[rewind] iteration ", iter, ":\n");
@@ -725,7 +737,9 @@ sampler <- function(dat,model_options,mcmc_options){
       for (i in 1:n){
         z_samp[i,keep_index] <- z[i]
       }
-      H_star_merge_samp[1:nrow(H_star_merge),1:ncol(H_star_merge),keep_index] <- H_star_merge
+      mylist_samp[,keep_index] <- mylist
+      H_star_merge_samp[1:nrow(H_star_merge),1:ncol(H_star_merge),keep_index] <-
+        H_star_merge
       if (is.null(model_options$theta)){
         theta_samp[,keep_index] <- theta # of length L.
       }
@@ -742,7 +756,8 @@ sampler <- function(dat,model_options,mcmc_options){
   res <- list(t_samp=t_samp,N_samp=N_samp,z_samp=z_samp,keepers=keepers,
               H_star_samp = H_star_samp,
               H_star_merge_samp = H_star_merge_samp,
-              alpha_samp=alpha_samp)
+              alpha_samp=alpha_samp,
+              mylist_samp=mylist_samp)
   if (is.null(model_options$theta)){
     res$theta_samp <- theta_samp # of length L.
   }
