@@ -39,7 +39,7 @@ quantification as well as patient-specific posterior probability of having each 
 \item This package partly adapts Julia programs used in
 Miller, J.W. and Harrison, M.T., 2017. Mixture models with a prior on the number of components.
 Journal of the American Statistical Association, pp.1-17. \url{https://github.com/jwmi/BayesianMixtures.jl}
-\item Slice sampler for Indian Buffet Process priors: Teh, Y. W., Grür, D., and Ghahramani, Z. (2007).
+\item Slice sampler for Indian Buffet Process priors: Teh, Y. W., Grur, D., and Ghahramani, Z. (2007).
 Stick-breaking construction for the indian buffet process. In Artificial Intelligence and Statistics, pages 556–563.
 }
 }

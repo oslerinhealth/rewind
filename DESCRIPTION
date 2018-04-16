@@ -10,7 +10,8 @@ Description: This package implememnts a Bayesian hierarchical model that represe
     observations as aggregation of a few unobserved binary machines where the aggregation 
     varies by subjects. Our approach is to specify the model likelihood via factorization 
     into two latent binary matrices: machine profiles and individual factors. 
-    Given latent factorization, we account for inherent errors in measurement using sensitivities and specificities of protein detection. 
+    Given latent factorization, we account for inherent errors in measurement using 
+    sensitivities and specificities of protein detection. 
     We use a prior for the individual factor matrix (Indian Buffet Process for binary matrices) to 
     encourage a small number of subject clusters each with distinct patterns of active machines. 
     The posterior distribution for the numbers of patient clusters and machines are 
@@ -22,15 +23,17 @@ Depends:
     R(>= 3.4.0)
 Imports:
     matrixStats(>= 0.52.2),
-    RcppArmadillo(>= 0.8.300.1.0),
-    Rcpp(>= 0.12.15),
-    ars(>= 0.5)
+    Rcpp(>= 0.12.15)
 Suggests:
     knitr,
     testthat,
     bibtex,
     knitcitations,
-    rmarkdown
+    rmarkdown,
+    ars(>= 0.5),
+    RcppArmadillo(>= 0.8.300.1.0),
+    mcclust.ext(>= 1.0)
+Remotes: url::http://wrap.warwick.ac.uk/71934/1/mcclust.ext_1.0.tar.gz
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
