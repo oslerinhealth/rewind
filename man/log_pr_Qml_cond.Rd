@@ -2,18 +2,19 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{log_pr_Qml_cond}
 \alias{log_pr_Qml_cond}
-\title{compute the full conditional probability of Q_ml given others}
+\title{Compute the full conditional probability of Q_ml given the rest of parameters}
 \usage{
 log_pr_Qml_cond(Yl, eta_star, Ql, thetal, psil)
 }
 \arguments{
 \item{Yl}{a column of the multivariate binary data}
 
-\item{eta_star}{a matrix of machine usage indicators, rows for clusters, columns for M machines}
+\item{eta_star}{a matrix of latent state profiles, rows for clusters,
+columns for M latent states}
 
 \item{Ql}{l-th column of the Q matrix}
 
-\item{thetal, psil}{True and false positive rate (both are numbers between 0 and 1)}
+\item{thetal, psil}{The true, false positive rate (both between 0 and 1)}
 }
 \value{
 log conditional probability of Q_ml given other unknown parameters

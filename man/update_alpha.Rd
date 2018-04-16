@@ -2,20 +2,20 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{update_alpha}
 \alias{update_alpha}
-\title{sample alpha - hyperparameter for prevalences p_m}
+\title{sample alpha - hyperparameter for latent state prevalences p_m}
 \usage{
 update_alpha(H_star, t, M, a = 1, b = 1, show_density = FALSE)
 }
 \arguments{
-\item{H_star}{the matrix of machine usage profiles across clusters}
+\item{H_star}{the matrix of latent state profiles across clusters}
 
 \item{t}{number of clusters}
 
-\item{M}{number of machines}
+\item{M}{latent state dimension}
 
-\item{a, b}{hyperparameter for beta distribution over reparameterized alpha.}
+\item{a, b}{hyperparameter for Beta distribution over reparameterized alpha.}
 
-\item{show_density}{Default to FALSE - not showing the full conditional density of alpha
+\item{show_density}{Default to FALSE - hide the full conditional density of alpha
 given other unknown parameters; TRUE otherwise.}
 }
 \value{
@@ -23,5 +23,5 @@ an updated alpha value (positive)
 }
 \description{
 Function to sample the parameters from a grid (this is used only for model
-with pre-specified #factors M)
+with pre-specified latent state dimension M)
 }

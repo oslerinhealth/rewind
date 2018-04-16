@@ -14,12 +14,12 @@ hmcols    <- colorRampPalette(YlGnBu5)(256)
 
 # simulate data:
 L0 <- 100
-options_sim0  <- list(N = 50,  # sample size.
+options_sim0  <- list(N = 100,  # sample size.
                       M = 3,   # true number of machines.
                       L = L0,   # number of antibody landmarks.
                       K = 2^3,    # number of true components.,
                       theta = rep(0.9,L0), # true positive rates
-                      psi   = rep(0.1,L0), # false positive rates
+                      psi   = rep(0.01,L0), # false positive rates
                       alpha1 = 1 # half of the people have the first machine.
 )
 
@@ -37,12 +37,12 @@ simu_dat <- simu$datmat
 model_options0 <- list(
   n   = nrow(simu_dat),
   t_max  = 40,
-  m_max  = 100,
+  m_max  = 10,
   b  = 1, # Dirichlet hyperparameter; in the functions above, we used "b" -
           # also can be called "gamma".
   #Q  = simu$Q,
   a_theta = c(9,1),
-  a_psi   = c(1,9),
+  a_psi   = c(1,99),
   a_alpha = 1, # hyperparameter for IBP alpha.
   b_alpha = 1,
   #theta = options_sim0$theta,
@@ -55,7 +55,7 @@ model_options0 <- list(
 
 # pre-compute the log of coefficients in MFM:
 model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
-                                         model_options0$gamma,
+                                         model_options0$b,
                                          model_options0$n,
                                          model_options0$t_max+1)
 # mcmc options:
@@ -64,7 +64,7 @@ mcmc_options0 <- list(
   n_keep  = 200,
   n_split = 5,
   print_mod = 10,
-  m_plus_init = 10,
+  m_plus_init = 5,
   m0_init = 0,
   constrained = TRUE,
   block_update_H = TRUE,# NULL is also okay - because the conditional

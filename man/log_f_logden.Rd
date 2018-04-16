@@ -2,7 +2,7 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{log_f_logden}
 \alias{log_f_logden}
-\title{compute the log of density of inactive probability given
+\title{compute the log of density of inactive states' probability given
 the previous one (Teh et al., 07')}
 \usage{
 log_f_logden(log_p0, alpha, t)
@@ -18,7 +18,7 @@ log_f_logden(log_p0, alpha, t)
 a value corresponding to the log density f(log_p0)
 }
 \description{
-This function is used in sampling infinite number of columns in H
+This function is used in sampling a model with infinite number of columns in H
 }
 \examples{
 

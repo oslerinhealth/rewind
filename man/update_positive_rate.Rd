@@ -7,17 +7,17 @@
 update_positive_rate(Y, H, Q, a_theta, a_psi)
 }
 \arguments{
-\item{Y}{data}
+\item{Y}{binary data matrix}
 
-\item{H}{a matrix whose rows are individual specific machine indicators (all subjects)}
+\item{H}{a matrix whose rows are individual specific latent states (all subjects)}
 
 \item{Q}{Q matrix}
 
-\item{a_theta, a_psi}{hyperparameters for priors on theta and psi, respectively}
+\item{a_theta, a_psi}{hyperparameters for priors on theta and psi, respectively.}
 }
 \value{
 a list of true positive rates theta and false positive rates psi, each of length L.
 }
 \description{
-This function samples the theta and psi parameters in bmf
+This function samples the true positive rates (theta) and false positive rates (psi)
 }

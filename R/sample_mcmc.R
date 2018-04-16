@@ -2,12 +2,12 @@
 
 #' Randomly generate a Q matrix within the identifying conditions
 #'
-#' This function is used to initialize the MCMC sampling chain within identifiability
-#' cosntraints
+#' This function initializes Q (if unknown) for MCMC sampling within identifiability
+#' constraints
 #'
-#' @param M the number of factors (machines)
-#' @param L the dimension of the binary data
-#' @param p the Bernoulli probability of an one in the Q matrix
+#' @param M latent state dimension
+#' @param L dimension of the binary responses
+#' @param p Bernoulli probability of 1 in the Q matrix (except two diagonal matrices)
 #' @examples
 #'
 #' simulate_Q(3,100)
@@ -17,23 +17,24 @@
 simulate_Q <- function(M,L,p=0.1){
   Q_col_ordered <-cbind(diag(1,M),diag(1,M),matrix(stats::rbinom(M*(L-2*M),1,p),nrow=M))
   Q_col_ordered[which(rowSums(Q_col_ordered[,-(1:(2*M))]) == 0), sample((2*M+1):(L),1)] <- 1
+  # if a row sums to two, add an extra "1".
   Q_col_ordered[,sample(1:L)]
 }
 
-#' Randomly generate a Q matrix within the identifying conditions driven by data
+#'Randomly generate a Q matrix within the identifying condition (data-driven)
 #'
-#' This function is used to initialize the MCMC sampling chain within identifiability
-#' cosntraints; but this is smart - because it will not assign a one to a dimension with
-#' few ones in the data
+#'This function initializes Q (if unknown) during MCMC sampling chain within identifiability
+#'cosntraints. It is a warm start - because it will not assign a one to a dimension with
+#'few ones in the data
 #'
-#' @param M the number of factors (machines)
-#' @param dat a matrix of binary data (rows for observations, columns for dimensions)
-#' @param p the Bernoulli probability of an one in the Q matrix
-#' @param frac only initialize those dimension with at least \code{frac}*100%
-#' of subjects having a positive response.
+#' @param M latent state dimension
+#' @param dat binary data matrix (rows for observations, columns for dimensions)
+#' @param p Bernoulli probability of 1 in the Q matrix (except two diagonal matrices)
+#' @param frac A threshold - this function only initializes the dimensions with at least
+#' \code{frac}*100\% observed frequencies. Default: 20\%.
+#'
 #' @examples
-#'
-#'#' # simulate data:
+#' # simulate data:
 #' L0 <- 100
 #' options_sim0  <- list(N = 200,  # sample size.
 #'                      M = 3,   # true number of machines.
@@ -52,8 +53,7 @@ simulate_Q <- function(M,L,p=0.1){
 #' @return a binary matrix of dimension M by L
 #' @export
 simulate_Q_dat <- function(M,dat,p=0.1,frac=1/5){
-  #dat <- simu_dat
-  ind_all <- which(colSums(dat)>nrow(dat)*frac) # this initial value is very important!. The extra challenge is to known which column is truly all zeros.
+  ind_all <- which(colSums(dat)>nrow(dat)*frac) # this initial value helps MCMC sampling!.
   res <- matrix(0,nrow=M,ncol=ncol(dat))
   for (m in 1:M){
     res[m,sample(ind_all,ceiling(p*length(ind_all)))] <- 1
@@ -61,22 +61,24 @@ simulate_Q_dat <- function(M,dat,p=0.1,frac=1/5){
   res
 }
 
-# compute likelihood:
+# compute the likelihood:
 
-
-
-
-#' Compute the cluster-specific marginal likelihood
+#' Compute marginal likelihood for observations in a cluster
+#' NB: this only works for Q = I; potential errors with the integration over latent states -
+#' one cannot factorize the marginal likelihood for an arbitrary Q. Can delete this if
+#' we have a general marginal likelihood function that works for all dimensions.
 #'
-#' This R function computes the marginal likelihood by integrating over
-#' the distribution of component specific parameter (e.g., machine usage profiles).
+#' This function computes the marginal likelihood by integrating over
+#' the distribution of component specific parameter (e.g., discrete latent states).
 #' This function conditions upon a few model parameters: the true and false positive
-#' rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
+#' rates (theta and psi), the Q matrix and {p}-the prevalence parameters for binary
+#' latent states.
 #'
 #' @param Yl a column of the multivariate binary data
 #' @param Ql l-th column of the Q matrix
-#' @param p prevalence of machines; a vector of length identical to the columns of H.
-#' @param thetal,psil True and false positive rate (both are numbers between 0 and 1)
+#' @param p prevalence of binary latent states; a vector of length identical to the dimension
+#' of latent states.
+#' @param thetal,psil True and false positive rates (between 0 and 1)
 #'
 #' # simulate data:
 #' L0 <- 100
@@ -107,64 +109,61 @@ log_marginal_one_column <- function(Yl, Ql, p, thetal, psil){
   n1 <- sum(Yl)
   n0 <- sum(1-Yl)
   p_xil <- 1-exp(matrix(log(1-p),nrow=1)%*%matrix(Ql,ncol=1)) # length L.
+  # This is based on the DINO model - it computes the probability of an activated dimension.
 
   mat <- c(n1*log(psil)+n0*log(1-psil),
-           n1*log(thetal)+n0*log(1-thetal))+
+           n1*log(thetal)+n0*log(1-thetal))+ # likelihood.
     c(log(1-p_xil),
-      log(p_xil))
-  matrixStats::logSumExp(mat) # can remove stuff including and before ::.
+      log(p_xil)) # prior.
+  matrixStats::logSumExp(mat) # total probability formula: likelihood given xil =0;
+  # likelihoodgiven xil=1; and sum them over with weights of 1-p_xil and p_xil respectively.
 }
-
-# mat_times_vec_by_col0 <- function(m,v){m * rep(v, rep(nrow(m),length(v)))}
-
 
 # update parameters:
 
 # eta_star <- as.matrix(expand.grid(rep(list(0:1), options_sim0$M)),ncol=options_sim0$M)
 # sum(abs(log_full0(Y,eta_star,Q, p, theta, psi)-
-# log_full(Y,eta_star,Q, p, theta, psi)))
-
+# log_full(Y,eta_star,Q, p, theta, psi))) # perhaps write this into a unit test.
 
 #' update true and false positive rates WITHOUT constraints
 #'
-#' This function samples the theta and psi parameters in bmf
+#' This function samples the true positive rates (theta) and false positive rates (psi)
 #'
-#' @param Y data
-#' @param H a matrix whose rows are individual specific machine indicators (all subjects)
+#' @param Y binary data matrix
+#' @param H a matrix whose rows are individual specific latent states (all subjects)
 #' @param Q Q matrix
-#' @param a_theta,a_psi hyperparameters for priors on theta and psi, respectively
+#' @param a_theta,a_psi hyperparameters for priors on theta and psi, respectively.
 #'
 #' @return a list of true positive rates theta and false positive rates psi, each of length L.
 #' @export
 update_positive_rate <- function(Y,H,Q,a_theta,a_psi){
-  xi       <- (H%*%Q>0.5)+0
+  xi       <- (H%*%Q>0.5)+0 # <-- NB: for DINO model. Essentially the design matrix
+  # in the manuscript. Should be modified for general restricted LCM.
   psi_a1   <- colSums((1-xi)*Y)+a_psi[1]
   psi_a2   <- colSums((1-xi)*(1-Y))+a_psi[2]
   theta_a1 <- colSums(xi*Y)+a_theta[1]
   theta_a2 <- colSums(xi*(1-Y))+a_theta[2]
   theta_samp <- sapply(1:ncol(Q),function(i) {stats::rbeta(1,theta_a1[i],theta_a2[i])})
   psi_samp   <- sapply(1:ncol(Q),function(i) {stats::rbeta(1,psi_a1[i],psi_a2[i])})
-  #list(theta=theta_samp,psi=rep(0.1,ncol(Q)))
   list(theta=theta_samp,psi=psi_samp)
 }
 
-#' sample alpha - hyperparameter for prevalences p_m
+#' sample alpha - hyperparameter for latent state prevalences p_m
 #'
-#'Function to sample the parameters from a grid (this is used only for model
-#'with pre-specified #factors M)
+#' Function to sample the parameters from a grid (this is used only for model
+#' with pre-specified latent state dimension M)
 #'
-#'@param H_star the matrix of machine usage profiles across clusters
+#'@param H_star the matrix of latent state profiles across clusters
 #'@param t number of clusters
-#'@param M number of machines
-#'@param a,b hyperparameter for beta distribution over reparameterized alpha.
-#'@param show_density Default to FALSE - not showing the full conditional density of alpha
+#'@param M latent state dimension
+#'@param a,b hyperparameter for Beta distribution over reparameterized alpha.
+#'@param show_density Default to FALSE - hide the full conditional density of alpha
 #'given other unknown parameters; TRUE otherwise.
 #'
 #'@return an updated alpha value (positive)
-#'
 #'@export
-update_alpha<-function(H_star,t,M,a=1,b=1,show_density=FALSE) {
-  th    <- seq(0.001,.999,length=5000)
+update_alpha <- function(H_star,t,M,a=1,b=1,show_density=FALSE) {
+  th    <- seq(0.001,.999,length=5000) # grid over (0,1) after reparametrization.
   sm    <- apply(H_star,2,sum,na.rm=T)
   part1 <- 0
   for (m in 1:M){
@@ -183,30 +182,33 @@ update_alpha<-function(H_star,t,M,a=1,b=1,show_density=FALSE) {
 #log_full(simu_dat,as.matrix(expand.grid(c(0,1),c(0,1),c(0,1),c(0,1),c(0,1))),
 #         Q,p,theta,psi)
 
-#' update prevalence
+#' update latent state prevalences
 #'
 #' This function updates the prevelance paramters
 #'
-#' @param H_star machine usage profiles for all clusters
+#' @param H_star latent state profiles for all clusters
 #' @param alpha hyperparameter
-#' @param M total number of machines (number of columns for H_star)
+#' @param M dimension of the latent state vector (number of columns for H_star)
 #'
-#' @return vector of prevalences of length M.
+#' @return vector of length M (each between 0 and 1).
 update_prevalence <- function(H_star,alpha,M){
   n1_star <- apply(H_star,2,sum,na.rm=T)
   n0_star <- apply(1-H_star,2,sum,na.rm=T)
   sapply(1:ncol(H_star),function(i) {stats::rbeta(1,n1_star[i]+alpha/M, n0_star[i]+1)})
+  # based on finite dimension IBP construction.
 }
 
-#' determine to update the current element of Q_ml or not
+#' Update the current element of Q_ml or not
 #'
-#' Function to test whether we need to update the current element of Q_ml. This
-#' is needed in the constrained Gibbs sampler.
+#' Function to test whether an update of the current element of Q_ml is needed.
+#' This function must be used for the constrained Gibbs sampler.
 #'
-#' @param Q a matrix with rows being machines and columns being protein landmarks (dimension)
-#' @param k,l row and column indicators for checking wether to update Q_kl
-#' @return logical value. TRUE for updating in constrained Gibbs sampler, FALSE
-#' for skipping the updating.
+#' @param Q a matrix with rows corresponding to latent states and columns
+#'          for number of binary measurements
+#' @param k,l row and column indices for checking wether to update Q_kl
+#' @return A logical value. TRUE for updating in constrained Gibbs sampler, FALSE
+#' for skipping the Gibbs update.
+#' @references Chen, Y., Culpepper, S. A., Chen, Y., and Douglas, J. (2017). Bayesian estimation of the DINA Q matrix.
 #' @export
 do_update_Q_one <- function(Q,k,l){ # this saves lots of speed:
   test <- rep(NA,3)
@@ -220,41 +222,45 @@ do_update_Q_one <- function(Q,k,l){ # this saves lots of speed:
 }
 
 
-#' compute the full conditional probability of Q_ml given others
+#' Compute the full conditional probability of Q_ml given the rest of parameters
 #'
 #' Function to compute this log full conditional density, which will be used
 #' in \link{update_Q}
 #'
 #' @param Yl a column of the multivariate binary data
-#' @param eta_star a matrix of machine usage indicators, rows for clusters, columns for M machines
+#' @param eta_star a matrix of latent state profiles, rows for clusters,
+#' columns for M latent states
 #' @param Ql l-th column of the Q matrix
-#' @param thetal,psil True and false positive rate (both are numbers between 0 and 1)
+#' @param thetal,psil The true, false positive rate (both between 0 and 1)
 #'
 #' @return log conditional probability of Q_ml given other unknown parameters
 #' @export
 log_pr_Qml_cond <- function(Yl,eta_star,Ql,thetal,psil){
   n1 <- sum(Yl)
   n0 <- sum(1-Yl)
-  xil <- (eta_star%*%matrix(Ql,ncol=1) > 0.5)+0
+  xil <- (eta_star%*%matrix(Ql,ncol=1) > 0.5)+0 # NB: works for DINA model;
+  # need revision for general restricted LCMs.
   PR_mat <- (1-xil)*(n1*log(psil)+n0*log(1-psil))+
-    xil*(n1*log(thetal)+n0*log(1-thetal))
+    xil*(n1*log(thetal)+n0*log(1-thetal)) # conditional distribution given the
+  # design matrix.
 }
 
 #' update the Q matrix element-wise
 #'
 #' This function updates Q matrix by Gibbs sampler (with option to do constarined
-#' updates in identifiability constrained set or not)
+#' updates within the identifiability constraint)
 #' NB: - do we need M here? do we modify M after collapsing partner machines.
 #'     - need to speed up.
-#' @param Y data
+#' @param Y binary data matrix
 #' @param Q_old the Q matrix from the last scan in Gibbs sampler (of dimension M by L)
-#' @param H matrix of machine usage indicators, rows for N subjects, columns for M machines
+#' @param H matrix of latent state profiles, rows for N subjects,
+#'          columns for M latent states
 #' @param z a vector of individual cluster indicators
-#' @param t the number of clusters at an iteration
+#' @param t the number of clusters at a particular iteration
 #' @param mylist the ordered list that keeps the cluster ids in increasing order
-#' @param p prevalence of machines; a vector of length identical to the columns of H.
+#' @param p Latent state prevalences; a vector of length identical to the columns of H.
 #' @param theta,psi True and false positive rates. Both are vectors of length L
-#' @param constrained Default to FALSE; Set to true if doing constrained Gibbs sampling
+#' @param constrained Default to FALSE; Set to TRUE if doing constrained Gibbs sampling
 #' with identifiability constraints.
 #'
 #' @return A Q matrix with all its elements updated.
@@ -285,25 +291,25 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
         }# end an update if needed.
       }
     }  #end iteration over elements.
-  } else {
+  } else { # Gibbs update without constraints of Q within a set.
     for (k in sample(1:M,replace=FALSE)){
       for (l in sample(1:L,replace=FALSE)){ # begin iteration over elements.
-          L0 <- L1 <- 0
-          Q_old[k,l] <- 0
-          for (j in 1:t){ #Yl,eta_star,Ql,thetal,psil
-            L0 <- L0 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
-                                       H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
-          }
-          Q_old[k,l] <- 1
-          for (j in 1:t){
-            L1 <- L1 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
-                                       H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
-          }
-          curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1)))
-          #print(curr_prob)
+        L0 <- L1 <- 0
+        Q_old[k,l] <- 0
+        for (j in 1:t){ #Yl,eta_star,Ql,thetal,psil
+          L0 <- L0 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
+                                     H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
+        }
+        Q_old[k,l] <- 1
+        for (j in 1:t){
+          L1 <- L1 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
+                                     H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
+        }
+        curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1)))
+        #print(curr_prob)
 
-          #Q_old[k,l] <- metrop_flip(Q_old[k,l],curr_prob)
-          Q_old[k,l] <- stats::rbinom(1,1,prob = curr_prob)
+        #Q_old[k,l] <- metrop_flip(Q_old[k,l],curr_prob)
+        Q_old[k,l] <- stats::rbinom(1,1,prob = curr_prob)
       }
     }  #end iteration over elements.
   }
@@ -315,7 +321,7 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
 #' Function to compute the log full conditional density for all patterns of the
 #' l-th column of Q. This function is used in \link{update_Q_col_block}.
 #'
-#' @param Yl a column of the multivariate binary data
+#' @param Yl a column of the binary data matrix
 #' @param eta_star a matrix of machine usage indicators, rows for clusters, columns for M machines
 #' @param Ql_enumerate l-th column of the Q matrix
 #' @param thetal,psil True and false positive rates. Both are vectors of length L
@@ -327,24 +333,25 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
 log_pr_Qml_cond_enum <- function(Yl,eta_star,Ql_enumerate,thetal,psil){
   n1 <- sum(Yl)
   n0 <- sum(1-Yl)
-  xil <- (eta_star%*%matrix(Ql_enumerate,nrow=ncol(eta_star)) > 0.5)+0
+  xil <- (eta_star%*%matrix(Ql_enumerate,nrow=ncol(eta_star)) > 0.5)+0 # NB: only works for DINO model; need to revise
+  # for other general restricted LCMs.
   PR_mat <- (1-xil)*(n1*log(psil)+n0*log(1-psil))+
     xil*(n1*log(thetal)+n0*log(1-thetal))
 }
 
-#' Block update the Q matrix column by column
+#' Block update the Q matrix by column
 #'
 #' This function updates Q matrix by Gibbs sampler (without identifiability
 #' constraints)
 #'
-#' @param Y data
+#' @param Y binary data matrix
 #' @param Q_old the Q matrix from the last scan in Gibbs sampler (of dimension M by L)
-#' @param H matrix of machine usage indicators, rows for N subjects, columns for M machines
+#' @param H matrix of latent state profiles, rows for N subjects, columns for M latent states
 #' @param z a vector of individual cluster indicators
 #' @param t the number of clusters at an iteration
 #' @param mylist the ordered list that keeps the cluster ids in increasing order
-#' @param p prevalence of machines; a vector of length identical to the columns of H.
-#' @param theta,psi True and false positive rates. Both are vectors of length L
+#' @param p latent state prevalences; a vector of length identical to the columns of H.
+#' @param theta,psi True and false positive rates, each of length L
 #'
 #' @return A Q matrix with all elements updated.
 #' @export
@@ -358,6 +365,7 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
     for (j in 1:t){
       L_enum <- L_enum + log_pr_Qml_cond_enum(Y[z==mylist[j],l,drop=FALSE],
                                               H[j,,drop=FALSE],Ql_enum,theta[l],psi[l])
+      # for all patterns of each column, we compute the likelihood and sum over clusters.
     }
     curr_prob <- exp(L_enum-matrixStats::logSumExp(L_enum))
     Q_old[,l] <- Ql_enum[,sample(1:2^M,1,prob = curr_prob)]
@@ -365,7 +373,7 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
   Q_old
 }
 
-#' MCMC sampling designed for binary factor analysis (pre-specified number of factors)
+#' MCMC sampling for pre-specified latent state dimension M
 #'
 #' This function performs MCMC sampling with user-specified options.
 #' NB: 1) add flexibility to specify other parameters as fixed. 2) sample component-specific
@@ -373,45 +381,48 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' 5) add posterior summary functions.
 #' 6) edit verbose contents.
 #'
-#' @param dat multivariate binary data (row for observations and column for dimensions4)
+#' @param dat binary data matrix (row for observations and column for dimensions)
 #' @param model_options Specifying assumed model options:
 #' \itemize{
 #' \item \code{n} The number of subjects.
 #' \item \code{t_max} The maximum (guessed) number of clusters in the data during
-#' posterior inference
+#' the posterior inference
 #' \item \code{m_max} For a model with pre-specified number of factors, \code{m_max};
-#' In an infinite factor model with unknown number of factors, \code{m_max} is
-#' the maximum (guessed) number of factors during the posterior inference (see \code{\link{slice_sampler}});
-#' one can increase this number if this pacakge recommends so;
+#' In an infinite dimension model, \code{m_max} is
+#' the maximum (guessed) latent state dimension during the posterior inference
+#' (see \code{\link{slice_sampler}}); one can increase this number if
+#' this pacakge recommends so in the printed message;
 #' \item \code{a_theta, a_psi} hyperparameters for true and false positive rates;
 #' a_theta and a_psi are both a vector of length two.
-#' \item \code{a_alpha, b_alpha} Only for infinite factor model  -
-#' Gamma hyperparameter for the hyperprior on \code{alpha}. (See \code{\link{slice_sampler}})
+#' \item \code{a_alpha, b_alpha} Just for infinite latent state dimension model  -
+#' Gamma hyperparameter for the hyperprior on \code{alpha}.
+#' (See \code{\link{slice_sampler}})
 #' \item \code{log_v} The charaster string representing the prior
 #' distribution for the number of true clusters, e.g.,
-#' \code{"function(k) {log(0.1) + (k-1)*log(0.9)}"}. It is usually pre-computed log of the coefficients in Mixture of Finite Mixtures
+#' \code{"function(k) {log(0.1) + (k-1)*log(0.9)}"}. We pre-computed
+#' log of the coefficients in Mixture of Finite Mixtures
 #' (Miller and Harrison, 2017, JASA). Use this code:
 #' \code{coefficients(eval(parse(text=model_options0$log_pk)),
 #' model_options0$gamma,
 #' model_options0$n,
 #' model_options0$t_max+1)}
 #' }
-#' The following are used if one needs to prefix a few unnown parameters to
+#' The following are used if one needs to pre-specify a few unknown parameters to
 #' their respective true or other values
 #' \itemize{
 #' \item \code{Q} Q matrix
 #' \item \code{theta} a vector of true positive rates
 #' \item \code{psi} a vector of false positive rates
-#' \item \code{p} a vector of machine prevalences
-#' \item \code{alpha} For pre-specified number of factors, the hyperparameter
-#' for \code{Beta(alpha/m_max,1)} (can set to \code{m_max}); For infinite factor model, the hyperparameter
-#' for IBP (can set to 1).
+#' \item \code{p} a vector of latent state prevalences
+#' \item \code{alpha} For pre-specified latent state dimension, the hyperparameter
+#' for \code{Beta(alpha/m_max,1)} (can set to \code{m_max});
+#' For infinite dimension model, the hyperparameter for IBP (can set to 1).
 #' }
-#' options for specifying data, sample size, max cluster number,
-#' coefficients in MFM (Miller and Harrison 2017 JASA), gamma parameter in the MFM
+#' Options for specifying data, sample size, max cluster number,
+#' coefficients in MFM (Miller and Harrison 2017 JASA), Gamma parameter in the MFM
 #' Dirchlet prior, number of intermediate Gibbs scan to arrive at the launch state,
-#' and other hyperparamter specification if needed, n_total for total number of
-#' mcmc iterations and n_keep for the number of samples kept for posterior inference.
+#' and other hyperparamter specification if needed, \code{n_total} for total number of
+#' MCMC iterations and \code{n_keep} for the number of samples kept for posterior inference.
 #' Note that the options involve other parameters for sampling hyperparameters such as
 #' alpha in the Indian Buffet Process.
 #' @param mcmc_options Options for MCMC sampling:
@@ -420,20 +431,20 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' \item \code{n_keep} number of iterations kept
 #' \item \code{n_split} the number of restricted Gibbs scan to arrive at a launch state;
 #' see \link{restricted_gibbs}
-#' \item \code{print_mod} print machine usage profiles for all clusters and plot
-#' the current Q matrix.
-#' \item \code{constrained} update the Q matrix with identifiability constraints (if \code{TRUE}); otherwise, set to \code{FALSE}.
+#' \item \code{print_mod} print intermediate model fitting information
+#' \item \code{constrained} update the Q matrix with identifiability constraints (if \code{TRUE});
+#' otherwise, set to \code{FALSE}.
 #' \item \code{block_update_H} update rows of H (if \code{TRUE}) or not
-#' (if \code{NULL} or FALSE - must be so for \code{\link{slice_sampler}}). Then no constraints
-#' about identifiability is imposed upon Q at any iterations.
+#' (if \code{NULL} or \code{FALSE} - must be so for \code{\link{slice_sampler}}).
 #' \item \code{block_update_Q} update columns of Q (if \code{TRUE}) or not
-#' (if \code{NULL} or FALSE - must be so for \code{\link{slice_sampler}}). Then no constraints
-#' about identifiability is imposed upon Q at any iterations.
+#' (if \code{NULL} or \code{FALSE} - must be so for \code{\link{slice_sampler}}).
+#' Then no identifiability constraint is imposed upon Q at any iterations.
 #' }
 #'
 #' @example /inst/example/simulation_fixed_M.R
 #'
-#' @return posterior samples for quantities of interest. It is a list comprised of the following elements
+#' @return posterior samples for quantities of interest.
+#' It is a list comprised of the following elements:
 #' \itemize{
 #' \item \code{t_samp}
 #' \item \code{z_samp}
@@ -468,7 +479,7 @@ sampler <- function(dat,model_options,mcmc_options){
   # set options (need to fill in as specific paramters are needed):
   t_max <- model_options$t_max # maximum allowable number of clusters.
   m_max <- model_options$m_max # maximum number of machines (truncated to m_max).
-  b     <- model_options$b     # gamma parameter in MFM - hyperparameter for Dirichlet distn. needs to be sampled?????
+  b     <- model_options$b     # Gamma parameter in MFM - hyperparameter for Dirichlet distn. needs to be sampled?????
   log_v <- model_options$log_v # coefficients for MFM.
 
   if (is.null(model_options$Q)){
@@ -481,7 +492,7 @@ sampler <- function(dat,model_options,mcmc_options){
   }
 
   #if (block_update_H){
-    H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_max)),ncol=m_max) # all binary patterns for machine usage profiles. 2^m_max of them.
+  H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_max)),ncol=m_max) # all binary patterns for latent state profiles. 2^m_max of them.
   #}
   # initialize the sampling chain:
   t <- 1        # number of clusters.
@@ -537,7 +548,7 @@ sampler <- function(dat,model_options,mcmc_options){
     alpha      <- m_max           # initialization.
   }
 
-  cat("[rewind] Start MCMC for model with pre-specified #factors (M =", m_max, ")\n")
+  cat("[rewind] Start MCMC for model with pre-specified #latent states (M =", m_max, ")\n")
   for (iter in 1:n_total){
     VERBOSE <- iter%%mcmc_options$print_mod==0
     # update cluster indicators z for all subjects - one complete Gibbs scan to refine clusters:
@@ -597,7 +608,7 @@ sampler <- function(dat,model_options,mcmc_options){
     # #}
 
     # update machine usage profile given clusters: (check here for sampling H)
-    H_star_redun <- matrix(0,nrow=t_max+3,ncol=m_max)
+    H_star_redun <- matrix(0,nrow=t_max+3,ncol=m_max) # prior to merging redundant rows or columns.
     for (j in 1:t){
       if (block_update_H){
         curr_pattern_log_p   <- log_full(dat[z==mylist[j],,drop=FALSE],H_star_enumerate,Q,p,theta,psi)
@@ -624,7 +635,8 @@ sampler <- function(dat,model_options,mcmc_options){
 
     # update Q:
     if (is.null(model_options$Q)){
-      if (block_update_Q && constrained){stop("[rewind] 'block_update_Q' and 'constrained' cannot both be TRUE. Set one to FALSE and retry.")}
+      if (block_update_Q && constrained){
+        stop("[rewind] 'block_update_Q' and 'constrained' cannot both be TRUE. Set one to FALSE and retry.")}
       if (block_update_Q){
         Q <- update_Q_col_block(dat,Q,H_star,z,t,mylist,p,theta,psi)
       } else{
@@ -650,13 +662,13 @@ sampler <- function(dat,model_options,mcmc_options){
       string_merge1 <- paste0(">> absorbed ",nrow(H_star)-nrow(H_star_merge)," pseudo clusters, giving ", nrow(H_star_merge), " scientific clusters.\n")
     }
 
-    # merge columns (combine factors that are present or absent at the same time):
+    # merge columns (combine factors that are present or absent at the same time; partner latent states):
     pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
     curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge)) # <-- can get the mapping from partner machines to final merged machines.
     H_star_merge  <- t(curr_merge_col$uniq_pat)
     string_merge2 <- NULL
     if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
-      string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)," partner factors, giving ", ncol(H_star_merge), " machines. \n")
+      string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)," `partner` latent states, giving ", ncol(H_star_merge), " latent states. \n")
     }
 
     # put the zeros back into H_star.
@@ -666,8 +678,8 @@ sampler <- function(dat,model_options,mcmc_options){
 
     if (VERBOSE){
       cat("\n[rewind] iteration ", iter, ":\n");
-      cat("> Factor indicators (machines usages) for t=",t," pseudo-clusters of sizes: ",N[N!=0],"\n")
-      cat("> Merging identical rows (pseudo-clusters) and columns (factors):\n")
+      cat("> Latent state profiles for t=",t," pseudo-clusters of sizes: ",N[N!=0],"\n")
+      cat("> Merging identical rows (pseudo-clusters) and columns (partner latent states):\n")
       cat(">> H^* Before:\n")
       print_mat <- H_star[,colSums(H_star)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("pseudo-cluster",rep("",t-1)),1:t,sep=" "); colnames(print_mat) <- paste(c("factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
       print(print_mat) # <-- removed all zero columns.
@@ -749,13 +761,13 @@ sampler <- function(dat,model_options,mcmc_options){
 }
 
 ##
-##  slice sampler for a unknown number of machines:
+##  slice sampler for infinite dimension models:
 ##
 
-#' compute the log of density of inactive probability given
+#' compute the log of density of inactive states' probability given
 #' the previous one (Teh et al., 07')
 #'
-#' This function is used in sampling infinite number of columns in H
+#' This function is used in sampling a model with infinite number of columns in H
 #'
 #' @param log_p0 log probability (the argument of this function)
 #' @param alpha hyperparameter for Indian Buffet Process (Infinite version)
@@ -794,10 +806,10 @@ log_f_logden <- function(log_p0,alpha,t){
 }
 
 
-#' compute the deriviative of the log of density of inactive probability given
-#' the previous one (Teh et al., 07')
+#' compute the deriviative of the log of density of inactive states'
+#' probability given the previous one (Teh et al., 07')
 #'
-#' This function is used in sampling infinite number of columns in H
+#' This function is used in sampling a model with an infinite number of columns in H
 #'
 #' @inheritParams log_f_logden
 #'
@@ -889,9 +901,7 @@ merge_Q <- function(Q,map_id){
   res
 }
 
-
-
-#' MCMC sampling designed for binary factor analysis (unknown number of factors)
+#' MCMC sampling for a model with infinite dimension of latent states (NB: needs fixing)
 #'
 #' This function performs MCMC sampling with user-specified options.
 #' NB: 1) add flexibility to specify other parameters as fixed.
@@ -915,8 +925,8 @@ merge_Q <- function(Q,map_id){
 #' \item \code{keepers} indices of MCMC samples kept for inference;
 #' \item \code{H_star_samp}
 #' \item \code{alpha_samp}
-#' \item \code{m_plus_samp} This is unique to slice_sampler
-#' \item \code{m0_samp} This is unique to slice_sampler
+#' \item \code{m_plus_samp} just for slice_sampler
+#' \item \code{m0_samp} just for slice_sampler
 #' } The following are recorded if they are not fixed in a priori:
 #' \itemize{
 #' \item \code{Q_samp}
@@ -926,6 +936,11 @@ merge_Q <- function(Q,map_id){
 #' }
 #' @export
 slice_sampler <- function(dat,model_options,mcmc_options){
+
+  dat <- simu_dat
+  model_options <- model_options0
+  mcmc_options  <- mcmc_options0
+
   n <- nrow(dat) # number of observations
   L <- ncol(dat) # number of dimensions (protein landmarks).
 
@@ -947,7 +962,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
   if (is.null(model_options$m_plus)){
     m_plus_samp <- m0_samp <- rep(NA,n_total) # what does m_plus mean?
     m_plus <- mcmc_options$m_plus_init # initialization.
-    m0     <- mcmc_options$m0_init # initialization.
+    m0     <- mcmc_options$m0_init     # initialization.
     m_both <- m_plus+m0
   } else{
     m_plus <- model_options$m_plus
@@ -1018,9 +1033,11 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     alpha      <- 5           # initialization.
   }
 
-  cat("[rewind] Start MCMC for model with infinite #factors (without pre-specifying #factors M): \n")
+  cat("[rewind] Start MCMC for model with infinite latent state dimension (without pre-specifying M): \n")
   for (iter in 1:n_total){
     VERBOSE <- iter%%mcmc_options$print_mod==0
+
+    H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_both)),ncol=m_both)
 
     # update cluster indicators z for all subjects - one complete Gibbs scan to refine clusters:
     for (i in 1:n){ # iterate over subjects:
@@ -1076,7 +1093,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
       H_star_redun <- matrix(0,nrow=t_max+3,ncol=m_max)
       for (m in 1:m_both){
         for (j in 1:t){
-          H_star_redun[mylist[j],m] <- 0
+          H_star_redun[mylist[j],m] <- 0 # update H one dimension by one dimension.
           L0            <- log_full(dat[z==mylist[j],,drop=FALSE],
                                     H_star_redun[mylist[j],1:m_both,drop=FALSE],Q,p,theta,psi)
           H_star_redun[mylist[j],m] <- 1
@@ -1132,7 +1149,8 @@ slice_sampler <- function(dat,model_options,mcmc_options){
 
     # update Q:
     if (is.null(model_options$Q)){
-      if (block_update_Q && constrained){stop("[rewind] 'block_update_Q' and 'constrained' cannot both be TRUE. Set one to FALSE and retry.")}
+      if (block_update_Q && constrained){
+        stop("[rewind] 'block_update_Q' and 'constrained' cannot both be TRUE. Set one to FALSE and retry.")}
       if (block_update_Q){
         Q <- update_Q_col_block(dat,Q,H_star,z,t,mylist,p,theta,psi) # <-- could be very slow for a large number of factors.
       } else{
@@ -1179,8 +1197,8 @@ slice_sampler <- function(dat,model_options,mcmc_options){
 
     if (VERBOSE){ # <-- moved here because we need the merge information.
       cat("\n[rewind] iteration: ", iter, "\n");
-      cat("> # of (active, inactive) factors (M+, M0) = (",m_plus,", ",m0,"); Active factors may be duplicated or zeros.\n")
-      cat("> Merging identical rows (pseudo-clusters) and columns (factors):\n")
+      cat("> # of (active, inactive) latent states (M+, M0) = (",m_plus,", ",m0,"); Now active states may be duplicated or zeros (will be processed now).\n")
+      cat("> Merging identical rows (pseudo-clusters) and columns (partner latent states):\n")
       cat(">> H^* Before:\n")
       print_mat <- H_star[,colSums(H_star)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("pseudo-cluster",rep("",t-1)),1:t,sep=" "); colnames(print_mat) <- paste(c("factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
       print(print_mat) # <-- removed all zero columns.
@@ -1200,7 +1218,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     # drop inactive ones and add newly active ones:
     ind_plus <- which(colSums(H_star)!=0)
     m_plus   <- length(ind_plus)  # <-- what if ind_plus is empty?
-    if (m_plus==0){stop("[rewind] no active factors (machines) - H all zeros, initialize Q with more plausible values and retry.")}
+    if (m_plus==0){stop("[rewind] no active latent states - H all zeros, initialize Q with more plausible values and retry.")}
     H_star <- H_star[,ind_plus,drop=FALSE] # <----- modified H_star!!
 
     # deal with inactive parts to be added to columns of H_star:
@@ -1216,14 +1234,14 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     p0    <- 1
     count <- 1
 
-    while (p0[count] >= s){
+    while (p0[count] >= s || length(p)+length(p0)-1<= m_max){
       curr_alpha <- alpha
       curr_t     <- t # <-- the two rows above works because ars cannot simply accept alpha or t.
       curr_log_p0_samp <- ars::ars(1,log_f_logden,log_f_logprima,
-                              log(c(p0[count]/10,p0[count]/2,p0[count]/10*9)),m=3,
-                              lb=TRUE,xlb=-1e10,
-                              ub=TRUE,xub=log(p0[count]),
-                              alpha=curr_alpha,t=curr_t)
+                                   log(c(p0[count]/10,p0[count]/2,p0[count]/10*9)),m=3,
+                                   lb=TRUE,xlb=-1e10,
+                                   ub=TRUE,xub=log(p0[count]),
+                                   alpha=curr_alpha,t=curr_t)
       p0 <- c(p0, exp(curr_log_p0_samp))
       count <- count + 1
     }
@@ -1237,7 +1255,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     }
     m_both <- m_plus + m0 # <- what if both are zero? A: will show an error meesage above.
 
-    if (m_both > m_max){stop("[rewind] total #factors (machines) exceeds m_max=",m_max,", increase m_max and retry.")}
+    if (m_both > m_max){stop("[rewind] total #states exceeds m_max=",m_max,", increase m_max and retry.")}
 
     Q <- Q[ind_plus,,drop=FALSE]
     if (m0>0){
@@ -1260,7 +1278,7 @@ slice_sampler <- function(dat,model_options,mcmc_options){
     # update hyperparameter for {p_m}:
     if (is.null(model_options$alpha)){ # gamma hyperparameters for IBP (Knowles and Zoubin AOAS).
       alpha <- stats::rgamma(1,shape=model_options$a_alpha+m_plus,
-                      rate= model_options$b_alpha+sum(1/(1:t)))
+                             rate= model_options$b_alpha+sum(1/(1:t)))
       alpha_samp[iter] <- alpha
     }
 

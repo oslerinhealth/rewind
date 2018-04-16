@@ -2,51 +2,54 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{slice_sampler}
 \alias{slice_sampler}
-\title{MCMC sampling designed for binary factor analysis (unknown number of factors)}
+\title{MCMC sampling for a model with infinite dimension of latent states (NB: needs fixing)}
 \usage{
 slice_sampler(dat, model_options, mcmc_options)
 }
 \arguments{
-\item{dat}{multivariate binary data (row for observations and column for dimensions4)}
+\item{dat}{binary data matrix (row for observations and column for dimensions)}
 
 \item{model_options}{Specifying assumed model options:
 \itemize{
 \item \code{n} The number of subjects.
 \item \code{t_max} The maximum (guessed) number of clusters in the data during
-posterior inference
+the posterior inference
 \item \code{m_max} For a model with pre-specified number of factors, \code{m_max};
-In an infinite factor model with unknown number of factors, \code{m_max} is
-the maximum (guessed) number of factors during the posterior inference (see \code{\link{slice_sampler}});
-one can increase this number if this pacakge recommends so;
+In an infinite dimension model, \code{m_max} is
+the maximum (guessed) latent state dimension during the posterior inference
+(see \code{\link{slice_sampler}}); one can increase this number if
+this pacakge recommends so in the printed message;
 \item \code{a_theta, a_psi} hyperparameters for true and false positive rates;
 a_theta and a_psi are both a vector of length two.
-\item \code{a_alpha, b_alpha} Only for infinite factor model  -
-Gamma hyperparameter for the hyperprior on \code{alpha}. (See \code{\link{slice_sampler}})
+\item \code{a_alpha, b_alpha} Just for infinite latent state dimension model  -
+Gamma hyperparameter for the hyperprior on \code{alpha}.
+(See \code{\link{slice_sampler}})
 \item \code{log_v} The charaster string representing the prior
 distribution for the number of true clusters, e.g.,
-\code{"function(k) {log(0.1) + (k-1)*log(0.9)}"}. It is usually pre-computed log of the coefficients in Mixture of Finite Mixtures
+\code{"function(k) {log(0.1) + (k-1)*log(0.9)}"}. We pre-computed
+log of the coefficients in Mixture of Finite Mixtures
 (Miller and Harrison, 2017, JASA). Use this code:
 \code{coefficients(eval(parse(text=model_options0$log_pk)),
 model_options0$gamma,
 model_options0$n,
 model_options0$t_max+1)}
 }
-The following are used if one needs to prefix a few unnown parameters to
+The following are used if one needs to pre-specify a few unknown parameters to
 their respective true or other values
 \itemize{
 \item \code{Q} Q matrix
 \item \code{theta} a vector of true positive rates
 \item \code{psi} a vector of false positive rates
-\item \code{p} a vector of machine prevalences
-\item \code{alpha} For pre-specified number of factors, the hyperparameter
-for \code{Beta(alpha/m_max,1)} (can set to \code{m_max}); For infinite factor model, the hyperparameter
-for IBP (can set to 1).
+\item \code{p} a vector of latent state prevalences
+\item \code{alpha} For pre-specified latent state dimension, the hyperparameter
+for \code{Beta(alpha/m_max,1)} (can set to \code{m_max});
+For infinite dimension model, the hyperparameter for IBP (can set to 1).
 }
-options for specifying data, sample size, max cluster number,
-coefficients in MFM (Miller and Harrison 2017 JASA), gamma parameter in the MFM
+Options for specifying data, sample size, max cluster number,
+coefficients in MFM (Miller and Harrison 2017 JASA), Gamma parameter in the MFM
 Dirchlet prior, number of intermediate Gibbs scan to arrive at the launch state,
-and other hyperparamter specification if needed, n_total for total number of
-mcmc iterations and n_keep for the number of samples kept for posterior inference.
+and other hyperparamter specification if needed, \code{n_total} for total number of
+MCMC iterations and \code{n_keep} for the number of samples kept for posterior inference.
 Note that the options involve other parameters for sampling hyperparameters such as
 alpha in the Indian Buffet Process.}
 
@@ -56,15 +59,14 @@ alpha in the Indian Buffet Process.}
 \item \code{n_keep} number of iterations kept
 \item \code{n_split} the number of restricted Gibbs scan to arrive at a launch state;
 see \link{restricted_gibbs}
-\item \code{print_mod} print machine usage profiles for all clusters and plot
-the current Q matrix.
-\item \code{constrained} update the Q matrix with identifiability constraints (if \code{TRUE}); otherwise, set to \code{FALSE}.
+\item \code{print_mod} print intermediate model fitting information
+\item \code{constrained} update the Q matrix with identifiability constraints (if \code{TRUE});
+otherwise, set to \code{FALSE}.
 \item \code{block_update_H} update rows of H (if \code{TRUE}) or not
-(if \code{NULL} or FALSE - must be so for \code{\link{slice_sampler}}). Then no constraints
-about identifiability is imposed upon Q at any iterations.
+(if \code{NULL} or \code{FALSE} - must be so for \code{\link{slice_sampler}}).
 \item \code{block_update_Q} update columns of Q (if \code{TRUE}) or not
-(if \code{NULL} or FALSE - must be so for \code{\link{slice_sampler}}). Then no constraints
-about identifiability is imposed upon Q at any iterations.
+(if \code{NULL} or \code{FALSE} - must be so for \code{\link{slice_sampler}}).
+Then no identifiability constraint is imposed upon Q at any iterations.
 }}
 }
 \value{
@@ -76,8 +78,8 @@ posterior samples for quantities of interest. It is a list comprised of the foll
 \item \code{keepers} indices of MCMC samples kept for inference;
 \item \code{H_star_samp}
 \item \code{alpha_samp}
-\item \code{m_plus_samp} This is unique to slice_sampler
-\item \code{m0_samp} This is unique to slice_sampler
+\item \code{m_plus_samp} just for slice_sampler
+\item \code{m0_samp} just for slice_sampler
 } The following are recorded if they are not fixed in a priori:
 \itemize{
 \item \code{Q_samp}
@@ -114,12 +116,12 @@ hmcols    <- colorRampPalette(YlGnBu5)(256)
 
 # simulate data:
 L0 <- 100
-options_sim0  <- list(N = 50,  # sample size.
+options_sim0  <- list(N = 100,  # sample size.
                       M = 3,   # true number of machines.
                       L = L0,   # number of antibody landmarks.
                       K = 2^3,    # number of true components.,
                       theta = rep(0.9,L0), # true positive rates
-                      psi   = rep(0.1,L0), # false positive rates
+                      psi   = rep(0.01,L0), # false positive rates
                       alpha1 = 1 # half of the people have the first machine.
 )
 
@@ -137,12 +139,12 @@ simu_dat <- simu$datmat
 model_options0 <- list(
   n   = nrow(simu_dat),
   t_max  = 40,
-  m_max  = 100,
+  m_max  = 10,
   b  = 1, # Dirichlet hyperparameter; in the functions above, we used "b" -
           # also can be called "gamma".
   #Q  = simu$Q,
   a_theta = c(9,1),
-  a_psi   = c(1,9),
+  a_psi   = c(1,99),
   a_alpha = 1, # hyperparameter for IBP alpha.
   b_alpha = 1,
   #theta = options_sim0$theta,
@@ -155,7 +157,7 @@ model_options0 <- list(
 
 # pre-compute the log of coefficients in MFM:
 model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
-                                         model_options0$gamma,
+                                         model_options0$b,
                                          model_options0$n,
                                          model_options0$t_max+1)
 # mcmc options:
@@ -164,7 +166,7 @@ mcmc_options0 <- list(
   n_keep  = 200,
   n_split = 5,
   print_mod = 10,
-  m_plus_init = 10,
+  m_plus_init = 5,
   m0_init = 0,
   constrained = TRUE,
   block_update_H = TRUE,# NULL is also okay - because the conditional

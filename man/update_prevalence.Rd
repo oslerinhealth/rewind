@@ -2,19 +2,19 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{update_prevalence}
 \alias{update_prevalence}
-\title{update prevalence}
+\title{update latent state prevalences}
 \usage{
 update_prevalence(H_star, alpha, M)
 }
 \arguments{
-\item{H_star}{machine usage profiles for all clusters}
+\item{H_star}{latent state profiles for all clusters}
 
 \item{alpha}{hyperparameter}
 
-\item{M}{total number of machines (number of columns for H_star)}
+\item{M}{dimension of the latent state vector (number of columns for H_star)}
 }
 \value{
-vector of prevalences of length M.
+vector of length M (each between 0 and 1).
 }
 \description{
 This function updates the prevelance paramters

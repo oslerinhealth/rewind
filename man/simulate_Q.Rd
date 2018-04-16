@@ -7,18 +7,18 @@
 simulate_Q(M, L, p = 0.1)
 }
 \arguments{
-\item{M}{the number of factors (machines)}
+\item{M}{latent state dimension}
 
-\item{L}{the dimension of the binary data}
+\item{L}{dimension of the binary responses}
 
-\item{p}{the Bernoulli probability of an one in the Q matrix}
+\item{p}{Bernoulli probability of 1 in the Q matrix (except two diagonal matrices)}
 }
 \value{
 a binary matrix of dimension M by L
 }
 \description{
-This function is used to initialize the MCMC sampling chain within identifiability
-cosntraints
+This function initializes Q (if unknown) for MCMC sampling within identifiability
+constraints
 }
 \examples{
 

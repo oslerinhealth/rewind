@@ -2,16 +2,16 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{update_Q_col_block}
 \alias{update_Q_col_block}
-\title{Block update the Q matrix column by column}
+\title{Block update the Q matrix by column}
 \usage{
 update_Q_col_block(Y, Q_old, H, z, t, mylist, p, theta, psi)
 }
 \arguments{
-\item{Y}{data}
+\item{Y}{binary data matrix}
 
 \item{Q_old}{the Q matrix from the last scan in Gibbs sampler (of dimension M by L)}
 
-\item{H}{matrix of machine usage indicators, rows for N subjects, columns for M machines}
+\item{H}{matrix of latent state profiles, rows for N subjects, columns for M latent states}
 
 \item{z}{a vector of individual cluster indicators}
 
@@ -19,9 +19,9 @@ update_Q_col_block(Y, Q_old, H, z, t, mylist, p, theta, psi)
 
 \item{mylist}{the ordered list that keeps the cluster ids in increasing order}
 
-\item{p}{prevalence of machines; a vector of length identical to the columns of H.}
+\item{p}{latent state prevalences; a vector of length identical to the columns of H.}
 
-\item{theta, psi}{True and false positive rates. Both are vectors of length L}
+\item{theta, psi}{True and false positive rates, each of length L}
 }
 \value{
 A Q matrix with all elements updated.

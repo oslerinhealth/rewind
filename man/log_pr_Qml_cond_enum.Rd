@@ -7,7 +7,7 @@
 log_pr_Qml_cond_enum(Yl, eta_star, Ql_enumerate, thetal, psil)
 }
 \arguments{
-\item{Yl}{a column of the multivariate binary data}
+\item{Yl}{a column of the binary data matrix}
 
 \item{eta_star}{a matrix of machine usage indicators, rows for clusters, columns for M machines}
 

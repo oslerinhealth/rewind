@@ -2,7 +2,10 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{log_marginal_one_column}
 \alias{log_marginal_one_column}
-\title{Compute the cluster-specific marginal likelihood}
+\title{Compute marginal likelihood for observations in a cluster
+NB: this only works for Q = I; potential errors with the integration over latent states -
+one cannot factorize the marginal likelihood for an arbitrary Q. Can delete this if
+we have a general marginal likelihood function that works for all dimensions.}
 \usage{
 log_marginal_one_column(Yl, Ql, p, thetal, psil)
 }
@@ -11,9 +14,10 @@ log_marginal_one_column(Yl, Ql, p, thetal, psil)
 
 \item{Ql}{l-th column of the Q matrix}
 
-\item{p}{prevalence of machines; a vector of length identical to the columns of H.}
+\item{p}{prevalence of binary latent states; a vector of length identical to the dimension
+of latent states.}
 
-\item{thetal, psil}{True and false positive rate (both are numbers between 0 and 1)
+\item{thetal, psil}{True and false positive rates (between 0 and 1)
 
 # simulate data:
 L0 <- 100
@@ -36,8 +40,9 @@ log_marginal_one_column(Y[,l], Q[,l], p, theta[l], psi[l])}
 log of marginal likelihood given other model parameters.
 }
 \description{
-This R function computes the marginal likelihood by integrating over
-the distribution of component specific parameter (e.g., machine usage profiles).
+This function computes the marginal likelihood by integrating over
+the distribution of component specific parameter (e.g., discrete latent states).
 This function conditions upon a few model parameters: the true and false positive
-rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
+rates (theta and psi), the Q matrix and {p}-the prevalence parameters for binary
+latent states.
 }

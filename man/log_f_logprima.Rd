@@ -2,8 +2,8 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{log_f_logprima}
 \alias{log_f_logprima}
-\title{compute the deriviative of the log of density of inactive probability given
-the previous one (Teh et al., 07')}
+\title{compute the deriviative of the log of density of inactive states'
+probability given the previous one (Teh et al., 07')}
 \usage{
 log_f_logprima(log_p0, alpha, t)
 }
@@ -18,7 +18,7 @@ log_f_logprima(log_p0, alpha, t)
 a value corresponding to the derivative of the log density d/du f(log_p0)
 }
 \description{
-This function is used in sampling infinite number of columns in H
+This function is used in sampling a model with an infinite number of columns in H
 }
 \seealso{
 \code{\link{log_f_logden}} provides an example

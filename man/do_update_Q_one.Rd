@@ -2,20 +2,24 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{do_update_Q_one}
 \alias{do_update_Q_one}
-\title{determine to update the current element of Q_ml or not}
+\title{Update the current element of Q_ml or not}
 \usage{
 do_update_Q_one(Q, k, l)
 }
 \arguments{
-\item{Q}{a matrix with rows being machines and columns being protein landmarks (dimension)}
+\item{Q}{a matrix with rows corresponding to latent states and columns
+for number of binary measurements}
 
-\item{k, l}{row and column indicators for checking wether to update Q_kl}
+\item{k, l}{row and column indices for checking wether to update Q_kl}
 }
 \value{
-logical value. TRUE for updating in constrained Gibbs sampler, FALSE
-for skipping the updating.
+A logical value. TRUE for updating in constrained Gibbs sampler, FALSE
+for skipping the Gibbs update.
 }
 \description{
-Function to test whether we need to update the current element of Q_ml. This
-is needed in the constrained Gibbs sampler.
+Function to test whether an update of the current element of Q_ml is needed.
+This function must be used for the constrained Gibbs sampler.
+}
+\references{
+Chen, Y., Culpepper, S. A., Chen, Y., and Douglas, J. (2017). Bayesian estimation of the DINA Q matrix.
 }

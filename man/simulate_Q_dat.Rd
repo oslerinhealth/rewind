@@ -2,31 +2,30 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{simulate_Q_dat}
 \alias{simulate_Q_dat}
-\title{Randomly generate a Q matrix within the identifying conditions driven by data}
+\title{Randomly generate a Q matrix within the identifying condition (data-driven)}
 \usage{
 simulate_Q_dat(M, dat, p = 0.1, frac = 1/5)
 }
 \arguments{
-\item{M}{the number of factors (machines)}
+\item{M}{latent state dimension}
 
-\item{dat}{a matrix of binary data (rows for observations, columns for dimensions)}
+\item{dat}{binary data matrix (rows for observations, columns for dimensions)}
 
-\item{p}{the Bernoulli probability of an one in the Q matrix}
+\item{p}{Bernoulli probability of 1 in the Q matrix (except two diagonal matrices)}
 
-\item{frac}{only initialize those dimension with at least \code{frac}*100%
-of subjects having a positive response.}
+\item{frac}{A threshold - this function only initializes the dimensions with at least
+\code{frac}*100\% observed frequencies. Default: 20\%.}
 }
 \value{
 a binary matrix of dimension M by L
 }
 \description{
-This function is used to initialize the MCMC sampling chain within identifiability
-cosntraints; but this is smart - because it will not assign a one to a dimension with
+This function initializes Q (if unknown) during MCMC sampling chain within identifiability
+cosntraints. It is a warm start - because it will not assign a one to a dimension with
 few ones in the data
 }
 \examples{
-
-#' # simulate data:
+# simulate data:
 L0 <- 100
 options_sim0  <- list(N = 200,  # sample size.
                      M = 3,   # true number of machines.
