@@ -3,6 +3,7 @@ rm(list=ls())
 library(rewind)
 library(matrixStats)
 library(ars)
+library(mcclust.ext) # http://wrap.warwick.ac.uk/71934/1/mcclust.ext_1.0.tar.gz
 
 # color palette for heatmaps:
 YlGnBu5   <- c('#ffffd9','#c7e9b4','#41b6c4','#225ea8','#081d58',"#092d94")
@@ -57,8 +58,8 @@ model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
 
 # mcmc options:
 mcmc_options0 <- list(
-  n_total = 200,
-  n_keep  = 200,
+  n_total = 1000,
+  n_keep  = 500,
   n_split = 5,
   print_mod = 10,
   constrained = TRUE, # <-- need to write a manual about when these options are okay.
@@ -118,21 +119,78 @@ z2comat <- function(z){
 
 nsamp_C <- dim(out$z_samp)[2]
 z_Em <- rep(NA,nsamp_C)
-## approach 2:
-for (iter in 1:nsamp_C){
-  z_Em[iter] <- norm(z2comat(out$z_samp[,iter])-comat,"F")
-}
-ind_dahl <- which.min(z_Em)
-plot(z_Em,type="l",main="|S-E[S|Y]|")
+
+par(mfrow=c(2,4))
+#
+# Approach 3 - use "mcclust.ext" pacakge:
+#
+
+psm <- comp.psm(t(out$z_samp))
+bmf.VI <- minVI(psm,t(out$z_samp),method="all",include.greedy=TRUE)
+summary(bmf.VI)
+
 image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(out$z_samp[,ind_dahl]),col=hmcols,
-      main="clustering at the minimized Z")
+      z2comat(bmf.VI$cl["avg",]),col=hmcols,
+      main="Wade clustering")
+
 for (k in 1:options_sim0$K){
   abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
   abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
 }
 
-#3 approach 1:
+
+bmf.cb=credibleball(bmf.VI$cl[1,],t(out$z_samp))
+
+image(1:options_sim0$N,1:options_sim0$N,
+      z2comat(bmf.cb$c.horiz),col=hmcols,
+      main="Wade ball - horizontal")
+
+for (k in 1:options_sim0$K){
+  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+}
+
+
+
+image(1:options_sim0$N,1:options_sim0$N,
+      z2comat(bmf.cb$c.uppervert),col=hmcols,
+      main="Wade ball - upper vertical")
+
+for (k in 1:options_sim0$K){
+  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+}
+
+image(1:options_sim0$N,1:options_sim0$N,
+      z2comat(bmf.cb$c.lowervert),col=hmcols,
+      main="Wade ball - lower vertical")
+
+for (k in 1:options_sim0$K){
+  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+}
+
+
+
+#
+## Approach 2:
+#
+for (iter in 1:nsamp_C){
+  z_Em[iter] <- norm(z2comat(out$z_samp[,iter])-comat,"F")
+}
+ind_dahl <- which.min(z_Em)
+# plot(z_Em,type="l",main="|S-E[S|Y]|")
+image(1:options_sim0$N,1:options_sim0$N,
+      z2comat(out$z_samp[,ind_dahl]),col=hmcols,
+      main="Dahl 2006")
+for (k in 1:options_sim0$K){
+  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+}
+
+#
+# Approach 1:
+#
 for (iter in 1:nsamp_C){
   z_Em[iter] <- myentropy(out$z_samp[,iter])
 }
@@ -163,7 +221,7 @@ for (k in 1:options_sim0$K){
 }
 
 # median:
-ind_median <- which(abs(z_Em-median(z_Em))<1e-3)
+ind_median <- which.min(abs(z_Em-median(z_Em)))
 image(1:options_sim0$N,1:options_sim0$N,
       z2comat(out$z_samp[,ind_median]),col=hmcols,
       main="median entropy clustering")
@@ -215,16 +273,8 @@ image(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res,
 ##
 ##  compute the error |HH' - E[HH'|Y]|_Frobneious
 ##
-nsamp_H <- dim(out$z_samp)[2]
-# H_Em <- rep(NA,nsamp_H)
-# for (iter in 1:nsamp_H){
-#   H_Em[iter] <- trans_squared_error(out$H_star_merge_samp[out$z_samp[,iter],,iter],
-#                                     simu$H_star[simu$Z,])
-# }
-# plot(H_Em,type="o",main="|HH'-E[H0H0'|Y]|")
-
 H_res <- matrix(0,nrow=nrow(simu$datmat),ncol=model_options0$m_max)
-H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=length(ind_of_Q))
+H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=length(ind_of_Q)) # here ind_of_Q are those that minimized the Q loss.
 for (l in seq_along(ind_of_Q)){
   tmp_mylist <- out$mylist_samp[,ind_of_Q[l]]
   tmp <- out$H_star_merge_samp[match(out$z_samp[,ind_of_Q[l]],tmp_mylist),,ind_of_Q[l]]
@@ -235,16 +285,28 @@ apply(H_pat_res,1,table)
 
 image(H_res)
 
-Q_res <- matrix(0,nrow=model_options0$m_max,ncol=ncol(simu$Q))
-for (l in seq_along(ind_of_Q)){
-  Q_res <- (out$Q_merge_samp[,,ind_of_Q[l]] + Q_res*(l-1))/l
-}
+# nsamp_H <- dim(out$z_samp)[2]
+# H_Em <- rep(NA,nsamp_H)
+# for (iter in 1:nsamp_H){
+#   H_Em[iter] <- trans_squared_error(out$H_star_merge_samp[out$z_samp[,iter],,iter],
+#                                     simu$H_star[simu$Z,])
+# }
+# plot(H_Em,type="o",main="|HH'-E[H0H0'|Y]|")
 
-#min_H_Em <- which.min(Q_Em) # select the one with minimal squared error.
-image(1:options_sim0$N,1:model_options0$m_max,
-      H_res,
-      col=hmcols,xlab="subjects",ylab="latent states")
-for (k in 1:options_sim0$K){
-  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-}
-#}
+
+# Q_res <- matrix(0,nrow=model_options0$m_max,ncol=ncol(simu$Q))
+# for (l in seq_along(ind_of_Q)){
+#   Q_res <- (out$Q_merge_samp[,,ind_of_Q[l]] + Q_res*(l-1))/l
+# }
+#
+# #min_H_Em <- which.min(Q_Em) # select the one with minimal squared error.
+# image(1:options_sim0$N,1:model_options0$m_max,
+#       H_res,
+#       col=hmcols,xlab="subjects",ylab="latent states")
+# for (k in 1:options_sim0$K){
+#   abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+# }
+# #}
+
+
+
