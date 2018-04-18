@@ -61,6 +61,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// log_marginal_Q_identity
+double log_marginal_Q_identity(NumericMatrix Y, NumericVector p, NumericVector theta, NumericVector psi);
+RcppExport SEXP _rewind_log_marginal_Q_identity(SEXP YSEXP, SEXP pSEXP, SEXP thetaSEXP, SEXP psiSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type psi(psiSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_marginal_Q_identity(Y, p, theta, psi));
+    return rcpp_result_gen;
+END_RCPP
+}
 // equal_unit_vec
 bool equal_unit_vec(arma::vec v, int k);
 RcppExport SEXP _rewind_equal_unit_vec(SEXP vSEXP, SEXP kSEXP) {
@@ -96,6 +110,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rewind_mat_times_vec_by_col", (DL_FUNC) &_rewind_mat_times_vec_by_col, 2},
     {"_rewind_log_full", (DL_FUNC) &_rewind_log_full, 6},
     {"_rewind_log_marginal", (DL_FUNC) &_rewind_log_marginal, 6},
+    {"_rewind_log_marginal_Q_identity", (DL_FUNC) &_rewind_log_marginal_Q_identity, 4},
     {"_rewind_equal_unit_vec", (DL_FUNC) &_rewind_equal_unit_vec, 2},
     {"_rewind_compute_Q_condpr", (DL_FUNC) &_rewind_compute_Q_condpr, 7},
     {NULL, NULL, 0}

@@ -196,9 +196,8 @@ nsamp_C <- dim(out$z_samp)[2]
 z_Em    <- rep(NA,nsamp_C)
 
 par(mfrow=c(2,3))
-#
+
 ## Approach 1:
-#
 for (iter in 1:nsamp_C){
   z_Em[iter] <- norm(z2comat(out$z_samp[,iter])-comat,"F")
 }
@@ -211,13 +210,9 @@ for (k in 1:options_sim0$K){
   abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
   abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
 }
-
 #heatmap(z2comat(out$z_samp[,ind_dahl]),col=hmcols)
 
-#
-# Approach 2 - use "mcclust.ext" pacakge:
-#
-
+## Approach 2 - use "mcclust.ext" pacakge:
 # process the posterior samples of cluster indicators:
 psm    <- comp.psm(t(out$z_samp))
 # point estimate using all methods:
@@ -269,7 +264,6 @@ for (k in 1:options_sim0$K){
   abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
 }
 #heatmap(z2comat(bmf.cb$c.lowervert),col=hmcols)
-
 
 #
 # summarize Q (first need to transpose it)
@@ -374,11 +368,14 @@ for (k in 1:options_sim0$M){
 }
 
 plot.new()
-
 legend("center",legend = c(1,0),col=c("#092D94","#FFFFD9"),
        pch=c(15,15),cex=3,bty="n")
 dev.off()
 
+
+#
+# visualize the individual latent states depending on whether Q is known or not.
+#
 if (!is.null(model_options0$Q)){
   H_res     <- matrix(0,nrow=nrow(simu$datmat),ncol=sum(rowSums(model_options0$Q)!=0))
   H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=dim(out$H_star_merge_samp)[3])
@@ -393,8 +390,6 @@ if (!is.null(model_options0$Q)){
   apply(H_pat_res,1,table)
   image(H_res)
 } else{
-
-
   #
   # This is the best estimated Q:
   #
@@ -447,7 +442,7 @@ compute_table <- function(p){
   res
 }
 log_eti_samp <- apply(out$p_samp,2,compute_table)
-eti_samp_mean <- exp(rowMeans(log_eti_samp))
+eti_samp_mean <- rowMeans(exp(log_eti_samp))
 plot(eti_samp_mean,type="h")
 
 pat <-  as.matrix(expand.grid(rep(list(0:1),model_options0$m_max)),
@@ -455,20 +450,21 @@ pat <-  as.matrix(expand.grid(rep(list(0:1),model_options0$m_max)),
 
 pdf("population_fraction.pdf",height=6,width=8)
 plot(rep(1:nrow(pat), each = ncol(pat)),
-     rep(-(1:ncol(pat)), nrow(pat)),
+     rep(-rev(1:ncol(pat)), nrow(pat)),
      axes = FALSE, ann = FALSE,
      pch = ifelse(t(pat), 19, 1), cex = 2.5, asp = 1, xpd = NA,
      col = rep(c("grey","black")[1+(eti_samp_mean>quantile(eti_samp_mean,0.75))],
                each=ncol(pat)))
 
-segments(1:nrow(pat),exp(apply(eti_samp,1,quantile,0.025))*ncol(pat)*4,
-         1:nrow(pat),exp(apply(eti_samp,1,quantile,0.975))*ncol(pat)*4)
-segments(1:nrow(pat),exp(apply(eti_samp,1,quantile,0.25))*ncol(pat)*4,
-         1:nrow(pat),exp(apply(eti_samp,1,quantile,0.75))*ncol(pat)*4,lwd=4,col="dodgerblue2")
-points(1:nrow(pat),exp(rowMeans(eti_samp))*ncol(pat)*4,pch=18,xpd = NA)
-points(1:nrow(pat),exp(apply(eti_samp,1,quantile,0.025))*ncol(pat)*4,lwd=6,pch="-")
-points(1:nrow(pat),exp(apply(eti_samp,1,quantile,0.975))*ncol(pat)*4,lwd=6,pch="-")
-axis(2,at=ncol(pat)*c(0,0.25,0.5)*4,labels=c(0,0.25,0.5),las=2,xpd = NA)
+multiplier <- 4
+segments(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.025))*ncol(pat)*multiplier,
+         1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.975))*ncol(pat)*multiplier)
+segments(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.25))*ncol(pat)*multiplier,
+         1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.75))*ncol(pat)*multiplier,lwd=4,col="dodgerblue2")
+points(1:nrow(pat),rowMeans(exp(log_eti_samp))*ncol(pat)*multiplier,pch=18,xpd = NA)
+points(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.025))*ncol(pat)*multiplier,lwd=6,pch="-")
+points(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.975))*ncol(pat)*multiplier,lwd=6,pch="-")
+axis(2,at=ncol(pat)*c(0,0.25,0.5)*multiplier,labels=c(0,0.25,0.5),las=2,xpd = NA)
 
 mtext(text = expression(paste("", pi[eta],
                               sep="")),line = 2,side=2,cex=2,las=2,padj=-4)

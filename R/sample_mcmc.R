@@ -489,11 +489,12 @@ sampler <- function(dat,model_options,mcmc_options){
     Q      <- simulate_Q_dat(m_max,dat,min(max(colMeans(dat)),0.3)) # random initialization, could be impproved by a smarter starting Q matrix.
   }else{
     Q      <- model_options$Q # suppose we are given Q.
+    is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))
   }
 
-  #if (block_update_H){
-  H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_max)),ncol=m_max) # all binary patterns for latent state profiles. 2^m_max of them.
-  #}
+  if (is.null(model_options$Q)){
+    H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_max)),ncol=m_max) # all binary patterns for latent state profiles. 2^m_max of them.
+  }
   # initialize the sampling chain:
   t <- 1        # number of clusters.
   z <- rep(1,n) # z[i] is the cluster ID for observation i.
@@ -567,13 +568,25 @@ sampler <- function(dat,model_options,mcmc_options){
       }
       # compute probability for Gibbs updating - the probability of assigning a subject
       # to a cluster.
-      for (j in 1:t){
-        cc       <- mylist[j]
-        log_p[j] <- log_Nb[N[cc]]+log_marginal(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),H_star_enumerate,Q,p,theta,psi)-
-          log_marginal(dat[(z==cc)[-i],,drop=FALSE],H_star_enumerate,Q,p, theta,psi) # existing cluster.
-      }
-      log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],H_star_enumerate,Q,p,theta,psi) # new cluster.
 
+      if (is.null(is_identity_Q)){
+        for (j in 1:t){
+          cc       <- mylist[j]
+          log_p[j] <- log_Nb[N[cc]]+log_marginal(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),H_star_enumerate,Q,p,theta,psi)-
+            log_marginal(dat[(z==cc)[-i],,drop=FALSE],H_star_enumerate,Q,p, theta,psi) # existing cluster.
+        }
+        log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],H_star_enumerate,Q,p,theta,psi) # new cluster.
+      } else{
+        if (is_identity_Q){
+          print("[rewind] identity Q.")
+          for (j in 1:t){
+            cc       <- mylist[j]
+            log_p[j] <- log_Nb[N[cc]]+log_marginal_Q_identity(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),p,theta,psi)-
+              log_marginal_Q_identity(dat[(z==cc)[-i],,drop=FALSE],p, theta,psi) # existing cluster.
+          }
+          log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal_Q_identity(dat[i,,drop=FALSE],p,theta,psi) # new cluster.
+        }
+      }
       j <- sample(t+1,1,prob = exp(log_p[1:(t+1)]))
 
       # add obs i to its new cluster:
@@ -667,14 +680,17 @@ sampler <- function(dat,model_options,mcmc_options){
     # print(length(H_star_merge))
     # H_tmp <- H_star_merge
     # if(length(H_tmp)>0){
-      # merge columns (combine factors that are present or absent at the same time; partner latent states):
+    # merge columns (combine factors that are present or absent at the same time; partner latent states):
+    string_merge2 <- NULL
+    if (is.null(model_options$Q)){ # only collapse columns of H or Q when Q is unknown.
       pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
       curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge)) # <-- can get the mapping from partner machines to final merged machines.
       H_star_merge  <- t(curr_merge_col$uniq_pat)
-      string_merge2 <- NULL
+
       if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
         string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)," `partner` latent states, giving ", ncol(H_star_merge), " latent states. \n")
       }
+    }
     # }else{
     #   H_star_merge <- matrix(0,nrow=t_max+3,ncol=m_max)
     # }
@@ -683,7 +699,11 @@ sampler <- function(dat,model_options,mcmc_options){
     H_star <- H_star_redun[mylist[1:t],,drop=FALSE] # <------ allow zero columns.
 
     #if(length(H_tmp)>0){
+    if (is.null(model_options$Q)){
       Q_merge <- merge_Q(Q[colSums(H_star)!=0,,drop=FALSE],curr_merge_col$map)
+    } else{
+      Q_merge <- model_options$Q
+    }
     #} else{
     #  Q_merge <- simulate_Q_dat(m_max,dat,0.5)
     #}
@@ -698,11 +718,17 @@ sampler <- function(dat,model_options,mcmc_options){
       if(!is.null(string_merge1)){cat(string_merge1)}
       if(!is.null(string_merge2)){cat(string_merge2)}
       cat(">> H^*: After: \n")
-      print_mat <-H_star_merge[,colSums(H_star_merge)!=0 & rowSums(Q_merge)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("scientific-cluster",rep("",nrow(print_mat)-1)),1:nrow(print_mat),sep=" "); colnames(print_mat) <- paste(c("merged factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
+      if (is.null(model_options$Q)){ # if Q is unknown, we have made t(Q_merge) and H_star_merge to have the same # of columns.
+        print_mat <- H_star_merge[,colSums(H_star_merge)!=0 & rowSums(Q_merge)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("scientific-cluster",rep("",nrow(print_mat)-1)),1:nrow(print_mat),sep=" "); colnames(print_mat) <- paste(c("merged factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
+      } else{ # when Q is known, just discard unused H_star_merge columns.
+        print_mat <- H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("scientific-cluster",rep("",nrow(print_mat)-1)),1:nrow(print_mat),sep=" "); colnames(print_mat) <- paste(c("merged factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
+      }
       print(print_mat) # removed all zero columns.
       cat("> Finite IBP hyperparameter: alpha = ", alpha,"\n")
-      graphics::image(Q[colSums(H_star)!=0,,drop=FALSE],main=paste0("Q matrix at iteration ",iter),col=hmcols)
-      graphics::image(Q_merge[rowSums(Q_merge)!=0,,drop=FALSE],main=paste0("merged Q matrix at iteration ",iter),col=hmcols)
+      if (is.null(model_options$Q)){ # need to merge Q if needed.
+        graphics::image(Q[colSums(H_star)!=0,,drop=FALSE],main=paste0("Q matrix at iteration ",iter),col=hmcols)
+        graphics::image(Q_merge[rowSums(Q_merge)!=0,,drop=FALSE],main=paste0("merged Q matrix at iteration ",iter),col=hmcols)
+      }
     }
 
     # update true/false positive rates - theta/psi:
