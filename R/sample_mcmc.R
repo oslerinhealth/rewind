@@ -486,7 +486,7 @@ sampler <- function(dat,model_options,mcmc_options){
     Q_samp <- array(0,c(m_max,ncol(dat),n_keep))
     Q_merge_samp <- Q_samp
     #Q      <- simulate_Q(m_max,L) # random initialization, could be impproved by a smarter starting Q matrix.
-    Q      <- simulate_Q_dat(m_max,dat,0.5) # random initialization, could be impproved by a smarter starting Q matrix.
+    Q      <- simulate_Q_dat(m_max,dat,min(max(colMeans(dat)),0.3)) # random initialization, could be impproved by a smarter starting Q matrix.
   }else{
     Q      <- model_options$Q # suppose we are given Q.
   }
@@ -698,11 +698,11 @@ sampler <- function(dat,model_options,mcmc_options){
       if(!is.null(string_merge1)){cat(string_merge1)}
       if(!is.null(string_merge2)){cat(string_merge2)}
       cat(">> H^*: After: \n")
-      print_mat <-H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("scientific-cluster",rep("",nrow(print_mat)-1)),1:nrow(print_mat),sep=" "); colnames(print_mat) <- paste(c("merged factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
+      print_mat <-H_star_merge[,colSums(H_star_merge)!=0 & rowSums(Q_merge)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("scientific-cluster",rep("",nrow(print_mat)-1)),1:nrow(print_mat),sep=" "); colnames(print_mat) <- paste(c("merged factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
       print(print_mat) # removed all zero columns.
       cat("> Finite IBP hyperparameter: alpha = ", alpha,"\n")
       graphics::image(Q[colSums(H_star)!=0,,drop=FALSE],main=paste0("Q matrix at iteration ",iter),col=hmcols)
-      graphics::image(Q_merge[rowSums(Q_merge)!=0,],main=paste0("merged Q matrix at iteration ",iter),col=hmcols)
+      graphics::image(Q_merge[rowSums(Q_merge)!=0,,drop=FALSE],main=paste0("merged Q matrix at iteration ",iter),col=hmcols)
     }
 
     # update true/false positive rates - theta/psi:
