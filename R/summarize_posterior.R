@@ -164,7 +164,7 @@ plot_population_fractions <- function(p_samp,state_nm){
 #' NB: need to add more info.)
 #' @export
 #' @import stats
-plot_individual_pred <- function(p_samp,state_nm,thedata){
+plot_individual_pred <- function(p_samp,state_nm,thedata,...){
   # p_samp = apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]])
   # state_nm = analysis_list
   # thedata = dat_rlcm_case[i,,drop=FALSE]
@@ -180,9 +180,9 @@ plot_individual_pred <- function(p_samp,state_nm,thedata){
   plot(rep(1:nrow(pat), each = M),
        rep(-rev(1:M), nrow(pat)),
        axes = FALSE, ann = FALSE,
-       pch = ifelse(t(pat), 19, 1), cex = mycex,asp=2, xpd = NA,lwd=0.2,
+       pch = ifelse(t(pat), 19, 1), cex = mycex, xpd = NA,lwd=0.2,
        col = rep(c("grey","black")[1+(1:nrow(pat))%in%match(as.numeric(names(p_samp)),round(exp(bin2dec_vec(pat))))],
-                 each=M))
+                 each=M),...)
   # mtext(expression(paste("Individual Etiology Fractions by Infection Patterns (P{",
   #                        eta[i],"=",eta,"|Data})",
   #                        collapse="")),side = 3,line=-3)
@@ -201,3 +201,175 @@ plot_individual_pred <- function(p_samp,state_nm,thedata){
   legend("topright",legend = c("95% CI","50% CI"),col=c("black","dodgerblue2"),lwd=c(1,4),
          bty="n")
 }
+
+
+#' Merge latent state profile matrix (H_star) and Q matrix
+#'
+#' This function
+#' \itemize{
+#' \item merges identical rows in H: pseudo-cluster ---> scientific clusters;
+#' \item merges partner latent states (identical non-zero columns in H);
+#' merge the corresponding rows in Q by \code{pmax}.
+#' }
+#'
+#' @param H_star_redun A binary matrix of rows \code{t_max+3} by \code{m_max};
+#' It may be redundant because it has rows corresponding to empty pseudo-clusters,
+#' and if the entire matrix is non-zero, the zero columns mean inactive latent states
+#' @param mylist Cluster labels; A vector of length \code{t_max+3} comprised of
+#' integers that need not be consecutive.
+#' @param t The number of non-empty pseudo-clusters
+#' @param Q The \code{m_max} by \code{L} Q matrix
+#' @param VERBOSE Default to \code{FALSE}: no print of the merged matrices; Otherwise
+#' set to \code{TRUE}.
+#' @param z_pseudo Default is \code{NULL}.
+#' A vector of pseudo-cluster indicators to be merged into
+#' scientific cluster indicators \code{z_sci}.
+#'
+#' @return A list comprised of two elements named:
+#' \code{H_star_merge} and \code{Q_merge} and \code{z_sci} if \code{z_pseudo}
+#' is provided.
+#' @export
+#'
+#' @examples
+#'
+#'# the third latent state is inactive among non-empty pseudo-clusters;
+#'# the 2nd and 4th latent states are partners.
+#'# merge 1 and 2 pseudo-clusters.
+#'  H_star_redun <- matrix(c(0,1,0,1,
+#'                           0,1,0,1,
+#'                           1,0,0,0,
+#'                           0,0,0,0,
+#'                           0,0,0,0,
+#'                           0,0,0,0,
+#'                           0,0,0,0),nrow=7,ncol=4,byrow=TRUE)
+#' mylist <- c(1,2,3,5,0,0,0)
+#' t <- 4
+#' Q <- simulate_Q(4,100,p=0.1)
+#' z_pseudo <- c(1,1,3,5,2,2,2,1,3,3,5,1,2,2,1)
+#' merge_H_Q(H_star_redun,mylist,t,Q,TRUE,z_pseudo)
+#'
+merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL){
+  H_star  <- H_star_redun[mylist[1:t],,drop=FALSE] #<-- focus on Eta vectors
+  # associated with a pseudo-cluster;
+  ind_zero_col <- which(colSums(H_star)==0)
+  if (sum(H_star)>0 && length(ind_zero_col)>0){H_star <- H_star[,-ind_zero_col]}
+  # merge rows (pseudo clusters to scientific clusters defined by \bEta_j):
+  pat_H_star    <- apply(H_star,1,paste,collapse="")
+  curr_merge    <- merge_map(pat_H_star,unique(pat_H_star))
+  #<-- can get the mapping from pseudo clusters to scientific clusters.
+  H_star_merge  <- curr_merge$uniq_pat
+  if (!is.null(z_pseudo)){
+    t_tilde <- nrow(H_star_merge)
+    z_sci <- rep(NA,length(z_pseudo))
+    sci_lab <- 0
+    for (i in 1:t_tilde) {
+      sci_lab <- sci_lab+1
+      used_cluster_label <- mylist[1:t]
+      ind_labels_to_merge <- which(curr_merge$map==i)
+      z_sci[z_pseudo%in%used_cluster_label[ind_labels_to_merge]] <- sci_lab
+    }
+  }
+  string_merge1 <- NULL
+  if (VERBOSE && nrow(H_star_merge)<nrow(H_star)){
+    string_merge1 <- paste0(">> absorbed ",nrow(H_star)-nrow(H_star_merge)," pseudo clusters ---> ", nrow(H_star_merge)," scientific clusters.\n")
+    cat(string_merge1)
+  }
+
+  # merge columns (combine factors that are present or absent at the same time;
+  # partner latent states):
+  pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
+  curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge))
+  # <-- can get the mapping from partner machines to final merged machines.
+  H_star_merge  <- t(curr_merge_col$uniq_pat)
+  string_merge2 <- NULL
+  if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
+    string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)+1,"` partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
+    cat(string_merge2)
+  }
+  if (length(ind_zero_col)>0){
+    Q_merge <- merge_Q(Q[-ind_zero_col,],curr_merge_col$map)
+  } else {
+    Q_merge <- merge_Q(Q,curr_merge_col$map)
+  }
+  if (!is.null(z_pseudo)){
+    return(list(H_star_merge=H_star_merge, Q_merge=Q_merge,z_sci=z_sci))
+  } else{
+    return(list(H_star_merge=H_star_merge, Q_merge=Q_merge))
+  }
+}
+
+
+
+#' Merge mapping
+#'
+#' This function combines pseudo-clusters by the current H_star samples.
+#'
+#' @param pseudo_pat a vector of character strings for
+#' binary patterns that might not be unique
+#' @param uniq_pat a vector of character strings of distinct binary codes
+#'
+#' @return a list \itemize{
+#' \item \code{map} a vector of integer of identical length to \code{pseudo_pat}; takes values
+#' from 1 to \code{length(uniq_pat)}
+#' \item \code{uniq_pat} a matrix of unique binary patterns (# rows =  \code{length(uniq_pat)},
+#' # columns = number of 1/0s for each element in \code{uniq_pat})
+#' }
+#' @export
+#'
+#' @examples
+#' #' # simulate data:
+#' L0 <- 100
+#' options_sim0  <- list(N = 200,  # sample size.
+#'                      M = 3,   # true number of machines.
+#'                      L = L0,   # number of antibody landmarks.
+#'                      K = 8,    # number of true components.,
+#'                      theta = rep(0.8,L0), # true positive rates
+#'                      psi   = rep(0.01,L0), # false positive rates
+#'                      alpha1 = 1 # half of the people have the first machine.
+#')
+#'
+#' #image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
+#'
+#' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
+#' tmp <-  simu$H_star[c(1,1,2,2,2,3,4,5,6,7,8),]
+#' uid <- unique(apply(tmp,1,paste,collapse=""))
+#' merge_map(apply(tmp,1,paste,collapse=""),uid)
+merge_map <- function(pseudo_pat,uniq_pat){
+  if (length(pseudo_pat)<length(uniq_pat)){stop("==[rewind] more pseudo patterns than unique patterns.==")}
+  map <- sapply(1:length(pseudo_pat),function(i){which(uniq_pat==pseudo_pat[i])})
+  uniq_pat <- do.call("rbind",lapply(sapply(uniq_pat,strsplit,""),as.numeric))
+  list(map=map,uniq_pat=uniq_pat)
+}
+
+
+#' merge Q matrix by rows
+#'
+#' Some rows of Q correspond to partner factors that are present or absent together;
+#' It is of scientific interest to combine them by taking the maximum for each column
+#' of Q among these rows.
+#'
+#' @param Q A Q matrix (row for ACTIVE factors that might be partners, columns for dimension of multivariate binary data)
+#' @param map_id a vector taking possibly duplicated values in {1,...,M^+}, where M^+ is the number
+#' of active factors. \code{map_id=c(1,1,2,2,2,3)} means factor 1 and 2 are partner factors, factor 3 to 5 are another group
+#' of partner factors.
+#'
+#' @return A Q matrix with merged rows (by taking maximum within each group of partner factors)
+#' @export
+#'
+#' @examples
+#'
+#' Q <- simulate_Q(6,100,0.1)
+#' map_id <- c(1,1,2,2,3,2)
+#' Q_merge <- merge_Q(Q,map_id)
+#' par(mfrow=c(1,2))
+#' image(Q,main="before merging")
+#' image(Q_merge, main="after merging")
+merge_Q <- function(Q,map_id){
+  res <- matrix(NA,nrow=length(unique(map_id)),ncol=ncol(Q))
+  for (i in unique(map_id)){
+    row_id_to_merge <- which(map_id==i)
+    res[i,] <- apply(Q[row_id_to_merge,,drop=FALSE],2,max)
+  }
+  res
+}
+

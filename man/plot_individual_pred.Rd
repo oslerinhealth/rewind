@@ -4,7 +4,7 @@
 \alias{plot_individual_pred}
 \title{Plot individual probabilities}
 \usage{
-plot_individual_pred(p_samp, state_nm, thedata)
+plot_individual_pred(p_samp, state_nm, thedata, ...)
 }
 \arguments{
 \item{p_samp}{A vector of posterior probabilities for each individual}

@@ -406,13 +406,11 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' \item \code{z_samp}
 #' \item \code{N_samp}
 #' \item \code{keepers} indices of MCMC samples kept for inference;
-#' \item \code{H_star_samp}
-#' \item \code{H_star_merge_samp}
+#' \item \code{H_star_samp} \code{t_max+3} by \code{m_max} binary matrix
 #' \item \code{alpha_samp}
 #' } The following are recorded if they are not fixed in a priori:
 #' \itemize{
 #' \item \code{Q_samp}
-#' \item \code{Q_merge_samp}
 #' \item \code{theta_samp}
 #' \item \code{psi_samp}
 #' \item \code{p_samp}
@@ -627,6 +625,9 @@ sampler <- function(dat,model_options,mcmc_options){
       print_mat <- H_star; rownames(print_mat) <- paste(c("pseudo-cluster",rep("",t-1)),1:t,sep=" ");
       colnames(print_mat) <- paste(c("factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
       print(print_mat) # <-- removed all zero columns.
+      if (is.null(model_options$Q)){
+        merged_res <- merge_H_Q(H_star,1:t,t,Q,TRUE)
+      }
       cat("> Finite IBP hyperparameter: alpha = ", alpha,"\n")
     }
 
@@ -655,7 +656,7 @@ sampler <- function(dat,model_options,mcmc_options){
       t_samp[keep_index] <- t
       for (j in 1:t){N_samp[mylist[j],keep_index] <- N[mylist[j]]}
       p_samp[,keep_index]    <- p
-      H_star_samp[1:t,,keep_index] <- H_star
+      H_star_samp[mylist[1:t],,keep_index] <- H_star # <-- need fix.
       for (i in 1:n){z_samp[i,keep_index] <- z[i]}
       mylist_samp[,keep_index] <- mylist
       if (is.null(model_options$theta)){
@@ -758,79 +759,4 @@ log_f_logprima <- function(log_p0,alpha,t){
   }
   alpha-t*exp(log_p0)/(1-exp(log_p0))+
     alpha*res
-}
-
-
-
-#' Merge mapping
-#'
-#' This function combines pseudo-clusters by the current H_star samples.
-#'
-#' @param pseudo_pat a vector of character strings for
-#' binary patterns that might not be unique
-#' @param uniq_pat a vector of character strings of distinct binary codes
-#'
-#' @return a list \itemize{
-#' \item \code{map} a vector of integer of identical length to \code{pseudo_pat}; takes values
-#' from 1 to \code{length(uniq_pat)}
-#' \item \code{uniq_pat} a matrix of unique binary patterns (# rows =  \code{length(uniq_pat)},
-#' # columns = number of 1/0s for each element in \code{uniq_pat})
-#' }
-#' @export
-#'
-#' @examples
-#' #' # simulate data:
-#' L0 <- 100
-#' options_sim0  <- list(N = 200,  # sample size.
-#'                      M = 3,   # true number of machines.
-#'                      L = L0,   # number of antibody landmarks.
-#'                      K = 8,    # number of true components.,
-#'                      theta = rep(0.8,L0), # true positive rates
-#'                      psi   = rep(0.01,L0), # false positive rates
-#'                      alpha1 = 1 # half of the people have the first machine.
-#')
-#'
-#' #image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
-#'
-#' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
-#' tmp <-  simu$H_star[c(1,1,2,2,2,3,4,5,6,7,8),]
-#' uid <- unique(apply(tmp,1,paste,collapse=""))
-#' merge_map(apply(tmp,1,paste,collapse=""),uid)
-merge_map <- function(pseudo_pat,uniq_pat){
-  if (length(pseudo_pat)<length(uniq_pat)){stop("==[rewind] more pseudo patterns than unique patterns.==")}
-  map <- sapply(1:length(pseudo_pat),function(i){which(uniq_pat==pseudo_pat[i])})
-  uniq_pat <- do.call("rbind",lapply(sapply(uniq_pat,strsplit,""),as.numeric))
-  list(map=map,uniq_pat=uniq_pat)
-}
-
-
-#' merge Q matrix by rows
-#'
-#' Some rows of Q correspond to partner factors that are present or absent together;
-#' It is of scientific interest to combine them by taking the maximum for each column
-#' of Q among these rows.
-#'
-#' @param Q A Q matrix (row for ACTIVE factors that might be partners, columns for dimension of multivariate binary data)
-#' @param map_id a vector taking possibly duplicated values in {1,...,M^+}, where M^+ is the number
-#' of active factors. \code{map_id=c(1,1,2,2,2,3)} means factor 1 and 2 are partner factors, factor 3 to 5 are another group
-#' of partner factors.
-#'
-#' @return A Q matrix with merged rows (by taking maximum within each group of partner factors)
-#' @export
-#'
-#' @examples
-#'
-#' Q <- simulate_Q(6,100,0.1)
-#' map_id <- c(1,1,2,2,3,2)
-#' Q_merge <- merge_Q(Q,map_id)
-#' par(mfrow=c(1,2))
-#' image(Q,main="before merging")
-#' image(Q_merge, main="after merging")
-merge_Q <- function(Q,map_id){
-  res <- matrix(NA,nrow=length(unique(map_id)),ncol=ncol(Q))
-  for (i in unique(map_id)){
-    row_id_to_merge <- which(map_id==i)
-    res[i,] <- apply(Q[row_id_to_merge,,drop=FALSE],2,max)
-  }
-  res
 }

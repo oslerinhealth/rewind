@@ -53,7 +53,6 @@ model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
                                        model_options0$b,
                                        model_options0$n,
                                        model_options0$t_max+1)
-
 # mcmc options:
 mcmc_options0 <- list(
   n_total = 200,
@@ -71,12 +70,44 @@ mcmc_options0 <- list(
 #
 out <- sampler(simu_dat,model_options0,mcmc_options0)
 
-#
-# Posterior summaries:
-#
+
+
+
+################################################################
+## Posterior summaries:
+###############################################################
+
+##
+## Post-processing H an Q:
+##
+n_kept <- dim(out$H_star_samp)[3]
+Q_merge_samp <- array(0,c(model_options0$m_max,dim(out$Q_samp)[2],n_kept))
+H_star_merge_samp <- array(0,c(dim(out$H_star_samp)[1],model_options0$m_max,n_kept))
+z_sci_samp <- matrix(0,nrow=dim(out$z_samp)[1],ncol=n_kept)
+for (iter in 1:n_kept){
+  merged_res <- merge_H_Q(out$H_star_samp[,,iter],
+                          out$mylist[,iter],
+                          out$t_samp[iter],
+                          out$Q_samp[,,iter],
+                          FALSE,
+                          out$z_samp[,iter])
+  merged_H <- merged_res$H_star_merge
+  merged_Q <- merged_res$Q_merge
+  H_star_merge_samp[1:nrow(merged_H),1:ncol(merged_H),iter] <- merged_H
+  Q_merge_samp[1:nrow(merged_Q),1:ncol(merged_Q),iter]      <- merged_Q
+  z_sci_samp[,iter]    <- merged_res$z_sci
+}
+out$H_star_merge_samp <- H_star_merge_samp # <-- could have zero columns.
+out$Q_merge_samp      <- Q_merge_samp # <-- could have zero rows.
+out$z_sci_samp        <- z_sci_samp # <-- add scientific indicators.
+
+
+#Z_SAMP_FOR_PLOT <- out$z_samp  # <---- use pseudo-indicators for co-clustering.
+                                # tend to be more granular.
+Z_SAMP_FOR_PLOT <- out$z_sci_samp # <--- use scientific-cluster indicators.
 
 # posterior co-clustering probabilities (N by N):
-comat <- coclust_mat(nrow(simu_dat),out$z_samp,mcmc_options0$n_keep)
+comat <- coclust_mat(nrow(simu_dat),Z_SAMP_FOR_PLOT,mcmc_options0$n_keep)
 image(1:options_sim0$N,1:options_sim0$N, comat,
       xlab="Subjects",ylab="Subjects",col=hmcols,main="co-clustering")
 for (k in 1:options_sim0$K){
@@ -93,19 +124,19 @@ for (k in 1:options_sim0$K){
 ## Approach 2: Wade - estimate the best partition using posterior expected loss
 ##             by variation of information (VI) metric.
 
-nsamp_C <- dim(out$z_samp)[2]
+nsamp_C <- dim(Z_SAMP_FOR_PLOT)[2]
 z_Em    <- rep(NA,nsamp_C)
 
 par(mfrow=c(2,3))
 
 ## Approach 1:
 for (iter in 1:nsamp_C){
-  z_Em[iter] <- norm(z2comat(out$z_samp[,iter])-comat,"F")
+  z_Em[iter] <- norm(z2comat(Z_SAMP_FOR_PLOT[,iter])-comat,"F")
 }
 ind_dahl <- which.min(z_Em)
 # plot 1:
 image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(out$z_samp[,ind_dahl]),col=hmcols,
+      z2comat(Z_SAMP_FOR_PLOT[,ind_dahl]),col=hmcols,
       main="Dahl (2006) - least squares to hat{pi}_ij")
 for (k in 1:options_sim0$K){
   abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
@@ -115,9 +146,9 @@ for (k in 1:options_sim0$K){
 
 ## Approach 2 - use "mcclust.ext" pacakge:
 # process the posterior samples of cluster indicators:
-psm    <- comp.psm(t(out$z_samp))
+psm    <- comp.psm(t(Z_SAMP_FOR_PLOT))
 # point estimate using all methods:
-bmf.VI <- minVI(psm,t(out$z_samp),method="all",include.greedy=TRUE)
+bmf.VI <- minVI(psm,t(Z_SAMP_FOR_PLOT),method="all",include.greedy=TRUE)
 summary(bmf.VI)
 
 # plot 2:
@@ -132,7 +163,8 @@ for (k in 1:options_sim0$K){
 #heatmap(z2comat(bmf.VI$cl["avg",]),col=hmcols)
 
 # credible sets as defined in Wade and Ghahramani 2017.
-bmf.cb=credibleball(bmf.VI$cl[1,],t(out$z_samp))
+bmf.cb <- credibleball(bmf.VI$cl[1,],t(Z_SAMP_FOR_PLOT))
+
 # plot 3:
 image(1:options_sim0$N,1:options_sim0$N,
       z2comat(bmf.cb$c.horiz),col=hmcols,
@@ -146,7 +178,7 @@ for (k in 1:options_sim0$K){
 
 # plot 4:
 image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(bmf.cb$c.uppervert),col=hmcols,
+      z2comat(bmf.cb$c.uppervert[1,]),col=hmcols,
       main="Wade credible ball - upper vertical")
 
 for (k in 1:options_sim0$K){
@@ -273,7 +305,6 @@ legend("center",legend = c(1,0),col=c("#092D94","#FFFFD9"),
        pch=c(15,15),cex=3,bty="n")
 dev.off()
 
-
 #
 # visualize the individual latent states depending on whether Q is known or not.
 #
@@ -296,7 +327,7 @@ if (!is.null(model_options0$Q)){
   #
   Q_merged <- out$Q_merge_samp[,,ind_of_Q[1]] # just picked one.
   NROW_Q_PLOT <- nrow(Q_merged) # sum(rowSums(Q_merged)!=0)
-  Q_PLOT <- t(order_mat_byrow(Q_merged)$res) #f(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res)
+  Q_PLOT <- f(order_mat_byrow(Q_merged)$res) #f(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res)
   image(1:ncol(simu$datmat),1:NROW_Q_PLOT,
         Q_PLOT,
         main="Best Q (merged & ordered)",col=hmcols,
@@ -328,7 +359,7 @@ if (!is.null(model_options0$Q)){
     H_res <- (tmp + H_res*(l-1))/l
   }
   apply(H_pat_res,1,table)
-  image(H_res)
+  image(f(H_res),col=hmcols)
 
   # issues: the order of the rows of Q at ind_of_Q might be different, so need to order them.
 }
@@ -399,12 +430,15 @@ dev.off()
 # posterior distribution over the number of pseudo-clusters T: <-- scientific clusters?
 plot(out$t_samp,type="l",ylab="T: #pseudo-clusters")
 
-
-
-
-
-
-
+## individual predictions:
+pdf("individual_pred_simulation.pdf",height=15,width=12)
+par(mar=c(2,8,8,0),mfrow=c(2,1),oma=c(5,5,5,5))
+for (i in 1:nrow(simu_dat)){
+  plot_individual_pred(apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]]),
+                       1:model_options0$m_max,
+                       simu_dat[i,,drop=FALSE],asp=0.5)
+}
+dev.off()
 
 
 
