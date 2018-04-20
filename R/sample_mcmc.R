@@ -61,63 +61,8 @@ simulate_Q_dat <- function(M,dat,p=0.1,frac=1/5){
   res
 }
 
-# compute the likelihood:
+# compute the likelihood (in the cpp file):
 
-#' Compute marginal likelihood for observations in a cluster
-#' NB: this only works for Q = I; potential errors with the integration over latent states -
-#' one cannot factorize the marginal likelihood for an arbitrary Q. Can delete this if
-#' we have a general marginal likelihood function that works for all dimensions.
-#'
-#' This function computes the marginal likelihood by integrating over
-#' the distribution of component specific parameter (e.g., discrete latent states).
-#' This function conditions upon a few model parameters: the true and false positive
-#' rates (theta and psi), the Q matrix and {p}-the prevalence parameters for binary
-#' latent states.
-#'
-#' @param Yl a column of the multivariate binary data
-#' @param Ql l-th column of the Q matrix
-#' @param p prevalence of binary latent states; a vector of length identical to the dimension
-#' of latent states.
-#' @param thetal,psil True and false positive rates (between 0 and 1)
-#'
-#' # simulate data:
-#' L0 <- 100
-#' options_sim0  <- list(N = 200,  # sample size.
-#'                      M = 3,   # true number of machines.
-#'                      L = L0,   # number of antibody landmarks.
-#'                      K = 8,    # number of true components.,
-#'                      theta = rep(0.8,L0), # true positive rates
-#'                      psi   = rep(0.01,L0), # false positive rates
-#'                      alpha1 = 1 # half of the people have the first machine.
-#')
-#'
-#' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
-#' simu_dat <- simu$datmat
-#' Y <- simu_dat
-#  Q <- simu$Q
-#  p <- c(0.5,0.25,0.1,0.02,0.05)
-#  theta <- options_sim0$theta
-#  psi   <- options_sim0$psi
-#
-#' l <- 20
-#' log_marginal_one_column(Y[,l], Q[,l], p, theta[l], psi[l])
-#'
-#' @return log of marginal likelihood given other model parameters.
-#'
-#' @export
-log_marginal_one_column <- function(Yl, Ql, p, thetal, psil){
-  n1 <- sum(Yl)
-  n0 <- sum(1-Yl)
-  p_xil <- 1-exp(matrix(log(1-p),nrow=1)%*%matrix(Ql,ncol=1)) # length L.
-  # This is based on the DINO model - it computes the probability of an activated dimension.
-
-  mat <- c(n1*log(psil)+n0*log(1-psil),
-           n1*log(thetal)+n0*log(1-thetal))+ # likelihood.
-    c(log(1-p_xil),
-      log(p_xil)) # prior.
-  matrixStats::logSumExp(mat) # total probability formula: likelihood given xil =0;
-  # likelihoodgiven xil=1; and sum them over with weights of 1-p_xil and p_xil respectively.
-}
 
 # update parameters:
 
@@ -139,12 +84,22 @@ log_marginal_one_column <- function(Yl, Ql, p, thetal, psil){
 update_positive_rate <- function(Y,H,Q,a_theta,a_psi){
   xi       <- (H%*%Q>0.5)+0 # <-- NB: for DINO model. Essentially the design matrix
   # in the manuscript. Should be modified for general restricted LCM.
-  psi_a1   <- colSums((1-xi)*Y)+a_psi[1]
-  psi_a2   <- colSums((1-xi)*(1-Y))+a_psi[2]
-  theta_a1 <- colSums(xi*Y)+a_theta[1]
-  theta_a2 <- colSums(xi*(1-Y))+a_theta[2]
-  theta_samp <- sapply(1:ncol(Q),function(i) {stats::rbeta(1,theta_a1[i],theta_a2[i])})
+  psi_a1   <- colSums((1-xi)*Y)+a_psi[1,]
+  psi_a2   <- colSums((1-xi)*(1-Y))+a_psi[2,]
+  theta_a1 <- colSums(xi*Y)+a_theta[1,]
+  theta_a2 <- colSums(xi*(1-Y))+a_theta[2,]
   psi_samp   <- sapply(1:ncol(Q),function(i) {stats::rbeta(1,psi_a1[i],psi_a2[i])})
+
+  # theta_all_a1 <- sum(colSums(xi*Y))+a_theta[1,1]
+  # theta_all_a2 <- sum(colSums(xi*(1-Y)))+a_theta[2,1]
+  # theta_samp   <- rep(stats::rbeta(1,theta_all_a1,theta_all_a2), ncol(Q))
+
+  #theta_samp <- sapply(1:ncol(Q),function(i) {stats::rbeta(1,theta_a1[i],theta_a2[i])})
+  theta_samp <- sapply(1:ncol(Q),function(i) {#stats::rbeta(1,theta_a1[i],theta_a2[i])
+    #u <- runif(1,pbeta(psi_samp[i],theta_a1[i],theta_a2[i]),1)
+    u <- runif(1,pbeta(0.5,theta_a1[i],theta_a2[i]),1) # set the lower limit to be 0.5.
+    qbeta(u,theta_a1[i],theta_a2[i])
+  })
   list(theta=theta_samp,psi=psi_samp)
 }
 
@@ -191,6 +146,7 @@ update_alpha <- function(H_star,t,M,a=1,b=1,show_density=FALSE) {
 #' @param M dimension of the latent state vector (number of columns for H_star)
 #'
 #' @return vector of length M (each between 0 and 1).
+#' @export
 update_prevalence <- function(H_star,alpha,M){
   n1_star <- apply(H_star,2,sum,na.rm=T)
   n0_star <- apply(1-H_star,2,sum,na.rm=T)
@@ -463,17 +419,25 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' }
 #' @export
 sampler <- function(dat,model_options,mcmc_options){
+
+  # # <<<<------ testing data:
+  # dat <- dat_rlcm_case
+  # model_options <- model_options0
+  # mcmc_options  <- mcmc_options0
+  # # <<<<------ end of testing data.
+
   n <- nrow(dat) # number of observations
-  L <- ncol(dat) # number of dimensions (protein landmarks).
+  L <- ncol(dat) # number of dimensions (e.g.,protein landmarks).
 
   n_total <- mcmc_options$n_total # total number of mcmc iterations.
   n_keep  <- mcmc_options$n_keep  # toral number of samples kept for posterior inference.
   keepers <- seq(ceiling(n_total/n_keep),n_total,len=n_keep)
   keep_index <- 0                 # the index to keep during MCMC inference.
-  n_split <- mcmc_options$n_split # number of intermediate GS scan to arrive at launch state.
+  n_split    <- mcmc_options$n_split # number of intermediate GS scan to arrive at launch state.
+
   block_update_Q <- !is.null(mcmc_options$block_update_Q) && mcmc_options$block_update_Q # TRUE for updating columns of Q. FALSE otherwise.
   block_update_H <- !is.null(mcmc_options$block_update_H) && mcmc_options$block_update_H # TRUE for updating rows of H. FALSE otherwise.
-  constrained <- !is.null(mcmc_options$constrained) && mcmc_options$constrained
+  constrained    <- !is.null(mcmc_options$constrained) && mcmc_options$constrained
   hmcols <- mcmc_options$hmcols
 
   # set options (need to fill in as specific paramters are needed):
@@ -482,17 +446,17 @@ sampler <- function(dat,model_options,mcmc_options){
   b     <- model_options$b     # Gamma parameter in MFM - hyperparameter for Dirichlet distn. needs to be sampled?????
   log_v <- model_options$log_v # coefficients for MFM.
 
+  is_identity_Q <- NULL
   if (is.null(model_options$Q)){
-    Q_samp <- array(0,c(m_max,ncol(dat),n_keep))
+    Q_samp <- array(0,c(m_max,L,n_keep))
     Q_merge_samp <- Q_samp
-    #Q      <- simulate_Q(m_max,L) # random initialization, could be impproved by a smarter starting Q matrix.
-    Q      <- simulate_Q_dat(m_max,dat,min(max(colMeans(dat)),0.3)) # random initialization, could be impproved by a smarter starting Q matrix.
+    Q      <- simulate_Q_dat(m_max,dat,0.1,min(max(colMeans(dat)),0.3)) # random initialization; warm start.
   }else{
-    Q      <- model_options$Q # suppose we are given Q.
-    is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))
+    Q      <- model_options$Q # if Q is given.
+    is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))<1e-3
   }
 
-  if (is.null(model_options$Q)){
+  if (is.null(model_options$Q) | block_update_H){ # <-- if Q may be non-diagonal; or if we block update H.
     H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_max)),ncol=m_max) # all binary patterns for latent state profiles. 2^m_max of them.
   }
   # initialize the sampling chain:
@@ -504,9 +468,6 @@ sampler <- function(dat,model_options,mcmc_options){
   c_next <- 2                    # an available cluster ID to be used next.
   N <- rep(0,t_max+3); N[1] <- n # N[c] is the size of cluster c. Note that N is different from n.
 
-  # H_star <- matrix(0,nrow=t_max+3,ncol=m_max) # parameter for clusters. In our application, the machine usage profiles.
-  # NOTE: need to consider SMARTER initial values for this. How to sample H_star? Not needed in conjugate algorithm.
-
   log_p <- rep(0,n+1) # probability for sampling z; n+1 because at most there could be n clusters;
   # and sometimes one needs to assign an observation to a new cluster - by current bookkeeping,
   # we are not efficient in memory and create a new cluster ID - hence +1.
@@ -516,42 +477,43 @@ sampler <- function(dat,model_options,mcmc_options){
   log_Nb <- log(1:n)+b # the multipliers needed when assigning an observation to an existing cluster. Restaurant process stuff.
 
   # variables for samples kept:
-  t_samp <- rep(0,n_total)
-  N_samp <- matrix(0,nrow=t_max+3,ncol=n_total)
+  t_samp <- rep(0,n_keep)
+  N_samp <- matrix(0,nrow=t_max+3,ncol=n_keep)
   z_samp <- matrix(0,nrow=n,ncol=n_keep) # posterior samples of cluster indicators.
-  H_star_samp <- array(0,c(t_max+3,m_max,n_total))# component-specific machine profiles.
-  H_star_merge_samp <- H_star_samp
-
-  mylist_samp <- matrix(0,nrow=length(mylist),ncol=n_total) # need it to retrieve the correct latent state vector.
+  H_star_samp <- array(0,c(t_max+3,m_max,n_keep))# component-specific machine profiles.
+  mylist_samp <- matrix(0,nrow=length(mylist),ncol=n_keep) # need it to retrieve the correct latent state vector.
 
   if (is.null(model_options$theta)){
-    theta_samp <- matrix(0,nrow=ncol(dat),ncol=n_keep)
-    a_theta <- model_options$a_theta
-    theta <- sapply(1:L,function(i){stats::rbeta(1,a_theta[1],a_theta[2])}) # initialization.
+    theta_samp <- matrix(0,nrow=L,ncol=n_keep)
+    a_theta    <- model_options$a_theta # <--------------------------- can be changed into a 2 by L matrix.
+    theta   <- sapply(1:L,function(i){stats::rbeta(1,a_theta[1,i],a_theta[2,i])}) # initialization.
   } else{
     theta   <- model_options$theta # use specified true positive rates.
   }
   if (is.null(model_options$psi)){
-    psi_samp   <- matrix(0,nrow=ncol(dat),ncol=n_keep)
-    a_psi      <- model_options$a_psi
-    psi <- sapply(1:L,function(i){stats::rbeta(1,a_psi[1],a_psi[2])}) # initialization.
+    psi_samp   <- matrix(0,nrow=L,ncol=n_keep)
+    a_psi      <- model_options$a_psi  # <--------------------------- can be changed into a 2 by L matrix.
+    psi <- sapply(1:L,function(i){stats::rbeta(1,a_psi[1,i],a_psi[2,i])}) # initialization.
   } else{
     psi     <- model_options$psi # use specified false positive rates.
   }
 
   if (is.null(model_options$p0)){
-    p_samp <- matrix(0,nrow=m_max,ncol=n_total)
+    p_samp <- matrix(0,nrow=m_max,ncol=n_keep)
     p      <- rep(0.5,m_max) # initialization.
   } else{
     p      <- model_options$p0 # fix prevalence.
   }
 
   if (is.null(model_options$alpha)){
-    alpha_samp <- rep(0,n_total)  # hyperparameter for machine prevalence.
+    alpha_samp <- rep(0,n_keep)  # hyperparameter for machine prevalence.
     alpha      <- m_max           # initialization.
+  }else{
+    alpha    <- model_options$alpha # fix alpha.
   }
 
-  cat("[rewind] Start MCMC for model with pre-specified #latent states (M =", m_max, ")\n")
+  cat("[rewind] Begin MCMC for model with #latent states (M =", m_max, ")\n")
+  if(!is.null(model_options$Q) && is_identity_Q){cat("> identity Q.\n")}
   for (iter in 1:n_total){
     VERBOSE <- iter%%mcmc_options$print_mod==0
     # update cluster indicators z for all subjects - one complete Gibbs scan to refine clusters:
@@ -578,7 +540,6 @@ sampler <- function(dat,model_options,mcmc_options){
         log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],H_star_enumerate,Q,p,theta,psi) # new cluster.
       } else{
         if (is_identity_Q){
-          print("[rewind] identity Q.")
           for (j in 1:t){
             cc       <- mylist[j]
             log_p[j] <- log_Nb[N[cc]]+log_marginal_Q_identity(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),p,theta,psi)-
@@ -611,7 +572,7 @@ sampler <- function(dat,model_options,mcmc_options){
     N <- res_split_merge$N
     mylist <- res_split_merge$mylist
     c_next <- ordered_next(mylist)
-    if(t>t_max) {stop("==[rewind] Sampled t has exceeded t_max. Increast t_max and retry.==")}
+    if(t>t_max) {stop("[rewind] Sampled t has exceeded t_max. Increast t_max and retry.")}
 
     ## Simulate xi for posterior predictive checking:
     # #if (is.null(model_options$Q)){
@@ -622,7 +583,7 @@ sampler <- function(dat,model_options,mcmc_options){
     # xi_star <- xi_samp[mylist[1:t],,iter]
     # #}
 
-    # update machine usage profile given clusters: (check here for sampling H)
+    # update latent state profile given clusters: (check here for sampling H)
     H_star_redun <- matrix(0,nrow=t_max+3,ncol=m_max) # prior to merging redundant rows or columns.
     for (j in 1:t){
       if (block_update_H){
@@ -645,95 +606,33 @@ sampler <- function(dat,model_options,mcmc_options){
       }
     }
 
-    H_star_samp[,,iter] <- H_star_redun
-    H_star <- H_star_redun[mylist[1:t],,drop=FALSE]
+    H_star <- H_star_redun[mylist[1:t],,drop=FALSE] # don't use Z to subset H_star!!! Do so for H_star_samp.
 
     # update Q:
     if (is.null(model_options$Q)){
       if (block_update_Q && constrained){
-        stop("[rewind] 'block_update_Q' and 'constrained' cannot both be TRUE. Set one to FALSE and retry.")}
+        stop("[rewind] 'block_update_Q' and 'constrained' in 'model_options' must NOT be TRUE at the same time. Set one to FALSE and retry.")}
       if (block_update_Q){
         Q <- update_Q_col_block(dat,Q,H_star,z,t,mylist,p,theta,psi)
       } else{
         Q <- update_Q(dat,Q,H_star,z,t,mylist,p,theta,psi,constrained)
       }
-      #Q <- update_Q_no_H(dat,Q,z,t,mylist,p,theta,psi)
-      # if (sum(colSums(H_star)==0)>0){
-      #   Q[colSums(H_star)==0,] <- simulate_Q_dat(sum(colSums(H_star)==0),dat)# # reinitialize if there are unused machines vs sample from prior?. Now we can see
-      # }
     }
-
-    # note that the H_star definition below needs not be repeated if we don't
-    # want to monitor the number of active factors collapsed!
-    #H_star[,rowSums(Q)==0] <- 0          # <--- remove factors with zero rows in Q.
-    H_star <- H_star[,colSums(H_star)!=0,drop=FALSE] # <-- remove no zero columns.
-
-    # merge rows (pseudo clusters to scientific clusters defined by \bEta_j):
-    pat_H_star    <- apply(H_star,1,paste,collapse="")
-    curr_merge    <- merge_map(pat_H_star,unique(pat_H_star)) #<-- can get the mapping from pseudo clusters to scientific clusters.
-    H_star_merge  <- curr_merge$uniq_pat
-    string_merge1 <- NULL
-    if (VERBOSE && nrow(H_star_merge)<nrow(H_star)){
-      string_merge1 <- paste0(">> absorbed ",nrow(H_star)-nrow(H_star_merge)," pseudo clusters, giving ", nrow(H_star_merge), " scientific clusters.\n")
-    }
-    # print(H_star_merge)
-    # print(length(H_star_merge))
-    # H_tmp <- H_star_merge
-    # if(length(H_tmp)>0){
-    # merge columns (combine factors that are present or absent at the same time; partner latent states):
-    string_merge2 <- NULL
-    if (is.null(model_options$Q)){ # only collapse columns of H or Q when Q is unknown.
-      pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
-      curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge)) # <-- can get the mapping from partner machines to final merged machines.
-      H_star_merge  <- t(curr_merge_col$uniq_pat)
-
-      if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
-        string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)," `partner` latent states, giving ", ncol(H_star_merge), " latent states. \n")
-      }
-    }
-    # }else{
-    #   H_star_merge <- matrix(0,nrow=t_max+3,ncol=m_max)
-    # }
-
-    # put the zeros back into H_star.
-    H_star <- H_star_redun[mylist[1:t],,drop=FALSE] # <------ allow zero columns.
-
-    #if(length(H_tmp)>0){
-    if (is.null(model_options$Q)){
-      Q_merge <- merge_Q(Q[colSums(H_star)!=0,,drop=FALSE],curr_merge_col$map)
-    } else{
-      Q_merge <- model_options$Q
-    }
-    #} else{
-    #  Q_merge <- simulate_Q_dat(m_max,dat,0.5)
-    #}
 
     if (VERBOSE){
       cat("\n[rewind] iteration ", iter, ":\n");
       cat("> Latent state profiles for t=",t," pseudo-clusters of sizes: ",N[N!=0],"\n")
       cat("> Merging identical rows (pseudo-clusters) and columns (partner latent states):\n")
       cat(">> H^* Before:\n")
-      print_mat <- H_star[,colSums(H_star)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("pseudo-cluster",rep("",t-1)),1:t,sep=" "); colnames(print_mat) <- paste(c("factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
+      print_mat <- H_star; rownames(print_mat) <- paste(c("pseudo-cluster",rep("",t-1)),1:t,sep=" ");
+      colnames(print_mat) <- paste(c("factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
       print(print_mat) # <-- removed all zero columns.
-      if(!is.null(string_merge1)){cat(string_merge1)}
-      if(!is.null(string_merge2)){cat(string_merge2)}
-      cat(">> H^*: After: \n")
-      if (is.null(model_options$Q)){ # if Q is unknown, we have made t(Q_merge) and H_star_merge to have the same # of columns.
-        print_mat <- H_star_merge[,colSums(H_star_merge)!=0 & rowSums(Q_merge)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("scientific-cluster",rep("",nrow(print_mat)-1)),1:nrow(print_mat),sep=" "); colnames(print_mat) <- paste(c("merged factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
-      } else{ # when Q is known, just discard unused H_star_merge columns.
-        print_mat <- H_star_merge[,colSums(H_star_merge)!=0,drop=FALSE]; rownames(print_mat) <- paste(c("scientific-cluster",rep("",nrow(print_mat)-1)),1:nrow(print_mat),sep=" "); colnames(print_mat) <- paste(c("merged factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
-      }
-      print(print_mat) # removed all zero columns.
       cat("> Finite IBP hyperparameter: alpha = ", alpha,"\n")
-      if (is.null(model_options$Q)){ # need to merge Q if needed.
-        graphics::image(Q[colSums(H_star)!=0,,drop=FALSE],main=paste0("Q matrix at iteration ",iter),col=hmcols)
-        graphics::image(Q_merge[rowSums(Q_merge)!=0,,drop=FALSE],main=paste0("merged Q matrix at iteration ",iter),col=hmcols)
-      }
     }
 
     # update true/false positive rates - theta/psi:
     if (is.null(model_options$theta) && is.null(model_options$psi)){
-      res_update_pr <- update_positive_rate(dat,H_star_samp[z,,iter],Q,a_theta,a_psi)
+      res_update_pr <- update_positive_rate(dat,H_star_redun[z,,drop=FALSE],Q,a_theta,a_psi)
       theta <- res_update_pr$theta
       psi   <- res_update_pr$psi
     }
@@ -741,31 +640,24 @@ sampler <- function(dat,model_options,mcmc_options){
     # update hyperparameter for {p_m}:
     if (is.null(model_options$alpha)){
       alpha <- update_alpha(H_star,t,m_max)
-      alpha_samp[iter] <- alpha
     }
 
     # update prevalence vector {p_m}:
     if (is.null(model_options$p0)){
       p    <- update_prevalence(H_star,alpha,m_max)
-      p_samp[,iter]    <- p
     }
 
     #
     # Record MCMC results:
     #
-    t_samp[iter] <- t
-    for (j in 1:t){
-      N_samp[mylist[j],iter] <- N[mylist[j]]
-    }
-
     if (iter==keepers[keep_index+1]){
-      keep_index <- keep_index +1
-      for (i in 1:n){
-        z_samp[i,keep_index] <- z[i]
-      }
+      keep_index   <- keep_index +1
+      t_samp[keep_index] <- t
+      for (j in 1:t){N_samp[mylist[j],keep_index] <- N[mylist[j]]}
+      p_samp[,keep_index]    <- p
+      H_star_samp[1:t,,keep_index] <- H_star
+      for (i in 1:n){z_samp[i,keep_index] <- z[i]}
       mylist_samp[,keep_index] <- mylist
-      H_star_merge_samp[1:nrow(H_star_merge),1:ncol(H_star_merge),keep_index] <-
-        H_star_merge
       if (is.null(model_options$theta)){
         theta_samp[,keep_index] <- theta # of length L.
       }
@@ -774,15 +666,15 @@ sampler <- function(dat,model_options,mcmc_options){
       }
       if (is.null(model_options$Q)){
         Q_samp[,,keep_index]       <- Q
-        Q_merge_samp[1:nrow(Q_merge),1:ncol(Q_merge),keep_index] <- Q_merge
+      }
+      if (is.null(model_options$alpha)){
+        alpha_samp[keep_index] <- alpha
       }
     }
   }# END mcmc iterations.
 
-  res <- list(t_samp=t_samp,N_samp=N_samp,z_samp=z_samp,keepers=keepers,
+  res <- list(keepers=keepers,t_samp=t_samp,N_samp=N_samp,z_samp=z_samp,
               H_star_samp = H_star_samp,
-              H_star_merge_samp = H_star_merge_samp,
-              alpha_samp=alpha_samp,
               mylist_samp=mylist_samp)
   if (is.null(model_options$theta)){
     res$theta_samp <- theta_samp # of length L.
@@ -792,17 +684,18 @@ sampler <- function(dat,model_options,mcmc_options){
   }
   if (is.null(model_options$Q)){
     res$Q_samp  <- Q_samp
-    res$Q_merge_samp <- Q_merge_samp
-    #res$xi_samp <- xi_samp
   }
   if (is.null(model_options$p0)){
     res$p_samp <- p_samp
+  }
+  if (is.null(model_options$alpha)){
+    res$alpha_samp <- alpha_samp
   }
   res
 }
 
 ##
-##  slice sampler for infinite dimension models:
+##  For slice sampler for infinite dimension models:
 ##
 
 #' compute the log of density of inactive states' probability given

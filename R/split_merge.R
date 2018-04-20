@@ -118,7 +118,8 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
   # ?? i must be different from j?
   log_p <- 0 # variable for log transition probabilities.
   M <- nrow(Q)
-  H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)
+  is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))<1e-3
+  if(is_identity_Q){H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
   for (ks in 1:ns){ # beging iteration over observations in S.
     k <- S[ks]
     if (k!=i && k!=j){
@@ -129,8 +130,13 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
       }
 
       # compute probability to assign observation k to the cluster to which obs i belongs:
-      Li <- log_marginal(rbind(Y[(zsa==cia)[-k],,drop=FALSE],Y[k,]),H_enumerate,Q,p,theta,psi) - log_marginal(Y[(zsa==cia)[-k],,drop=FALSE],H_enumerate,Q,p,theta,psi) # from restaurant process.
-      Lj <- log_marginal(rbind(Y[(zsa==cja)[-k],,drop=FALSE],Y[k,]),H_enumerate,Q,p,theta,psi) - log_marginal(Y[(zsa==cja)[-k],,drop=FALSE],H_enumerate,Q,p,theta,psi)
+      if (!is_identity_Q){
+        Li <- log_marginal(rbind(Y[(zsa==cia)[-k],,drop=FALSE],Y[k,]),H_enumerate,Q,p,theta,psi) - log_marginal(Y[(zsa==cia)[-k],,drop=FALSE],H_enumerate,Q,p,theta,psi) # from restaurant process.
+        Lj <- log_marginal(rbind(Y[(zsa==cja)[-k],,drop=FALSE],Y[k,]),H_enumerate,Q,p,theta,psi) - log_marginal(Y[(zsa==cja)[-k],,drop=FALSE],H_enumerate,Q,p,theta,psi)
+      }else{
+        Li <- log_marginal_Q_identity(rbind(Y[(zsa==cia)[-k],,drop=FALSE],Y[k,]),p,theta,psi) - log_marginal_Q_identity(Y[(zsa==cia)[-k],,drop=FALSE],p,theta,psi) # from restaurant process.
+        Lj <- log_marginal_Q_identity(rbind(Y[(zsa==cja)[-k],,drop=FALSE],Y[k,]),p,theta,psi) - log_marginal_Q_identity(Y[(zsa==cja)[-k],,drop=FALSE],p,theta,psi)
+      }
       Pi <- exp(log(ni+b)+Li- matrixStats::logSumExp(c(log(ni+b)+Li,log(nj+b)+Lj))) # the (ni+b) also comes from restaurant process.
 
       # if we need to update the assignment indicators:
@@ -181,13 +187,16 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
   # for non-conjugate sampler, there needs to be n_merge
   n <- nrow(Y)
   M <- nrow(Q)
-  H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)
+  is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))<1e-3
+  if(is_identity_Q){H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
   # randomly choose a pair of indices:
   rand_pair <- sample(n,2,replace=FALSE)
   i <- rand_pair[1]
   j <- rand_pair[2]
   ci0 <- z[i]
   cj0 <- z[j] # original states.
+
+
 
   # set S[1],...,S[ns] to the indices of the observations in clusters ci0 and cj0:
   ns <- 0
@@ -249,8 +258,13 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
     # compute MH acceptance probability
     log_prior_b <- log_v[t+1]+lgamma(ni+b)+lgamma(nj+b)-2*lgamma(b)
     log_prior_a <- log_v[t] + lgamma(ns+b)-lgamma(b)
-    log_lik_ratio <- log_marginal(Y[zs==ci,,drop=FALSE],H_enumerate,Q,p,theta,psi)+log_marginal(Y[zs==cj,,drop=FALSE],H_enumerate,Q,p,theta,psi)-
-      log_marginal(Y[z==ci0,,drop=FALSE],H_enumerate,Q,p,theta,psi)
+    if (!is_identity_Q){
+      log_lik_ratio <- log_marginal(Y[zs==ci,,drop=FALSE],H_enumerate,Q,p,theta,psi)+log_marginal(Y[zs==cj,,drop=FALSE],H_enumerate,Q,p,theta,psi)-
+        log_marginal(Y[z==ci0,,drop=FALSE],H_enumerate,Q,p,theta,psi)
+    } else{
+      log_lik_ratio <- log_marginal_Q_identity(Y[zs==ci,,drop=FALSE],p,theta,psi)+log_marginal_Q_identity(Y[zs==cj,,drop=FALSE],p,theta,psi)-
+        log_marginal_Q_identity(Y[z==ci0,,drop=FALSE],p,theta,psi)
+    }
     p_accept <- min(1,exp(log_prop_ba-log_prop_ab+log_prior_b-log_prior_a+log_lik_ratio))
 
     # accept or reject:
@@ -279,8 +293,14 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
     # compute acceptance probability:
     log_prior_b <- log_v[t-1]+lgamma(ns+b)-lgamma(b)
     log_prior_a <- log_v[t]+lgamma(ni+b)+lgamma(nj+b)-2*lgamma(b)
-    log_lik_ratio <- log_marginal(Y[S,,drop=FALSE],H_enumerate,Q,p,theta,psi) -
-      log_marginal(Y[z==ci0,,drop=FALSE],H_enumerate,Q,p,theta,psi)-log_marginal(Y[z==cj0,,drop=FALSE],H_enumerate,Q,p,theta,psi) # computed for original (not launch state) and proposed states.
+    if (!is_identity_Q){
+      log_lik_ratio <- log_marginal(Y[S,,drop=FALSE],H_enumerate,Q,p,theta,psi) -
+        log_marginal(Y[z==ci0,,drop=FALSE],H_enumerate,Q,p,theta,psi)-log_marginal(Y[z==cj0,,drop=FALSE],H_enumerate,Q,p,theta,psi) # computed for original (not launch state) and proposed states.
+    } else{
+      log_lik_ratio <- log_marginal_Q_identity(Y[S,,drop=FALSE],p,theta,psi) -
+        log_marginal_Q_identity(Y[z==ci0,,drop=FALSE],p,theta,psi)-log_marginal_Q_identity(Y[z==cj0,,drop=FALSE],p,theta,psi) # computed for original (not launch state) and proposed states.
+
+    }
     p_accept <- min(1,log_prop_ba-log_prop_ab+log_prior_b-log_prior_a+log_lik_ratio)
 
     #accept or reject:

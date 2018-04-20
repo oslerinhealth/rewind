@@ -44,8 +44,3 @@ library(rewind)
 example(sampler)
 ```
 
-- 2. binary factor analysis with **unknown # of factors** but unknown # of clusters
-```r
-library(rewind)
-example(slice_sampler)
-```
