@@ -119,7 +119,7 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
   log_p <- 0 # variable for log transition probabilities.
   M <- nrow(Q)
   is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))<1e-3
-  if(is_identity_Q){H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
+  if(!is_identity_Q){H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
   for (ks in 1:ns){ # beging iteration over observations in S.
     k <- S[ks]
     if (k!=i && k!=j){
@@ -188,7 +188,7 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
   n <- nrow(Y)
   M <- nrow(Q)
   is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))<1e-3
-  if(is_identity_Q){H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
+  if(!is_identity_Q){H_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
   # randomly choose a pair of indices:
   rand_pair <- sample(n,2,replace=FALSE)
   i <- rand_pair[1]

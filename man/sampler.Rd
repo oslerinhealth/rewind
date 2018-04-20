@@ -137,8 +137,8 @@ model_options0 <- list(
   b  = 1, # Dirichlet hyperparameter; in the functions above,
   # we used "b" - also can be called "gamma"!.
   #Q  = simu$Q,
-  a_theta = c(9,1),
-  a_psi   = c(1,9),
+  a_theta = replicate(L0, c(9,1)),
+  a_psi   = replicate(L0, c(1,9)),
   #theta = options_sim0$theta,
   #psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
