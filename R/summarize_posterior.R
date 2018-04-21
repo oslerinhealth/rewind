@@ -224,6 +224,8 @@ plot_individual_pred <- function(p_samp,state_nm,thedata,...){
 #' @param z_pseudo Default is \code{NULL}.
 #' A vector of pseudo-cluster indicators to be merged into
 #' scientific cluster indicators \code{z_sci}.
+#' @param skip_Q Default is \code{FALSE} - merge Q rows with partner states;
+#' Set to \code{TRUE} if \code{Q} is given.
 #'
 #' @return A list comprised of two elements named:
 #' \code{H_star_merge} and \code{Q_merge} and \code{z_sci} if \code{z_pseudo}
@@ -248,11 +250,11 @@ plot_individual_pred <- function(p_samp,state_nm,thedata,...){
 #' z_pseudo <- c(1,1,3,5,2,2,2,1,3,3,5,1,2,2,1)
 #' merge_H_Q(H_star_redun,mylist,t,Q,TRUE,z_pseudo)
 #'
-merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL){
+merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q=FALSE){
   H_star  <- H_star_redun[mylist[1:t],,drop=FALSE] #<-- focus on Eta vectors
   # associated with a pseudo-cluster;
   ind_zero_col <- which(colSums(H_star)==0)
-  if (sum(H_star)>0 && length(ind_zero_col)>0){H_star <- H_star[,-ind_zero_col]}
+  if (nrow(H_star)>1 && sum(H_star)>0 && length(ind_zero_col)>0){H_star <- H_star[,-ind_zero_col]} #<<<<- removed zero columns here.
   # merge rows (pseudo clusters to scientific clusters defined by \bEta_j):
   pat_H_star    <- apply(H_star,1,paste,collapse="")
   curr_merge    <- merge_map(pat_H_star,unique(pat_H_star))
@@ -286,19 +288,64 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL){
     string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)+1,"` partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
     cat(string_merge2)
   }
-  if (length(ind_zero_col)>0){
+  if (!skip_Q){
+    if (nrow(H_star)>1 && length(ind_zero_col)>0){
+      Q_merge <- merge_Q(Q[-ind_zero_col,],curr_merge_col$map)
+    } else {
+      Q_merge <- merge_Q(Q,curr_merge_col$map)
+    }
+    if (!is.null(z_pseudo)){
+      return(list(H_star_merge=H_star_merge, Q_merge=Q_merge,z_sci=z_sci))
+    } else{
+      return(list(H_star_merge=H_star_merge, Q_merge=Q_merge))
+    }
+  } else{
+    return(list(H_star_merge=H_star_merge, z_sci=z_sci))
+  }
+}
+
+#' Merge redundant H_star by column
+#'
+#' This function removes zero columns if thre are more than two rows in H_star
+#' and if \code{H_star_redun} is not trivially all zero
+#'
+#' @param H_star_redun A binary matrix of rows \code{t_max+3} by \code{m_max};
+#' It may be redundant because it has rows corresponding to empty pseudo-clusters,
+#' and if the entire matrix is non-zero, the zero columns mean inactive latent states
+#' @param Q Q-matrix - needs to be merged according to H_star_redun.
+#' @param VERBOSE Default to \code{FALSE}: no print of the merged matrices; Otherwise
+#' set to \code{TRUE}.
+#'
+#' @return a list of one element named \code{H_star_merge}
+#' @export
+#'
+#' @examples
+merge_H_col <- function(H_star_redun,Q, VERBOSE=FALSE){
+  #H_star_redun <- out$H_star_samp[,,56]
+  H_star  <- H_star_redun #<-- focus on Eta vectors
+  # associated with a pseudo-cluster;
+  ind_zero_col <- which(colSums(H_star)==0)
+  if (nrow(H_star)>1 && sum(H_star)>0 && length(ind_zero_col)>0){H_star <- H_star[,-ind_zero_col]} #<<<<- removed zero columns here.
+
+  # merge columns (combine factors that are present or absent at the same time;
+  # partner latent states):
+  pat_H_star_merge <- apply(t(H_star),1,paste,collapse="")
+  curr_merge_col <- merge_map(pat_H_star_merge,unique(pat_H_star_merge))
+  # <-- can get the mapping from partner machines to final merged machines.
+  H_star_merge  <- t(curr_merge_col$uniq_pat)
+  string_merge2 <- NULL
+  if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
+    string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)+1,"` partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
+    cat(string_merge2)
+  }
+  if (nrow(H_star)>1 && length(ind_zero_col)>0){
     Q_merge <- merge_Q(Q[-ind_zero_col,],curr_merge_col$map)
   } else {
     Q_merge <- merge_Q(Q,curr_merge_col$map)
   }
-  if (!is.null(z_pseudo)){
-    return(list(H_star_merge=H_star_merge, Q_merge=Q_merge,z_sci=z_sci))
-  } else{
-    return(list(H_star_merge=H_star_merge, Q_merge=Q_merge))
-  }
+
+  return(list(H_star_merge=H_star_merge,Q_merge=Q_merge))
 }
-
-
 
 #' Merge mapping
 #'

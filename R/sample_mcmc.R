@@ -656,7 +656,7 @@ sampler <- function(dat,model_options,mcmc_options){
       t_samp[keep_index] <- t
       for (j in 1:t){N_samp[mylist[j],keep_index] <- N[mylist[j]]}
       p_samp[,keep_index]    <- p
-      H_star_samp[mylist[1:t],,keep_index] <- H_star # <-- need fix.
+      H_star_samp[mylist[1:t],,keep_index] <- H_star # <-- okay, insert H_star at places indicated by mylist.
       for (i in 1:n){z_samp[i,keep_index] <- z[i]}
       mylist_samp[,keep_index] <- mylist
       if (is.null(model_options$theta)){

@@ -180,6 +180,7 @@ out <- sampler(simu_dat,model_options0,mcmc_options0)
 n_kept <- dim(out$H_star_samp)[3]
 Q_merge_samp <- array(0,c(model_options0$m_max,dim(out$Q_samp)[2],n_kept))
 H_star_merge_samp <- array(0,c(dim(out$H_star_samp)[1],model_options0$m_max,n_kept))
+col_merged_H_star_samp <- H_star_merge_samp
 z_sci_samp <- matrix(0,nrow=dim(out$z_samp)[1],ncol=n_kept)
 for (iter in 1:n_kept){
   merged_res <- merge_H_Q(out$H_star_samp[,,iter],
@@ -193,11 +194,12 @@ for (iter in 1:n_kept){
   H_star_merge_samp[1:nrow(merged_H),1:ncol(merged_H),iter] <- merged_H
   Q_merge_samp[1:nrow(merged_Q),1:ncol(merged_Q),iter]      <- merged_Q
   z_sci_samp[,iter]    <- merged_res$z_sci
+  col_merged_H_star_samp[,1:ncol(merged_H),iter] <- merge_H_col(out$H_star_samp[,,iter])$H_star_merge # <-- may still have extra zeros.
 }
 out$H_star_merge_samp <- H_star_merge_samp # <-- could have zero columns.
 out$Q_merge_samp      <- Q_merge_samp # <-- could have zero rows.
 out$z_sci_samp        <- z_sci_samp # <-- add scientific indicators.
-
+out$col_merged_H_star_samp <- col_merged_H_star_samp
 
 #Z_SAMP_FOR_PLOT <- out$z_samp  # <---- use pseudo-indicators for co-clustering.
                                 # tend to be more granular.
@@ -402,6 +404,7 @@ legend("center",legend = c(1,0),col=c("#092D94","#FFFFD9"),
        pch=c(15,15),cex=3,bty="n")
 dev.off()
 
+
 #
 # visualize the individual latent states depending on whether Q is known or not.
 #
@@ -410,7 +413,7 @@ if (!is.null(model_options0$Q)){
   H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=dim(out$H_star_merge_samp)[3])
   for (l in 1:dim(out$H_star_merge_samp)[3]){
     tmp_mylist <- out$mylist_samp[,l]
-    tmp0 <- out$H_star_merge_samp[match(out$z_samp[,l],tmp_mylist),,l]
+    tmp0 <- out$H_star_merge_samp[match(out$z_samp[,l],tmp_mylist),,l] #<------ wrong!!!
     tmp1 <- tmp0[,colSums(tmp0)!=0,drop=FALSE]
     tmp <- tmp1[,order_mat_byrow(model_options0$Q[rowSums(model_options0$Q)!=0,,drop=FALSE])$ord,drop=FALSE]
     H_pat_res[,l] <- bin2dec_vec(tmp,LOG=FALSE)

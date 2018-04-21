@@ -4,7 +4,8 @@
 \alias{merge_H_Q}
 \title{Merge latent state profile matrix (H_star) and Q matrix}
 \usage{
-merge_H_Q(H_star_redun, mylist, t, Q, VERBOSE = FALSE, z_pseudo = NULL)
+merge_H_Q(H_star_redun, mylist, t, Q, VERBOSE = FALSE, z_pseudo = NULL,
+  skip_Q = FALSE)
 }
 \arguments{
 \item{H_star_redun}{A binary matrix of rows \code{t_max+3} by \code{m_max};
@@ -20,10 +21,18 @@ integers that need not be consecutive.}
 
 \item{VERBOSE}{Default to \code{FALSE}: no print of the merged matrices; Otherwise
 set to \code{TRUE}.}
+
+\item{z_pseudo}{Default is \code{NULL}.
+A vector of pseudo-cluster indicators to be merged into
+scientific cluster indicators \code{z_sci}.}
+
+\item{skip_Q}{Default is \code{FALSE} - merge Q rows with partner states;
+Set to \code{TRUE} if \code{Q} is given.}
 }
 \value{
 A list comprised of two elements named:
-\code{H_star_merge} and \code{Q_merge}.
+\code{H_star_merge} and \code{Q_merge} and \code{z_sci} if \code{z_pseudo}
+is provided.
 }
 \description{
 This function
