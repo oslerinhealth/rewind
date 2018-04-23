@@ -4,14 +4,12 @@
 \alias{merge_H_col}
 \title{Merge redundant H_star by column}
 \usage{
-merge_H_col(H_star_redun, Q, VERBOSE = FALSE)
+merge_H_col(H_star_redun, VERBOSE = FALSE)
 }
 \arguments{
 \item{H_star_redun}{A binary matrix of rows \code{t_max+3} by \code{m_max};
 It may be redundant because it has rows corresponding to empty pseudo-clusters,
 and if the entire matrix is non-zero, the zero columns mean inactive latent states}
-
-\item{Q}{Q-matrix - needs to be merged according to H_star_redun.}
 
 \item{VERBOSE}{Default to \code{FALSE}: no print of the merged matrices; Otherwise
 set to \code{TRUE}.}
@@ -22,4 +20,20 @@ a list of one element named \code{H_star_merge}
 \description{
 This function removes zero columns if thre are more than two rows in H_star
 and if \code{H_star_redun} is not trivially all zero
+}
+\examples{
+
+# the third latent state is inactive among non-empty pseudo-clusters;
+# the 2nd and 4th latent states are partners.
+# merge 1 and 2 pseudo-clusters.
+ H_star_redun <- matrix(c(0,1,0,1,
+                          0,1,0,1,
+                          1,0,0,0,
+                          0,0,0,0,
+                          0,0,0,0,
+                          0,0,0,0,
+                          0,0,0,0),nrow=7,ncol=4,byrow=TRUE)
+Q <- simulate_Q(4,100,p=0.1)
+merge_H_col(H_star_redun,TRUE)
+
 }

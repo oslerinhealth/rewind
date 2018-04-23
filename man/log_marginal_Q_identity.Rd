@@ -9,13 +9,12 @@ log_marginal_Q_identity(Y, p, theta, psi)
 \arguments{
 \item{Y}{the data for the current cluster (a subset of observations.)}
 
-\item{p}{prevalence parameter for each machine; should be a vector of dimension M.}
+\item{p}{prevalence parameter for each machine; should be a vector of dimension
+M=L.}
 
 \item{theta}{true positive rates}
 
 \item{psi}{true positive rates}
-
-\item{eta_star_enumerate}{fixed binary matrix of 2^M rows and M columns. Need to be prespecified.}
 }
 \value{
 log of marginal likelihood given other model parameters.
@@ -30,9 +29,9 @@ rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each ma
 # simulate data:
 L0 <- 100
 options_sim0  <- list(N = 200,  # sample size.
-                     M = 3,   # true number of machines.
-                     L = L0,   # number of antibody landmarks.
-                     K = 8,    # number of true components.,
+                      M = 3,   # true number of machines.
+                      L = L0,   # number of antibody landmarks.
+                      K = 8,    # number of true components.,
                      theta = rep(0.8,L0), # true positive rates
                      psi   = rep(0.01,L0), # false positive rates
                      alpha1 = 1 # half of the people have the first machine.
@@ -42,12 +41,10 @@ options_sim0  <- list(N = 200,  # sample size.
  simu_dat <- simu$datmat
  Y <- simu_dat
  Q <- simu$Q
- p <- c(0.5,0.25,0.1,0.02,0.05)
+ p <- rep(0.5,L0) #<----- M must equal L.
  theta <- options_sim0$theta
  psi   <- options_sim0$psi
- H_enumerate <- as.matrix(expand.grid(rep(list(0:1), options_sim0$M)),ncol=options_sim0$M)
 
-#log_marginal0(Y, Q, p, theta, psi)
 log_marginal_Q_identity(Y, p, theta, psi) # <-- this is the Rcpp implementation.
 
 }

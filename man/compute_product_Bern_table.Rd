@@ -19,5 +19,5 @@ Compute the product Bernoulli probability table
 }
 \examples{
 
-compute_table(c(0.1,0.2,0.3,0.4))
+compute_product_Bern_table(c(0.1,0.2,0.3,0.4))
 }

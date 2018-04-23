@@ -1,4 +1,4 @@
-#\dontrun{
+\dontrun{
 rm(list=ls())
 library(rewind)
 library(matrixStats)
@@ -169,7 +169,7 @@ bmf.cb <- credibleball(bmf.VI$cl[1,],t(Z_SAMP_FOR_PLOT))
 
 # plot 3:
 image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(bmf.cb$c.horiz),col=hmcols,
+      z2comat(bmf.cb$c.horiz[1,]),col=hmcols,
       main="Wade credible ball - horizontal")
 
 for (k in 1:options_sim0$K){
@@ -236,10 +236,11 @@ ind_of_Q       <- which(Q_Em==min(Q_Em))
 
 f <- function(m) t(m)[,nrow(m):1]
 
+
 #
 # visualize truth: <------------------ IMPORTANT!
 #
-pdf("bmf_truth.pdf",width=12,height=6)
+pdf(file.path("inst/example_figure/","bmf_truth.pdf"),width=12,height=6)
 par(mfcol=c(4,1),tcl=-0.5,
     mai=c(0.7,0.7,0.3,0.3))
 
@@ -367,7 +368,6 @@ if (!is.null(model_options0$Q)){
   # issues: the order of the rows of Q at ind_of_Q might be different, so need to order them.
 }
 
-
 # population quantities: <---------------- important in childhood pneumonia examples.
 compute_table <- function(p){
   M <- length(p)
@@ -383,7 +383,7 @@ plot(eti_samp_mean,type="h")
 pat <-  as.matrix(expand.grid(rep(list(0:1),model_options0$m_max)),
                   ncol=model_options0$m_max)
 
-pdf("population_fraction.pdf",height=6,width=8)
+pdf(file.path("inst/example_figure/","population_fraction.pdf"),height=6,width=8)
 plot(rep(1:nrow(pat), each = ncol(pat)),
      rep(-rev(1:ncol(pat)), nrow(pat)),
      axes = FALSE, ann = FALSE,
@@ -434,21 +434,16 @@ dev.off()
 plot(out$t_samp,type="l",ylab="T: #pseudo-clusters")
 
 ## individual predictions:
-pdf("individual_pred_simulation.pdf",height=15,width=12)
+pdf(file.path("inst/example_figure/","individual_pred_simulation.pdf"),height=15,width=12)
 par(mar=c(2,8,8,0),mfrow=c(2,1),oma=c(5,5,5,5))
 for (i in 1:nrow(simu_dat)){
   plot_individual_pred(apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]]),
                        1:model_options0$m_max,
-                       simu_dat[i,,drop=FALSE],asp=0.5)
+                       simu_dat[i,,drop=FALSE],paste0("Obs ", i),asp=0.5)
 }
 dev.off()
 
-
-
-
-
-
-#}
+}
 
 
 

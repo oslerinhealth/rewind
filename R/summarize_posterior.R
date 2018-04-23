@@ -69,7 +69,7 @@ z2comat <- function(z){ # for Dahl (2006): simple least square approach to estim
 #'
 #' @examples
 #'
-#' compute_table(c(0.1,0.2,0.3,0.4))
+#' compute_product_Bern_table(c(0.1,0.2,0.3,0.4))
 compute_product_Bern_table <- function(p,LOG=TRUE){
   M <- length(p)
   pat <- as.matrix(expand.grid(rep(list(0:1),M)),ncol=M)
@@ -91,7 +91,7 @@ compute_product_Bern_table <- function(p,LOG=TRUE){
 #' @return a figure with population etiology fraction information (
 #' NB: need to add more info.)
 #' @export
-#' @import stats
+#' @import stats graphics
 plot_population_fractions <- function(p_samp,state_nm){
   M <- nrow(p_samp)
   log_eti_samp  <- apply(p_samp,2,compute_product_Bern_table)
@@ -158,13 +158,15 @@ plot_population_fractions <- function(p_samp,state_nm){
 #' @param p_samp A vector of posterior probabilities for each individual
 #' @param state_nm A string vector for the names of the latent state dimensions
 #' @param thedata a vector of binary measurements for a subject; of identical
+#' @param whoisthis a character string, e.g., subject name.
+#' @param ... other parameters for adjusting the individual plots.
 #' length to `state_nm`
 #'
 #' @return a figure with population etiology fraction information (
 #' NB: need to add more info.)
 #' @export
-#' @import stats
-plot_individual_pred <- function(p_samp,state_nm,thedata,...){
+#' @import stats graphics
+plot_individual_pred <- function(p_samp,state_nm,thedata,whoisthis,...){
   # p_samp = apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]])
   # state_nm = analysis_list
   # thedata = dat_rlcm_case[i,,drop=FALSE]
@@ -178,7 +180,7 @@ plot_individual_pred <- function(p_samp,state_nm,thedata,...){
   multiplier <- 2
   mycex      <- 1.5
   plot(rep(1:nrow(pat), each = M),
-       rep(-rev(1:M), nrow(pat)),
+       rep(-(1:M), nrow(pat)),
        axes = FALSE, ann = FALSE,
        pch = ifelse(t(pat), 19, 1), cex = mycex, xpd = NA,lwd=0.2,
        col = rep(c("grey","black")[1+(1:nrow(pat))%in%match(as.numeric(names(p_samp)),round(exp(bin2dec_vec(pat))))],
@@ -186,7 +188,7 @@ plot_individual_pred <- function(p_samp,state_nm,thedata,...){
   # mtext(expression(paste("Individual Etiology Fractions by Infection Patterns (P{",
   #                        eta[i],"=",eta,"|Data})",
   #                        collapse="")),side = 3,line=-3)
-  points(rep(-1,M),-rev(1:M),pch = ifelse(t(matrix(thedata,nrow=1)), 19, 1), cex = mycex,lwd=0.2,
+  points(rep(-1,M),-(1:M),pch = ifelse(t(matrix(thedata,nrow=1)), 19, 1), cex = mycex,lwd=0.2,
          col="blue")
   axis(2,at=-rev(1:M),
        labels=state_nm,las=2,xpd = NA,cex.axis=mycex)
@@ -195,11 +197,10 @@ plot_individual_pred <- function(p_samp,state_nm,thedata,...){
   axis(2,at=M*c(0,0.25,0.5,1)*multiplier,
        labels=c(0,0.25,0.5,1),las=2,xpd = NA)
 
-  mtext(expression(paste("P{",
-                         eta[i],"=",eta,"|Data}",
-                         collapse="")),side = 3,line=0,cex=2)
-  legend("topright",legend = c("95% CI","50% CI"),col=c("black","dodgerblue2"),lwd=c(1,4),
-         bty="n")
+  thetitle <- bquote(paste(.(whoisthis),": P{",
+                                eta[i],"=",eta,"|Data}",
+                                collapse=""))
+  mtext(thetitle,side = 3,line=0,cex=2)
 }
 
 
@@ -249,6 +250,8 @@ plot_individual_pred <- function(p_samp,state_nm,thedata,...){
 #' Q <- simulate_Q(4,100,p=0.1)
 #' z_pseudo <- c(1,1,3,5,2,2,2,1,3,3,5,1,2,2,1)
 #' merge_H_Q(H_star_redun,mylist,t,Q,TRUE,z_pseudo)
+#'
+#' # if all zero columns in H_star exists, they will be ignored.
 #'
 merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q=FALSE){
   H_star  <- H_star_redun[mylist[1:t],,drop=FALSE] #<-- focus on Eta vectors
@@ -312,7 +315,6 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
 #' @param H_star_redun A binary matrix of rows \code{t_max+3} by \code{m_max};
 #' It may be redundant because it has rows corresponding to empty pseudo-clusters,
 #' and if the entire matrix is non-zero, the zero columns mean inactive latent states
-#' @param Q Q-matrix - needs to be merged according to H_star_redun.
 #' @param VERBOSE Default to \code{FALSE}: no print of the merged matrices; Otherwise
 #' set to \code{TRUE}.
 #'
@@ -320,7 +322,21 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
 #' @export
 #'
 #' @examples
-merge_H_col <- function(H_star_redun,Q, VERBOSE=FALSE){
+#'
+#'# the third latent state is inactive among non-empty pseudo-clusters;
+#'# the 2nd and 4th latent states are partners.
+#'# merge 1 and 2 pseudo-clusters.
+#'  H_star_redun <- matrix(c(0,1,0,1,
+#'                           0,1,0,1,
+#'                           1,0,0,0,
+#'                           0,0,0,0,
+#'                           0,0,0,0,
+#'                           0,0,0,0,
+#'                           0,0,0,0),nrow=7,ncol=4,byrow=TRUE)
+#' Q <- simulate_Q(4,100,p=0.1)
+#' merge_H_col(H_star_redun,TRUE)
+#'
+merge_H_col <- function(H_star_redun,VERBOSE=FALSE){
   #H_star_redun <- out$H_star_samp[,,56]
   H_star  <- H_star_redun #<-- focus on Eta vectors
   # associated with a pseudo-cluster;
@@ -338,13 +354,14 @@ merge_H_col <- function(H_star_redun,Q, VERBOSE=FALSE){
     string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)+1,"` partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
     cat(string_merge2)
   }
-  if (nrow(H_star)>1 && length(ind_zero_col)>0){
-    Q_merge <- merge_Q(Q[-ind_zero_col,],curr_merge_col$map)
-  } else {
-    Q_merge <- merge_Q(Q,curr_merge_col$map)
-  }
+  # if (nrow(H_star)>1 && length(ind_zero_col)>0){
+  #   Q_merge <- merge_Q(Q[-ind_zero_col,],curr_merge_col$map)
+  # } else {
+  #   Q_merge <- merge_Q(Q,curr_merge_col$map)
+  # }
 
-  return(list(H_star_merge=H_star_merge,Q_merge=Q_merge))
+  #return(list(H_star_merge=H_star_merge,Q_merge=Q_merge))
+  return(list(H_star_merge=H_star_merge))
 }
 
 #' Merge mapping

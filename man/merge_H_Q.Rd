@@ -60,4 +60,6 @@ Q <- simulate_Q(4,100,p=0.1)
 z_pseudo <- c(1,1,3,5,2,2,2,1,3,3,5,1,2,2,1)
 merge_H_Q(H_star_redun,mylist,t,Q,TRUE,z_pseudo)
 
+# if all zero columns in H_star exists, they will be ignored.
+
 }

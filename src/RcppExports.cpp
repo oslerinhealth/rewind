@@ -62,15 +62,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // log_marginal_Q_identity
-double log_marginal_Q_identity(NumericMatrix Y, NumericVector p, NumericVector theta, NumericVector psi);
+double log_marginal_Q_identity(arma::mat Y, arma::vec p, arma::vec theta, arma::vec psi);
 RcppExport SEXP _rewind_log_marginal_Q_identity(SEXP YSEXP, SEXP pSEXP, SEXP thetaSEXP, SEXP psiSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type psi(psiSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type p(pSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type psi(psiSEXP);
     rcpp_result_gen = Rcpp::wrap(log_marginal_Q_identity(Y, p, theta, psi));
     return rcpp_result_gen;
 END_RCPP

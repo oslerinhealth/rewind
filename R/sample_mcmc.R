@@ -362,6 +362,9 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' model_options0$gamma,
 #' model_options0$n,
 #' model_options0$t_max+1)}
+#' \item \code{the_partition} Put a vector of z here if not to update
+#' the partition/clustering. The z must be 1) from 1 to t, which is
+#' the number of groups, 2) consecutive from 1 to t.
 #' }
 #' The following are used if one needs to pre-specify a few unknown parameters to
 #' their respective true or other values
@@ -424,6 +427,12 @@ sampler <- function(dat,model_options,mcmc_options){
   # mcmc_options  <- mcmc_options0
   # # <<<<------ end of testing data.
 
+  # # <<<<------ testing data:
+  # dat <- simu_dat
+  # model_options <- model_options_refit_given_partition
+  # mcmc_options  <- mcmc_options_refit_given_partition
+  # # <<<<------ end of testing data.
+
   n <- nrow(dat) # number of observations
   L <- ncol(dat) # number of dimensions (e.g.,protein landmarks).
 
@@ -433,10 +442,12 @@ sampler <- function(dat,model_options,mcmc_options){
   keep_index <- 0                 # the index to keep during MCMC inference.
   n_split    <- mcmc_options$n_split # number of intermediate GS scan to arrive at launch state.
 
+  do_update_partition <- is.null(model_options$the_partition)
   block_update_Q <- !is.null(mcmc_options$block_update_Q) && mcmc_options$block_update_Q # TRUE for updating columns of Q. FALSE otherwise.
   block_update_H <- !is.null(mcmc_options$block_update_H) && mcmc_options$block_update_H # TRUE for updating rows of H. FALSE otherwise.
   constrained    <- !is.null(mcmc_options$constrained) && mcmc_options$constrained
   hmcols <- mcmc_options$hmcols
+
 
   # set options (need to fill in as specific paramters are needed):
   t_max <- model_options$t_max # maximum allowable number of clusters.
@@ -457,6 +468,8 @@ sampler <- function(dat,model_options,mcmc_options){
   if (is.null(model_options$Q) | block_update_H){ # <-- if Q may be non-diagonal; or if we block update H.
     H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_max)),ncol=m_max) # all binary patterns for latent state profiles. 2^m_max of them.
   }
+
+
   # initialize the sampling chain:
   t <- 1        # number of clusters.
   z <- rep(1,n) # z[i] is the cluster ID for observation i.
@@ -510,66 +523,80 @@ sampler <- function(dat,model_options,mcmc_options){
     alpha    <- model_options$alpha # fix alpha.
   }
 
+  if (!do_update_partition){
+    z <- model_options$the_partition #<-- must be from 1 to the total number of clusters.
+    t <- length(unique(z))
+    # recommend using the best scientific cluster indicators
+    # after an initial fit without knowing the partition.
+    mylist[1:t] <- 1:t
+  }
+
   cat("[rewind] Begin MCMC for model with #latent states (M =", m_max, ")\n")
   if(!is.null(model_options$Q) && is_identity_Q){cat("> identity Q.\n")}
   for (iter in 1:n_total){
     VERBOSE <- iter%%mcmc_options$print_mod==0
-    # update cluster indicators z for all subjects - one complete Gibbs scan to refine clusters:
-    for (i in 1:n){ # iterate over subjects:
-      # remove obs i from its current cluster:
-      c    <- z[i]
-      N[c] <- N[c]-1
-      if (N[c]>0){ # if there are observations left after removal of i, use c_next:
-        c_prop <- c_next
-      } else{# if i was by itself, use its cluster ID again.
-        c_prop <- c
-        mylist <- ordered_remove(c,mylist,t)
-        t <- t-1 # total number of clusters is now reduced by one.
-      }
-      # compute probability for Gibbs updating - the probability of assigning a subject
-      # to a cluster.
-
-      if (is.null(is_identity_Q)){
-        for (j in 1:t){
-          cc       <- mylist[j]
-          log_p[j] <- log_Nb[N[cc]]+log_marginal(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),H_star_enumerate,Q,p,theta,psi)-
-            log_marginal(dat[(z==cc)[-i],,drop=FALSE],H_star_enumerate,Q,p, theta,psi) # existing cluster.
+    if (!do_update_partition){
+      N <- sapply(1:t,function(uu){sum(z==uu)})
+    }else{
+      # update cluster indicators z for all subjects - one complete Gibbs scan to refine clusters:
+      for (i in 1:n){ # iterate over subjects:
+        # remove obs i from its current cluster:
+        c    <- z[i]
+        N[c] <- N[c]-1
+        if (N[c]>0){ # if there are observations left after removal of i, use c_next:
+          c_prop <- c_next
+        } else{# if i was by itself, use its cluster ID again.
+          c_prop <- c
+          mylist <- ordered_remove(c,mylist,t)
+          t <- t-1 # total number of clusters is now reduced by one.
         }
-        log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],H_star_enumerate,Q,p,theta,psi) # new cluster.
-      } else{
-        if (is_identity_Q){
+        # compute probability for Gibbs updating - the probability of assigning a subject
+        # to a cluster.
+
+        if (is.null(is_identity_Q)){
           for (j in 1:t){
             cc       <- mylist[j]
-            log_p[j] <- log_Nb[N[cc]]+log_marginal_Q_identity(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),p,theta,psi)-
-              log_marginal_Q_identity(dat[(z==cc)[-i],,drop=FALSE],p, theta,psi) # existing cluster.
+            log_p[j] <- log_Nb[N[cc]]+log_marginal(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),H_star_enumerate,Q,p,theta,psi)-
+              log_marginal(dat[(z==cc)[-i],,drop=FALSE],H_star_enumerate,Q,p, theta,psi) # existing cluster.
           }
-          log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal_Q_identity(dat[i,,drop=FALSE],p,theta,psi) # new cluster.
+          log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],H_star_enumerate,Q,p,theta,psi) # new cluster.
+        } else{
+          if (is_identity_Q){
+            for (j in 1:t){
+              cc       <- mylist[j]
+              log_p[j] <- log_Nb[N[cc]]+log_marginal_Q_identity(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),p,theta,psi)-
+                log_marginal_Q_identity(dat[(z==cc)[-i],,drop=FALSE],p, theta,psi) # existing cluster.
+            }
+            log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal_Q_identity(dat[i,,drop=FALSE],p,theta,psi) # new cluster.
+          }
         }
-      }
-      j <- sample(t+1,1,prob = exp(log_p[1:(t+1)]))
+        j <- sample(t+1,1,prob = exp(log_p[1:(t+1)]))
 
-      # add obs i to its new cluster:
-      if (j<=t){
-        c <- mylist[j]
-      } else{
-        c      <- c_prop
-        mylist <- ordered_insert(c,mylist,t)
-        t      <- t+1
-        c_next <- ordered_next(mylist)
-        if(t>t_max) {stop("[rewind] Sampled t has exceeded t_max. Increast t_max and retry.")}
-      }
-      z[i] <- c
-      N[c] <- N[c] + 1
+        # add obs i to its new cluster:
+        if (j<=t){
+          c <- mylist[j]
+        } else{
+          c      <- c_prop
+          mylist <- ordered_insert(c,mylist,t)
+          t      <- t+1
+          c_next <- ordered_next(mylist)
+          if(t>t_max) {stop("[rewind] Sampled t has exceeded t_max. Increast t_max and retry.")}
+        }
+        z[i] <- c
+        N[c] <- N[c] + 1
 
-    }# END iteration over subjects.
+      }# END iteration over subjects.
+    }# END IFELSE for doing partition update or not.
 
-    # if (use_splitmerge){}
-    res_split_merge <- split_merge(dat,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi)
-    t <- res_split_merge$t
-    z <- res_split_merge$z
-    N <- res_split_merge$N
-    mylist <- res_split_merge$mylist
-    c_next <- ordered_next(mylist)
+    if (do_update_partition){
+      # if (use_splitmerge){}
+      res_split_merge <- split_merge(dat,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi)
+      t <- res_split_merge$t
+      z <- res_split_merge$z
+      N <- res_split_merge$N
+      mylist <- res_split_merge$mylist
+      c_next <- ordered_next(mylist)
+    }
     if(t>t_max) {stop("[rewind] Sampled t has exceeded t_max. Increast t_max and retry.")}
 
     ## Simulate xi for posterior predictive checking:

@@ -121,7 +121,6 @@ double log_marginal(arma::mat Y, arma::mat eta_star_enumerate,arma::mat Q,
   return(logsumexp(res_enumerate));
 }
 
-
 //' R Function to compute the cluster-specific marginal likelihood (just for Q=I)
 //'
 //' This R function computes the marginal likelihood by integrating over
@@ -130,8 +129,8 @@ double log_marginal(arma::mat Y, arma::mat eta_star_enumerate,arma::mat Q,
 //' rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each machines.
 //'
 //' @param Y the data for the current cluster (a subset of observations.)
-//' @param eta_star_enumerate fixed binary matrix of 2^M rows and M columns. Need to be prespecified.
-//' @param p prevalence parameter for each machine; should be a vector of dimension M.
+//' @param p prevalence parameter for each machine; should be a vector of dimension
+//' M=L.
 //' @param theta true positive rates
 //' @param psi true positive rates
 //'
@@ -139,9 +138,9 @@ double log_marginal(arma::mat Y, arma::mat eta_star_enumerate,arma::mat Q,
 //' # simulate data:
 //' L0 <- 100
 //' options_sim0  <- list(N = 200,  # sample size.
-//'                      M = 3,   # true number of machines.
-//'                      L = L0,   # number of antibody landmarks.
-//'                      K = 8,    # number of true components.,
+//'                       M = 3,   # true number of machines.
+//'                       L = L0,   # number of antibody landmarks.
+//'                       K = 8,    # number of true components.,
 //'                      theta = rep(0.8,L0), # true positive rates
 //'                      psi   = rep(0.01,L0), # false positive rates
 //'                      alpha1 = 1 # half of the people have the first machine.
@@ -151,35 +150,36 @@ double log_marginal(arma::mat Y, arma::mat eta_star_enumerate,arma::mat Q,
 //'  simu_dat <- simu$datmat
 //'  Y <- simu_dat
 //'  Q <- simu$Q
-//'  p <- c(0.5,0.25,0.1,0.02,0.05)
+//'  p <- rep(0.5,L0) #<----- M must equal L.
 //'  theta <- options_sim0$theta
 //'  psi   <- options_sim0$psi
-//'  H_enumerate <- as.matrix(expand.grid(rep(list(0:1), options_sim0$M)),ncol=options_sim0$M)
 //'
-//' #log_marginal0(Y, Q, p, theta, psi)
 //' log_marginal_Q_identity(Y, p, theta, psi) # <-- this is the Rcpp implementation.
 //'
 //' @return log of marginal likelihood given other model parameters.
 //' @export
 // [[Rcpp::export]]
-double log_marginal_Q_identity(NumericMatrix Y,
-                               NumericVector p,NumericVector theta,NumericVector psi){
-  int L = Y.ncol(), n = Y.nrow();
-  NumericVector n1(L), n0(L), p_xi(L), v(2);
+double log_marginal_Q_identity(arma::mat Y,
+                               arma::vec p,
+                               arma::vec theta,
+                               arma::vec psi){
+  int L = Y.n_cols, n = Y.n_rows;
+  arma::vec n1(L), n0(L), v(2); n1.zeros(); n0.zeros();v.zeros();
   double res = 0;
-
   for (int l=0; l<L; l++){
     for (int i=0; i<n; i++){
       n1[l] += Y(i,l);
     }
     n0[l] = n-n1[l];
-    p_xi[l] = p[l];
   }
-
+  // Rcout << "The n1 value is " << n1 << std::endl;
+  // Rcout << "The n0 value is " << n0 << std::endl;
+  // Rcout << "The p value is " << p << std::endl;
   for (int l=0; l<L; l++){
-    v[0] = n1[l]*log(psi[l])+n0[l]*log(1-psi[l])+log(1-p_xi[l]);
-    v[1] = n1[l]*log(theta[l])+n0[l]*log(1-theta[l])+log(p_xi[l]);
+    v[0] = n1[l]*log(psi[l])+n0[l]*log(1-psi[l])+log(1-p[l]);
+    v[1] = n1[l]*log(theta[l])+n0[l]*log(1-theta[l])+log(p[l]);
     res += logsumexp(v);
+    // Rcout << "The v value is " << v << std::endl;
   }
   return(res);
 }

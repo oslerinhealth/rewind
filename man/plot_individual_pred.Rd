@@ -4,14 +4,18 @@
 \alias{plot_individual_pred}
 \title{Plot individual probabilities}
 \usage{
-plot_individual_pred(p_samp, state_nm, thedata, ...)
+plot_individual_pred(p_samp, state_nm, thedata, whoisthis, ...)
 }
 \arguments{
 \item{p_samp}{A vector of posterior probabilities for each individual}
 
 \item{state_nm}{A string vector for the names of the latent state dimensions}
 
-\item{thedata}{a vector of binary measurements for a subject; of identical
+\item{thedata}{a vector of binary measurements for a subject; of identical}
+
+\item{whoisthis}{a character string, e.g., subject name.}
+
+\item{...}{other parameters for adjusting the individual plots.
 length to `state_nm`}
 }
 \value{
