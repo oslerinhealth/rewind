@@ -2,6 +2,9 @@
 
 An R package for fitting Bayesian restricted latent class models. 
 
+zhenkewu badges:
+[![Travis-CI Build Status](https://travis-ci.org/zhenkewu/rewind.svg?branch=master)](https://travis-ci.org/zhenkewu/rewind)
+
 **Maintainer**: Zhenke Wu, zhenkewu@umich.edu
 
 **References**: If you are using **rewind** for clustering multivariate binary
