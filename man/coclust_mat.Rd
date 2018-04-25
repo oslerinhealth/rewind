@@ -4,15 +4,13 @@
 \alias{coclust_mat}
 \title{Compute the posterior similarity matrix (probability that i and j are in same cluster).}
 \usage{
-coclust_mat(n, z, n_keep)
+coclust_mat(n, z)
 }
 \arguments{
 \item{n}{total number of subjejcts}
 
 \item{z}{a matrix of posterior samples, rows for subejcts, columns for MCMC samples kept across
 multiple iterations}
-
-\item{n_keep}{the number of columns in z}
 }
 \value{
 a matrix of co-clustering frequencies

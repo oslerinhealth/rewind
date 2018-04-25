@@ -60,6 +60,8 @@ alpha in the Indian Buffet Process.}
 \itemize{
 \item \code{n_total} total number of MCMC iterations
 \item \code{n_keep} number of iterations kept
+\item \code{n_burnin} the number of burnin iterations to be discarded
+for drawing the posterior inference.
 \item \code{n_split} the number of restricted Gibbs scan to arrive at a launch state;
 see \link{restricted_gibbs}
 \item \code{print_mod} print intermediate model fitting information
@@ -79,7 +81,8 @@ It is a list comprised of the following elements:
 \item \code{t_samp}
 \item \code{z_samp}
 \item \code{N_samp}
-\item \code{keepers} indices of MCMC samples kept for inference;
+\item \code{keepers} indices of MCMC samples kept for inference; will be used
+to see which ones to use for inference after \code{n_burnin}.
 \item \code{H_star_samp} \code{t_max+3} by \code{m_max} binary matrix
 \item \code{alpha_samp}
 } The following are recorded if they are not fixed in a priori:
@@ -197,7 +200,8 @@ for (iter in 1:n_kept){
   H_star_merge_samp[1:nrow(merged_H),1:ncol(merged_H),iter] <- merged_H
   Q_merge_samp[1:nrow(merged_Q),1:ncol(merged_Q),iter]      <- merged_Q
   z_sci_samp[,iter]    <- merged_res$z_sci
-  col_merged_H_star_samp[,1:ncol(merged_H),iter] <- merge_H_col(out$H_star_samp[,,iter])$H_star_merge # <-- may still have extra zeros.
+  col_merged_H_star_samp[,1:ncol(merged_H),iter] <- merge_H_col(
+    out$H_star_samp[,,iter])$H_star_merge # <-- may still have extra zeros.
 }
 out$H_star_merge_samp <- H_star_merge_samp # <-- could have zero columns.
 out$Q_merge_samp      <- Q_merge_samp # <-- could have zero rows.
@@ -417,9 +421,11 @@ if (!is.null(model_options0$Q)){
   H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=dim(out$H_star_merge_samp)[3])
   for (l in 1:dim(out$H_star_merge_samp)[3]){
     tmp_mylist <- out$mylist_samp[,l]
-    tmp0 <- out$H_star_samp[tmp_mylist[match(out$z_samp[,l],tmp_mylist)],,l] #<------ wrong!!!
+    tmp0 <- out$H_star_samp[tmp_mylist[match(out$z_samp[,l],tmp_mylist)],,l]
+    #<------ could be simpler!!!
     tmp1 <- tmp0[,colSums(tmp0)!=0,drop=FALSE]
-    tmp <- tmp1[,order_mat_byrow(model_options0$Q[rowSums(model_options0$Q)!=0,,drop=FALSE])$ord,drop=FALSE]
+    tmp <- tmp1[,order_mat_byrow(model_options0$Q[rowSums(model_options0$Q)!=0,
+                                                  ,drop=FALSE])$ord,drop=FALSE]
     H_pat_res[,l] <- bin2dec_vec(tmp,LOG=FALSE)
     H_res <- (tmp + H_res*(l-1))/l
   }
@@ -431,7 +437,8 @@ if (!is.null(model_options0$Q)){
   #
   Q_merged <- out$Q_merge_samp[,,ind_of_Q[1]] # just picked one.
   NROW_Q_PLOT <- nrow(Q_merged) # sum(rowSums(Q_merged)!=0)
-  Q_PLOT <- f(order_mat_byrow(Q_merged)$res) #f(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res)
+  Q_PLOT <- f(order_mat_byrow(Q_merged)$res)
+  #f(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res)
   image(1:ncol(simu$datmat),1:NROW_Q_PLOT,
         Q_PLOT,
         main="Best Q (merged & ordered)",col=hmcols,
@@ -452,13 +459,16 @@ if (!is.null(model_options0$Q)){
   #            obtained above.
   #
   H_res     <- matrix(0,nrow=nrow(simu$datmat),ncol=sum(rowSums(Q_merged)!=0))
-  H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=length(ind_of_Q)) # columns for the best indices.
+  H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=length(ind_of_Q))
+  # columns for the best indices.
   # here ind_of_Q are those that minimized the Q loss.
   for (l in seq_along(ind_of_Q)){
     tmp_mylist <- out$mylist_samp[,ind_of_Q[l]]
-    tmp0 <- out$col_merged_H_star_samp[tmp_mylist[match(out$z_samp[,ind_of_Q[l]],tmp_mylist)],,ind_of_Q[l]]
+    tmp0 <- out$col_merged_H_star_samp[tmp_mylist[match(out$z_samp[,
+                                        ind_of_Q[l]],tmp_mylist)],,ind_of_Q[l]]
     tmp1 <- tmp0[,colSums(tmp0)!=0,drop=FALSE]
-    tmp <- tmp1[,order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$ord,drop=FALSE]
+    tmp <- tmp1[,order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,
+                                          drop=FALSE])$ord,drop=FALSE]
     H_pat_res[,l] <- bin2dec_vec(tmp,LOG=FALSE)
     H_res <- (tmp + H_res*(l-1))/l
   }
@@ -468,7 +478,7 @@ if (!is.null(model_options0$Q)){
   # issues: the order of the rows of Q at ind_of_Q might be different, so need to order them.
 }
 
-# population quantities: <---------------- important in childhood pneumonia examples.
+# population quantities: <---------important in childhood pneumonia examples.
 compute_table <- function(p){
   M <- length(p)
   pat <-  as.matrix(expand.grid(rep(list(0:1),M)),ncol=M)
@@ -495,7 +505,8 @@ multiplier <- 4
 segments(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.025))*ncol(pat)*multiplier,
          1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.975))*ncol(pat)*multiplier)
 segments(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.25))*ncol(pat)*multiplier,
-         1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.75))*ncol(pat)*multiplier,lwd=4,col="dodgerblue2")
+         1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.75))*ncol(pat)*multiplier,
+         lwd=4,col="dodgerblue2")
 points(1:nrow(pat),rowMeans(exp(log_eti_samp))*ncol(pat)*multiplier,pch=18,xpd = NA)
 points(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.025))*ncol(pat)*multiplier,lwd=6,pch="-")
 points(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.975))*ncol(pat)*multiplier,lwd=6,pch="-")

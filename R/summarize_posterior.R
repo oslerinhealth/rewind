@@ -4,7 +4,6 @@
 #' @param n total number of subjejcts
 #' @param z a matrix of posterior samples, rows for subejcts, columns for MCMC samples kept across
 #' multiple iterations
-#' @param n_inference the number of columns in z
 #'
 #' @return a matrix of co-clustering frequencies
 #' @export
