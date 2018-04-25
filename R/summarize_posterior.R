@@ -4,14 +4,15 @@
 #' @param n total number of subjejcts
 #' @param z a matrix of posterior samples, rows for subejcts, columns for MCMC samples kept across
 #' multiple iterations
-#' @param n_keep the number of columns in z
+#' @param n_inference the number of columns in z
 #'
 #' @return a matrix of co-clustering frequencies
 #' @export
-coclust_mat <- function(n,z,n_keep){
+coclust_mat <- function(n,z){
+  n_inference <- ncol(z)
   res     <- matrix(0,n,n)
   count <- 0
-  for (index in 1:n_keep){
+  for (index in 1:n_inference){
     for (i in 1:n){
       for (j in 1:n){
         if (z[i,index]==z[j,index]){
@@ -190,7 +191,7 @@ plot_individual_pred <- function(p_samp,state_nm,thedata,whoisthis,...){
   #                        collapse="")),side = 3,line=-3)
   points(rep(-1,M),-(1:M),pch = ifelse(t(matrix(thedata,nrow=1)), 19, 1), cex = mycex,lwd=0.2,
          col="blue")
-  axis(2,at=-rev(1:M),
+  axis(2,at=-(1:M),
        labels=state_nm,las=2,xpd = NA,cex.axis=mycex)
 
   points(1:nrow(pat),pat_with_prob[,M+1]*M*multiplier,pch=18,xpd = NA,type="h")

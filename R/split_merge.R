@@ -193,9 +193,9 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
   rand_pair <- sample(n,2,replace=FALSE)
   i <- rand_pair[1]
   j <- rand_pair[2]
+
   ci0 <- z[i]
   cj0 <- z[j] # original states.
-
 
 
   # set S[1],...,S[ns] to the indices of the observations in clusters ci0 and cj0:
@@ -206,6 +206,58 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
       S[ns] <- k
     }
   }
+
+
+  # <<<<<<<
+  #print(mylist)
+  #print(z)
+  if (length(unique(z))>1){
+    log_p_bias <- rep(NA,length(unique(z))) # <--- biased towards split.
+    count <- 0
+    for (k_cj0 in unique(z)){
+      count <- count+1
+      ns <- 0
+      for (k in 1:n){
+        if (z[k]==ci0 || z[k]==k_cj0){
+          ns <- ns+1
+          S[ns] <- k
+        }
+      }
+      if (k_cj0!=ci0){
+        if (!is_identity_Q){
+          log_p_bias[count] <- log_marginal(Y[S,,drop=FALSE],H_enumerate,Q,p,theta,psi) -
+            log_marginal(Y[z==ci0,,drop=FALSE],H_enumerate,Q,p,theta,psi)-log_marginal(Y[z==k_cj0,,drop=FALSE],H_enumerate,Q,p,theta,psi) # computed for original (not launch state) and proposed states.
+        } else{
+          log_p_bias[count] <- log_marginal_Q_identity(Y[S,,drop=FALSE],p,theta,psi) -
+            log_marginal_Q_identity(Y[z==ci0,,drop=FALSE],p,theta,psi)-log_marginal_Q_identity(Y[z==k_cj0,,drop=FALSE],p,theta,psi) # computed for original (not launch state) and proposed states.
+        }
+      }
+    }
+
+    log_p_bias[which(is.na(log_p_bias))] <- log(4)+matrixStats::logSumExp(log_p_bias[-which(is.na(log_p_bias))]) # <-- 2 times more likely to be split.
+    p_bias <- exp(log_p_bias-matrixStats::logSumExp(log_p_bias))
+    #print(p_bias)
+
+    #print(unique(z))
+    cj0 <- sample(unique(z),1,replace=FALSE,prob=p_bias)
+    #print(which(z==cj0))
+    zz <- z; zz[i] <- 10000
+    if (sum(zz==cj0)>0){
+      j   <- sample(which(zz==cj0),1,replace=FALSE)
+    } else{
+      j   <- sample((1:n)[-i],1,replace=FALSE)
+    }
+    ns <- 0
+    for (k in 1:n){
+      if (z[k]==ci0 ||  z[k]==cj0){
+        ns <- ns+1
+        S[ns] <- k
+      }
+    }
+  }
+
+  # <<<<<<<<<
+
 
   # find available cluster IDs for split and merge parameters:
   k <- 1

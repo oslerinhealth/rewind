@@ -388,6 +388,8 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' \itemize{
 #' \item \code{n_total} total number of MCMC iterations
 #' \item \code{n_keep} number of iterations kept
+#' \item \code{n_burnin} the number of burnin iterations to be discarded
+#' for drawing the posterior inference.
 #' \item \code{n_split} the number of restricted Gibbs scan to arrive at a launch state;
 #' see \link{restricted_gibbs}
 #' \item \code{print_mod} print intermediate model fitting information
@@ -408,7 +410,8 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' \item \code{t_samp}
 #' \item \code{z_samp}
 #' \item \code{N_samp}
-#' \item \code{keepers} indices of MCMC samples kept for inference;
+#' \item \code{keepers} indices of MCMC samples kept for inference; will be used
+#' to see which ones to use for inference after \code{n_burnin}.
 #' \item \code{H_star_samp} \code{t_max+3} by \code{m_max} binary matrix
 #' \item \code{alpha_samp}
 #' } The following are recorded if they are not fixed in a priori:
@@ -703,7 +706,7 @@ sampler <- function(dat,model_options,mcmc_options){
 
   res <- list(keepers=keepers,t_samp=t_samp,N_samp=N_samp,z_samp=z_samp,
               H_star_samp = H_star_samp,
-              mylist_samp=mylist_samp)
+              mylist_samp=mylist_samp,keepers=keepers)
   if (is.null(model_options$theta)){
     res$theta_samp <- theta_samp # of length L.
   }
