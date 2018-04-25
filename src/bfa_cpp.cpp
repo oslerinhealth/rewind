@@ -115,7 +115,7 @@ arma::vec log_full(arma::mat Y,arma::mat eta_star,arma::mat Q,
 // [[Rcpp::export]]
 double log_marginal(arma::mat Y, arma::mat eta_star_enumerate,arma::mat Q,
                     arma::vec p,arma::vec theta,arma::vec psi){
-  int M = Q.n_rows, J = eta_star_enumerate.n_rows;
+  int J = eta_star_enumerate.n_rows;
   arma::vec res_enumerate(J); res_enumerate.zeros();
   res_enumerate = log_full(Y,eta_star_enumerate,Q,p,theta,psi);
   return(logsumexp(res_enumerate));
