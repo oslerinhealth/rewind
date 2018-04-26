@@ -54,5 +54,5 @@ order_mat_byrow <- function(mat){
 #'
 #' @param m a matrix
 #' @return a matrix after image() will look the same as the matrix
-#'
-f <- function(m) t(m)[,nrow(m):1]
+#' @export
+f <- function(m) {t(m)[,nrow(m):1]}
