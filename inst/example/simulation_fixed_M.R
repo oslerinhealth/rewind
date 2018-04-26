@@ -207,11 +207,8 @@ plot(Q_Em,type="o",main="||QQ'-E[QQ'|Y]||")
 # choose the indices minimizing the errors:
 ind_of_Q       <- which(Q_Em==min(Q_Em))
 
-
-
-
 #
-# visualize truth: <------------------ IMPORTANT!
+# visualize truth:
 #
 pdf(file.path("inst/example_figure/","bmf_truth.pdf"),width=12,height=6)
 plot_truth(simu,options_sim0)
