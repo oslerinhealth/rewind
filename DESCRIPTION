@@ -1,7 +1,7 @@
 Package: rewind
 Type: Package
 Title: Reconstructing Etiology with Binary Decomposition
-Version: 0.2.1
+Version: 0.2.2
 Date: 2018-04-26
 Authors@R: c(
      person("Zhenke", "Wu", email="zhenkewu@umich.edu",role=c("cre","aut","cph")),
@@ -37,7 +37,7 @@ Suggests:
     ars(>= 0.5),
     RcppArmadillo(>= 0.8.300.1.0),
     mcclust.ext(>= 1.0)
-Remotes: url::http://wrap.warwick.ac.uk/71934/1/mcclust.ext_1.0.tar.gz
+Remotes: muschellij2/mcclust.ext
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
