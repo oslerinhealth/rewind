@@ -47,3 +47,12 @@ order_mat_byrow <- function(mat){
   list(res = mat[rev(order(permute_M_vec)),,drop=FALSE],
        ord = rev(order(permute_M_vec)))
 }
+
+#' flip the matrix to the right form for image()
+#'
+#' This function makes the result of image() to be plotted as shown in a matrix
+#'
+#' @param m a matrix
+#' @return a matrix after image() will look the same as the matrix
+#'
+f <- function(m) t(m)[,nrow(m):1]

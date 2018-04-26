@@ -113,7 +113,8 @@ arma::vec log_full(arma::mat Y,arma::mat eta_star,arma::mat Q,
 //' @return log of marginal likelihood given other model parameters.
 //' @export
 // [[Rcpp::export]]
-double log_marginal(arma::mat Y, arma::mat eta_star_enumerate,arma::mat Q,
+double log_marginal(arma::mat Y, arma::mat eta_star_enumerate,
+                    arma::mat Q,
                     arma::vec p,arma::vec theta,arma::vec psi){
   int J = eta_star_enumerate.n_rows;
   arma::vec res_enumerate(J); res_enumerate.zeros();

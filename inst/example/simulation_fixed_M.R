@@ -71,46 +71,18 @@ mcmc_options0 <- list(
 out <- sampler(simu_dat,model_options0,mcmc_options0)
 
 
-
-
 ################################################################
 ## Posterior summaries:
 ###############################################################
-
-##
-## Post-processing H an Q:
-##
-n_kept <- dim(out$H_star_samp)[3]
-Q_merge_samp <- array(0,c(model_options0$m_max,dim(out$Q_samp)[2],n_kept))
-H_star_merge_samp <- array(0,c(dim(out$H_star_samp)[1],model_options0$m_max,n_kept))
-col_merged_H_star_samp <- H_star_merge_samp
-z_sci_samp <- matrix(0,nrow=dim(out$z_samp)[1],ncol=n_kept)
-for (iter in 1:n_kept){
-  merged_res <- merge_H_Q(out$H_star_samp[,,iter],
-                          out$mylist[,iter],
-                          out$t_samp[iter],
-                          out$Q_samp[,,iter],
-                          FALSE,
-                          out$z_samp[,iter])
-  merged_H <- merged_res$H_star_merge
-  merged_Q <- merged_res$Q_merge
-  H_star_merge_samp[1:nrow(merged_H),1:ncol(merged_H),iter] <- merged_H
-  Q_merge_samp[1:nrow(merged_Q),1:ncol(merged_Q),iter]      <- merged_Q
-  z_sci_samp[,iter]    <- merged_res$z_sci
-  col_merged_H_star_samp[,1:ncol(merged_H),iter] <- merge_H_col(
-    out$H_star_samp[,,iter])$H_star_merge # <-- may still have extra zeros.
-}
-out$H_star_merge_samp <- H_star_merge_samp # <-- could have zero columns.
-out$Q_merge_samp      <- Q_merge_samp # <-- could have zero rows.
-out$z_sci_samp        <- z_sci_samp # <-- add scientific indicators.
-out$col_merged_H_star_samp <- col_merged_H_star_samp
+out0 <- out
+out <- postprocess_H_Q(out0)
 
 #Z_SAMP_FOR_PLOT <- out$z_samp  # <---- use pseudo-indicators for co-clustering.
                                 # tend to be more granular.
 Z_SAMP_FOR_PLOT <- out$z_sci_samp # <--- use scientific-cluster indicators.
 
 # posterior co-clustering probabilities (N by N):
-comat <- coclust_mat(nrow(simu_dat),Z_SAMP_FOR_PLOT,mcmc_options0$n_keep)
+comat <- coclust_mat(nrow(simu_dat),Z_SAMP_FOR_PLOT)
 image(1:options_sim0$N,1:options_sim0$N, comat,
       xlab="Subjects",ylab="Subjects",col=hmcols,main="co-clustering")
 for (k in 1:options_sim0$K){
@@ -235,85 +207,20 @@ plot(Q_Em,type="o",main="||QQ'-E[QQ'|Y]||")
 # choose the indices minimizing the errors:
 ind_of_Q       <- which(Q_Em==min(Q_Em))
 
-f <- function(m) t(m)[,nrow(m):1]
+
 
 
 #
 # visualize truth: <------------------ IMPORTANT!
 #
 pdf(file.path("inst/example_figure/","bmf_truth.pdf"),width=12,height=6)
-par(mfcol=c(4,1),tcl=-0.5,
-    mai=c(0.7,0.7,0.3,0.3))
-
-m <- cbind(c(1, 1), c(2, 2),c(3,4))
-layout(m, widths=c(6,3,6), heights=c(2,4))
-#layout.show(4)
-par(mar = c(5, 5, 5, 1))
-
-# image(1:ncol(simu$datmat),1:nrow(simu$datmat),
-#       f(simu$datmat),main="Data",col=hmcols,
-#       xlab="Dimension (1:L)",
-#       ylab="Subject (1:N)",cex.lab=1.2)
-# for (k in 1:options_sim0$K){
-#   abline(h=100-cumsum(rle(simu$Z)$lengths)[k]+0.5,
-#          lty=2,col="grey",lwd=2)
-# }
-
-image(1:ncol(simu$datmat),1:nrow(simu$datmat),
-      f(simu$xi),#main="Design Matrix",
-      col=hmcols,
-      xlab="Dimension (1:L)",yaxt="n",
-      ylab="Subject (1:N)",cex.lab=1.2)
-axis(side=2,at=1:options_sim0$N,labels=rev(1:options_sim0$N),las=2,cex.axis=0.5)
-mtext(expression(paste("(",Gamma[il],"): Design Matrix",collapse="")),3,1)
-for (k in 1:options_sim0$K){
-  abline(h=100-cumsum(rle(simu$Z)$lengths)[k]+0.5,
-         lty=2,col="grey",lwd=2)
-}
-
-image(1:ncol(simu$Eta),1:nrow(simu$datmat),
-      f(simu$Eta[,order_mat_byrow(simu$Q)$ord]),#main="Latent State Profile",
-      col=hmcols,
-      xlab="Latent State (1:M)",ylab="Subject (1:N)",
-      yaxt="n",cex.lab=1.2,xaxt="n")
-axis(side=2,at=1:options_sim0$N,labels=rev(1:options_sim0$N),las=2,cex.axis=0.5)
-mtext(expression(paste("(",eta[im],"): Latent State",collapse="")),3,1)
-axis(side = 1,at=1:options_sim0$M,labels=1:options_sim0$M)
-
-for (k in 1:options_sim0$K){
-  abline(h=100-cumsum(rle(simu$Z)$lengths)[k]+0.5,
-         lty=2,col="grey",lwd=2)
-}
-for (k in 1:options_sim0$K){
-  abline(v=options_sim0$M-k+0.5,
-         lty=1,col="black",lwd=2)
-}
-
-image(1:ncol(simu$datmat),1:options_sim0$M,
-      f(order_mat_byrow(simu$Q)$res),
-      #main="True Q (ordered)",
-      col=hmcols,
-      xlab="Dimension (1:L)",
-      ylab="Latent State (1:M)",yaxt="n",cex.lab=1.2)
-mtext(expression(paste("(",Q[ml],"): True Q (ordered)",collapse="")),3,1)
-
-axis(side = 2,at=1:options_sim0$M,labels=1:options_sim0$M)
-
-for (k in 1:options_sim0$M){
-  abline(h=options_sim0$M-k+0.5,
-         lty=1,col="black",lwd=2)
-}
-
-plot.new()
-legend("center",legend = c(1,0),col=c("#092D94","#FFFFD9"),
-       pch=c(15,15),cex=3,bty="n")
+plot_truth(simu,options_sim0)
 dev.off()
-
 
 #
 # visualize the individual latent states depending on whether Q is known or not.
 #
-if (!is.null(model_options0$Q)){
+if (!is.null(model_options0$Q)){ # <--- Q known.
   H_res     <- matrix(0,nrow=nrow(simu$datmat),ncol=sum(rowSums(model_options0$Q)!=0))
   H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=dim(out$H_star_merge_samp)[3])
   for (l in 1:dim(out$H_star_merge_samp)[3]){
@@ -327,14 +234,14 @@ if (!is.null(model_options0$Q)){
     H_res <- (tmp + H_res*(l-1))/l
   }
   apply(H_pat_res,1,table)
-  image(H_res)
-} else{
+  image(f(H_res))
+} else{   # <---- Q unknown.
   #
   # This is the best estimated Q:
   #
   Q_merged <- out$Q_merge_samp[,,ind_of_Q[1]] # just picked one.
   NROW_Q_PLOT <- nrow(Q_merged) # sum(rowSums(Q_merged)!=0)
-  Q_PLOT <- f(order_mat_byrow(Q_merged)$res)
+  Q_PLOT <- f(order_mat_byrow(Q_merged)$res) # t(Q_merged)
   #f(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res)
   image(1:ncol(simu$datmat),1:NROW_Q_PLOT,
         Q_PLOT,
@@ -361,8 +268,7 @@ if (!is.null(model_options0$Q)){
   # here ind_of_Q are those that minimized the Q loss.
   for (l in seq_along(ind_of_Q)){
     tmp_mylist <- out$mylist_samp[,ind_of_Q[l]]
-    tmp0 <- out$col_merged_H_star_samp[tmp_mylist[match(out$z_samp[,
-                                        ind_of_Q[l]],tmp_mylist)],,ind_of_Q[l]]
+    tmp0 <- out$col_merged_H_star_samp[out$z_samp[,ind_of_Q[l]],,ind_of_Q[l]]
     tmp1 <- tmp0[,colSums(tmp0)!=0,drop=FALSE]
     tmp <- tmp1[,order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,
                                           drop=FALSE])$ord,drop=FALSE]
@@ -370,73 +276,11 @@ if (!is.null(model_options0$Q)){
     H_res <- (tmp + H_res*(l-1))/l
   }
   apply(H_pat_res,1,table)
-  image(f(H_res),col=hmcols)
-
+  par(mfrow=c(1,2))
+  image(f(H_res),col=hmcols,main="estimated marginal prob")
+  image(f(simu$Eta[,order_mat_byrow(simu$Q)$ord]),col=hmcols,main="truth")
   # issues: the order of the rows of Q at ind_of_Q might be different, so need to order them.
 }
-
-# population quantities: <---------important in childhood pneumonia examples.
-compute_table <- function(p){
-  M <- length(p)
-  pat <-  as.matrix(expand.grid(rep(list(0:1),M)),ncol=M)
-  res <- rowSums(pat%*%diag(log(p))+(1-pat)%*%diag(log(1-p)))
-  names(res) <- apply(pat,1,paste,collapse="")
-  res
-}
-log_eti_samp <- apply(out$p_samp,2,compute_table)
-eti_samp_mean <- rowMeans(exp(log_eti_samp))
-plot(eti_samp_mean,type="h")
-
-pat <-  as.matrix(expand.grid(rep(list(0:1),model_options0$m_max)),
-                  ncol=model_options0$m_max)
-
-pdf(file.path("inst/example_figure/","population_fraction.pdf"),height=6,width=8)
-plot(rep(1:nrow(pat), each = ncol(pat)),
-     rep(-rev(1:ncol(pat)), nrow(pat)),
-     axes = FALSE, ann = FALSE,
-     pch = ifelse(t(pat), 19, 1), cex = 2.5, asp = 1, xpd = NA,
-     col = rep(c("grey","black")[1+(eti_samp_mean>quantile(eti_samp_mean,0.75))],
-               each=ncol(pat)))
-
-multiplier <- 4
-segments(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.025))*ncol(pat)*multiplier,
-         1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.975))*ncol(pat)*multiplier)
-segments(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.25))*ncol(pat)*multiplier,
-         1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.75))*ncol(pat)*multiplier,
-         lwd=4,col="dodgerblue2")
-points(1:nrow(pat),rowMeans(exp(log_eti_samp))*ncol(pat)*multiplier,pch=18,xpd = NA)
-points(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.025))*ncol(pat)*multiplier,lwd=6,pch="-")
-points(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.975))*ncol(pat)*multiplier,lwd=6,pch="-")
-axis(2,at=ncol(pat)*c(0,0.25,0.5)*multiplier,labels=c(0,0.25,0.5),las=2,xpd = NA)
-
-mtext(text = expression(paste("", pi[eta],
-                              sep="")),line = 2,side=2,cex=2,las=2,padj=-4)
-mtext(text = expression(paste(eta[1],",..., ", eta[M],collapse="")),line = 1,side=2,
-      cex=1,adj = 0.5,las=0)
-
-legend("topright",legend = c("95% CI","50% CI"),col=c("black","dodgerblue2"),lwd=c(1,4),
-       bty="n")
-
-#
-# This is the best estimated Q:
-#
-Q_merged <- out$Q_merge_samp[,,ind_of_Q[1]] # just picked one.
-NROW_Q_PLOT <- nrow(Q_merged) #sum(rowSums(Q_merged)!=0)
-Q_PLOT <- t(order_mat_byrow(Q_merged)$res)
-#<- f(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res)
-image(seq(1,nrow(pat),length=ncol(simu$datmat)),-rev(1:NROW_Q_PLOT)-NROW_Q_PLOT-1,
-      Q_PLOT,
-      main="Best Q (merged & ordered)",col=hmcols,
-      xlab="Dimension (1:L)",
-      ylab="Latent State (1:M)",yaxt="n",cex.lab=1.2,add=TRUE)
-for (k in 1:(NROW_Q_PLOT+1)){
-  abline(h=-k+0.5-NROW_Q_PLOT-1,
-         lty=2,col="grey",lwd=2)
-}
-
-mtext(text = expression(paste(Q[1.],",..., ", Q[M.],collapse="")),line = 1,side=2,
-      cex=1,adj = 0.15,las=0)
-dev.off()
 
 # posterior distribution over the number of pseudo-clusters T: <-- scientific clusters?
 plot(out$t_samp,type="l",ylab="T: #pseudo-clusters")
@@ -446,8 +290,7 @@ pdf(file.path("inst/example_figure/","individual_pred_simulation.pdf"),height=15
 par(mar=c(2,8,8,0),mfrow=c(2,1),oma=c(5,5,5,5))
 for (i in 1:nrow(simu_dat)){
   plot_individual_pred(apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]]),
-                       1:model_options0$m_max,
-                       simu_dat[i,,drop=FALSE],paste0("Obs ", i),asp=0.5)
+                       1:model_options0$m_max,paste0("Obs ", i),asp=0.5)
 }
 dev.off()
 

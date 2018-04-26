@@ -25,7 +25,8 @@ Imports:
     matrixStats(>= 0.52.2),
     Rcpp(>= 0.12.15),
     stats(>= 3.4.3),
-    graphics(>= 3.4.3)
+    graphics(>= 3.4.3),
+    grDevices(>= 3.5.0)
 Suggests:
     knitr,
     testthat,

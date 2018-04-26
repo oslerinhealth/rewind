@@ -93,3 +93,100 @@ simulate_data <- function(options_sim, SETSEED=FALSE){
   }
   list(datmat = res,Q=Q,H_star= eta_atom,Z=Z,xi=xi,Eta=H)
 }
+
+
+
+#' Plot truth for simulation studies
+#'
+#' @param simu output from \code{\link{simulate_data}}
+#' @param options_sim0 options for simulation, see \code{\link{simulate_data}}
+#'
+#' @return a figure with three parts, design matrix, latent profiles and
+#' Q matrix
+#' @export
+#' @examples
+#' # simulate data:
+#' L0 <- 100
+#' options_sim0  <- list(N = 100,  # sample size.
+#'                       M = 3,    # true number of machines.
+#'                       L = L0,   # number of antibody landmarks.
+#'                       K = 2^3,    # number of true components.
+#'                       theta = rep(0.9,L0), # true positive rates.
+#'                       psi   = rep(0.1,L0), # false positive rates.
+#'                       alpha1 = 1 # half of the people have the first machine.
+#' )
+#' YlGnBu5   <- c('#ffffd9','#c7e9b4','#41b6c4','#225ea8','#081d58',"#092d94")
+#' hmcols    <- colorRampPalette(YlGnBu5)(256)
+#' image(simulate_data(options_sim0,SETSEED = TRUE)$datmat,col=hmcols)
+#' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
+#' plot_truth(simu,options_sim0)
+#' @importFrom grDevices colorRampPalette
+plot_truth <- function(simu,options_sim0){
+  YlGnBu5   <- c('#ffffd9','#c7e9b4','#41b6c4','#225ea8','#081d58',"#092d94")
+  hmcols    <- colorRampPalette(YlGnBu5)(256)
+  par(mfcol=c(4,1),tcl=-0.5,
+      mai=c(0.7,0.7,0.3,0.3))
+
+  m <- cbind(c(1, 1), c(2, 2),c(3,4))
+  layout(m, widths=c(6,3,6), heights=c(2,4))
+  #layout.show(4)
+  par(mar = c(5, 5, 5, 1))
+
+  # image(1:ncol(simu$datmat),1:nrow(simu$datmat),
+  #       f(simu$datmat),main="Data",col=hmcols,
+  #       xlab="Dimension (1:L)",
+  #       ylab="Subject (1:N)",cex.lab=1.2)
+  # for (k in 1:options_sim0$K){
+  #   abline(h=100-cumsum(rle(simu$Z)$lengths)[k]+0.5,
+  #          lty=2,col="grey",lwd=2)
+  # }
+
+  image(1:ncol(simu$datmat),1:nrow(simu$datmat),
+        f(simu$xi),#main="Design Matrix",
+        col=hmcols,
+        xlab="Dimension (1:L)",yaxt="n",
+        ylab="Subject (1:N)",cex.lab=1.2)
+  axis(side=2,at=1:options_sim0$N,labels=rev(1:options_sim0$N),las=2,cex.axis=0.5)
+  mtext(expression(paste("(",Gamma[il],"): Design Matrix",collapse="")),3,1)
+  for (k in 1:options_sim0$K){
+    abline(h=100-cumsum(rle(simu$Z)$lengths)[k]+0.5,
+           lty=2,col="grey",lwd=2)
+  }
+
+  image(1:ncol(simu$Eta),1:nrow(simu$datmat),
+        f(simu$Eta[,order_mat_byrow(simu$Q)$ord]),#main="Latent State Profile",
+        col=hmcols,
+        xlab="Latent State (1:M)",ylab="Subject (1:N)",
+        yaxt="n",cex.lab=1.2,xaxt="n")
+  axis(side=2,at=1:options_sim0$N,labels=rev(1:options_sim0$N),las=2,cex.axis=0.5)
+  mtext(expression(paste("(",eta[im],"): Latent State",collapse="")),3,1)
+  axis(side = 1,at=1:options_sim0$M,labels=1:options_sim0$M)
+
+  for (k in 1:options_sim0$K){
+    abline(h=100-cumsum(rle(simu$Z)$lengths)[k]+0.5,
+           lty=2,col="grey",lwd=2)
+  }
+  for (k in 1:options_sim0$K){
+    abline(v=options_sim0$M-k+0.5,
+           lty=1,col="black",lwd=2)
+  }
+
+  image(1:ncol(simu$datmat),1:options_sim0$M,
+        f(order_mat_byrow(simu$Q)$res),
+        #main="True Q (ordered)",
+        col=hmcols,
+        xlab="Dimension (1:L)",
+        ylab="Latent State (1:M)",yaxt="n",cex.lab=1.2)
+  mtext(expression(paste("(",Q[ml],"): True Q (ordered)",collapse="")),3,1)
+
+  axis(side = 2,at=1:options_sim0$M,labels=1:options_sim0$M)
+
+  for (k in 1:options_sim0$M){
+    abline(h=options_sim0$M-k+0.5,
+           lty=1,col="black",lwd=2)
+  }
+
+  plot.new()
+  legend("center",legend = c(1,0),col=c("#092D94","#FFFFD9"),
+         pch=c(15,15),cex=3,bty="n")
+}

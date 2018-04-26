@@ -80,9 +80,7 @@ compute_product_Bern_table <- function(p,LOG=TRUE){
   res
 }
 
-
-
-#' Plot population "etiology" fractions
+#' Plot population "etiology" fractions (for known Q only)
 #'
 #' @param p_samp A matrix of posterior samples of Bernoulli probabilities (
 #' rows for latent state dimensions, columns for MCMC iterations.)
@@ -157,8 +155,8 @@ plot_population_fractions <- function(p_samp,state_nm){
 #'
 #' @param p_samp A vector of posterior probabilities for each individual
 #' @param state_nm A string vector for the names of the latent state dimensions
-#' @param thedata a vector of binary measurements for a subject; of identical
 #' @param whoisthis a character string, e.g., subject name.
+#' @param thedata a vector of binary measurements for a subject; of identical
 #' @param ... other parameters for adjusting the individual plots.
 #' length to `state_nm`
 #'
@@ -166,7 +164,7 @@ plot_population_fractions <- function(p_samp,state_nm){
 #' NB: need to add more info.)
 #' @export
 #' @import stats graphics
-plot_individual_pred <- function(p_samp,state_nm,thedata,whoisthis,...){
+plot_individual_pred <- function(p_samp,state_nm,whoisthis,thedata=NULL,...){
   # p_samp = apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]])
   # state_nm = analysis_list
   # thedata = dat_rlcm_case[i,,drop=FALSE]
@@ -188,8 +186,13 @@ plot_individual_pred <- function(p_samp,state_nm,thedata,whoisthis,...){
   # mtext(expression(paste("Individual Etiology Fractions by Infection Patterns (P{",
   #                        eta[i],"=",eta,"|Data})",
   #                        collapse="")),side = 3,line=-3)
-  points(rep(-1,M),-(1:M),pch = ifelse(t(matrix(thedata,nrow=1)), 19, 1), cex = mycex,lwd=0.2,
-         col="blue")
+  if (!is.null(thedata)){
+    cat("[rewind] observed data plotted. It assumes L=M and Q is known. Otherwise, set thedata to NULL.")
+    points(rep(0,ncol(thedata)),-(1:ncol(thedata)),pch = ifelse(t(matrix(thedata,nrow=1)), 15, 0), cex = mycex,lwd=0.5,
+           col="blue",xpd=NA)
+    arrows(0,-M-2,0,-M-0.5,lwd=3,angle=20,length=0.1)
+    text(0,-M-2.5,"observed",pos=4)
+  }
   axis(2,at=-(1:M),
        labels=state_nm,las=2,xpd = NA,cex.axis=mycex)
 
@@ -198,8 +201,8 @@ plot_individual_pred <- function(p_samp,state_nm,thedata,whoisthis,...){
        labels=c(0,0.25,0.5,1),las=2,xpd = NA)
 
   thetitle <- bquote(paste(.(whoisthis),": P{",
-                                eta[i],"=",eta,"|Data}",
-                                collapse=""))
+                           eta[i],"=",eta,"|Data}",
+                           collapse=""))
   mtext(thetitle,side = 3,line=0,cex=2)
 }
 
@@ -435,5 +438,47 @@ merge_Q <- function(Q,map_id){
     res[i,] <- apply(Q[row_id_to_merge,,drop=FALSE],2,max)
   }
   res
+}
+
+
+#' Merge H and Q
+#'
+#' NB: need to add another option to skip merge Q when Q is known.
+#'
+#' @param outres output from \code{\link{sampler}}
+#'
+#' @return a new output with extra elements:
+#' \code{H_star_merge_samp}, \code{Q_merge_samp},
+#' \code{z_sci_samp}, \code{col_merged_H_star_samp}.
+#' @export
+#'
+postprocess_H_Q <- function(outres){
+  n_kept <- dim(outres$H_star_samp)[3]
+  curr_m_max <- ncol(outres$H_star_samp)
+  curr_L <- dim(outres$theta_samp)[1]
+  Q_merge_samp <- array(0,c(curr_m_max,curr_L,n_kept))
+  H_star_merge_samp <- array(0,c(dim(outres$H_star_samp)[1],curr_m_max,n_kept))
+  col_merged_H_star_samp <- H_star_merge_samp
+  z_sci_samp <- matrix(0,nrow=dim(outres$z_samp)[1],ncol=n_kept)
+  for (iter in 1:n_kept){
+    merged_res <- merge_H_Q(outres$H_star_samp[,,iter],
+                            outres$mylist[,iter],
+                            outres$t_samp[iter],
+                            outres$Q_samp[,,iter],
+                            FALSE,
+                            outres$z_samp[,iter])
+    merged_H <- merged_res$H_star_merge
+    merged_Q <- merged_res$Q_merge
+    H_star_merge_samp[1:nrow(merged_H),1:ncol(merged_H),iter] <- merged_H
+    Q_merge_samp[1:nrow(merged_Q),1:ncol(merged_Q),iter]      <- merged_Q
+    z_sci_samp[,iter]    <- merged_res$z_sci
+    col_merged_H_star_samp[,1:ncol(merged_H),iter] <- merge_H_col(
+      outres$H_star_samp[,,iter])$H_star_merge # <-- may still have extra zeros.
+  }
+  outres$H_star_merge_samp <- H_star_merge_samp # <-- could have zero columns.
+  outres$Q_merge_samp      <- Q_merge_samp # <-- could have zero rows.
+  outres$z_sci_samp        <- z_sci_samp # <-- add scientific indicators.
+  outres$col_merged_H_star_samp <- col_merged_H_star_samp
+  outres
 }
 

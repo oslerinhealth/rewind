@@ -2,7 +2,7 @@
 % Please edit documentation in R/summarize_posterior.R
 \name{plot_population_fractions}
 \alias{plot_population_fractions}
-\title{Plot population "etiology" fractions}
+\title{Plot population "etiology" fractions (for known Q only)}
 \usage{
 plot_population_fractions(p_samp, state_nm)
 }
@@ -17,5 +17,5 @@ a figure with population etiology fraction information (
 NB: need to add more info.)
 }
 \description{
-Plot population "etiology" fractions
+Plot population "etiology" fractions (for known Q only)
 }

@@ -96,9 +96,12 @@ update_positive_rate <- function(Y,H,Q,a_theta,a_psi){
 
   #theta_samp <- sapply(1:ncol(Q),function(i) {stats::rbeta(1,theta_a1[i],theta_a2[i])})
   theta_samp <- sapply(1:ncol(Q),function(i) {#stats::rbeta(1,theta_a1[i],theta_a2[i])
-    #u <- runif(1,pbeta(psi_samp[i],theta_a1[i],theta_a2[i]),1)
-    u <- runif(1,pbeta(0.5,theta_a1[i],theta_a2[i]),1) # set the lower limit to be 0.5.
+    u <- runif(1,pbeta(psi_samp[i],theta_a1[i],theta_a2[i]),1)
+    #u <- runif(1,pbeta(0.5,theta_a1[i],theta_a2[i]),1) # set the lower limit to be 0.5.
     qbeta(u,theta_a1[i],theta_a2[i])
+    #cat(u," - u\n")
+    #cat(res,"\n")
+    #res
   })
   list(theta=theta_samp,psi=psi_samp)
 }
@@ -425,7 +428,7 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 sampler <- function(dat,model_options,mcmc_options){
 
   # # <<<<------ testing data:
-  # dat <- dat_rlcm_case
+  # dat <- simu_dat
   # model_options <- model_options0
   # mcmc_options  <- mcmc_options0
   # # <<<<------ end of testing data.
