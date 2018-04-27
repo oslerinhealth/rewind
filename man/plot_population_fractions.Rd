@@ -4,13 +4,18 @@
 \alias{plot_population_fractions}
 \title{Plot population "etiology" fractions (for known Q only)}
 \usage{
-plot_population_fractions(p_samp, state_nm)
+plot_population_fractions(p_samp, state_nm, mycex = 1, ...)
 }
 \arguments{
 \item{p_samp}{A matrix of posterior samples of Bernoulli probabilities (
 rows for latent state dimensions, columns for MCMC iterations.)}
 
 \item{state_nm}{A string vector for the names of the latent state dimensions}
+
+\item{mycex}{The cex paramter for the size of the latent state names
+plotted on the left margin; Default is 1.}
+
+\item{...}{other parameters for adjusting the individual plots.}
 }
 \value{
 a figure with population etiology fraction information (

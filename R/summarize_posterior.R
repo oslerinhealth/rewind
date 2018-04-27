@@ -85,12 +85,15 @@ compute_product_Bern_table <- function(p,LOG=TRUE){
 #' @param p_samp A matrix of posterior samples of Bernoulli probabilities (
 #' rows for latent state dimensions, columns for MCMC iterations.)
 #' @param state_nm A string vector for the names of the latent state dimensions
+#' @param mycex The cex paramter for the size of the latent state names
+#' plotted on the left margin; Default is 1.
+#' @param ... other parameters for adjusting the individual plots.
 #'
 #' @return a figure with population etiology fraction information (
 #' NB: need to add more info.)
 #' @export
 #' @import stats graphics
-plot_population_fractions <- function(p_samp,state_nm){
+plot_population_fractions <- function(p_samp,state_nm,mycex=1,...){
   M <- nrow(p_samp)
   log_eti_samp  <- apply(p_samp,2,compute_product_Bern_table)
   eti_samp_mean <- rowMeans(exp(log_eti_samp))
@@ -99,17 +102,16 @@ plot_population_fractions <- function(p_samp,state_nm){
   pat <-  pat[order(rowSums(pat)),]
 
   multiplier <- 2
-  mycex      <- 1.5
   plot(rep(1:nrow(pat), each = ncol(pat)),
-       rep(-rev(1:ncol(pat)), nrow(pat)),
+       rep(-(1:ncol(pat)), nrow(pat)),
        axes = FALSE, ann = FALSE,
-       pch = ifelse(t(pat), 19, 1), cex = mycex,asp=2, xpd = NA,lwd=0.2,
+       pch = ifelse(t(pat), 19, 1), cex = mycex,xpd = NA,lwd=0.2,
        col = rep(c("grey","black")[1+(eti_samp_mean>quantile(eti_samp_mean,0.75))],
-                 each=ncol(pat)))
+                 each=ncol(pat)),...)
   mtext(expression(paste("Population Etiology Fraction by Infection Patterns (",
                          pi[eta],")",
                          collapse="")),side = 3,line=-3)
-  axis(2,at=-rev(1:ncol(pat)),
+  axis(2,at=-(1:ncol(pat)),
        labels=state_nm,las=2,xpd = NA,cex.axis=mycex)
 
   segments(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.025))*ncol(pat)*multiplier,
@@ -157,6 +159,7 @@ plot_population_fractions <- function(p_samp,state_nm){
 #' @param state_nm A string vector for the names of the latent state dimensions
 #' @param whoisthis a character string, e.g., subject name.
 #' @param thedata a vector of binary measurements for a subject; of identical
+#' @param mycex the cex parameter for the names of the latent states. Default is 1.
 #' @param ... other parameters for adjusting the individual plots.
 #' length to `state_nm`
 #'
@@ -164,7 +167,7 @@ plot_population_fractions <- function(p_samp,state_nm){
 #' NB: need to add more info.)
 #' @export
 #' @import stats graphics
-plot_individual_pred <- function(p_samp,state_nm,whoisthis,thedata=NULL,...){
+plot_individual_pred <- function(p_samp,state_nm,whoisthis,thedata=NULL,mycex=1,...){
   # p_samp = apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]])
   # state_nm = analysis_list
   # thedata = dat_rlcm_case[i,,drop=FALSE]
@@ -176,7 +179,6 @@ plot_individual_pred <- function(p_samp,state_nm,whoisthis,thedata=NULL,...){
   pat_with_prob[match(as.numeric(names(p_samp)),round(exp(bin2dec_vec(pat)))),M+1] <- p_samp
 
   multiplier <- 2
-  mycex      <- 1.5
   plot(rep(1:nrow(pat), each = M),
        rep(-(1:M), nrow(pat)),
        axes = FALSE, ann = FALSE,
@@ -187,11 +189,13 @@ plot_individual_pred <- function(p_samp,state_nm,whoisthis,thedata=NULL,...){
   #                        eta[i],"=",eta,"|Data})",
   #                        collapse="")),side = 3,line=-3)
   if (!is.null(thedata)){
-    cat("[rewind] observed data plotted. It assumes L=M and Q is known. Otherwise, set thedata to NULL.")
+    if (length(thedata)!=M){
+     stop("[rewind] observed data and latent states have unequal dimensions.Set thedata to NULL and retry.")
+    }
     points(rep(0,ncol(thedata)),-(1:ncol(thedata)),pch = ifelse(t(matrix(thedata,nrow=1)), 15, 0), cex = mycex,lwd=0.5,
            col="blue",xpd=NA)
-    arrows(0,-M-2,0,-M-0.5,lwd=3,angle=20,length=0.1)
-    text(0,-M-2.5,"observed",pos=4)
+    arrows(0,-M-2,0,-M-0.5,lwd=3,angle=20,length=0.1,col="blue")
+    text(0,-M-2.5,"observed",pos=4,col="blue",cex=1.5)
   }
   axis(2,at=-(1:M),
        labels=state_nm,las=2,xpd = NA,cex.axis=mycex)
@@ -481,4 +485,48 @@ postprocess_H_Q <- function(outres){
   outres$col_merged_H_star_samp <- col_merged_H_star_samp
   outres
 }
+
+
+#' Summarize individual latent state patterns given Q
+#'
+#' This function takes in posterior samples of individual latent states,
+#' orders latent states according to the rows of Q and output 1) the
+#' marginal probabilities of each individual's latent states being active
+#' and
+#' 2) the posterior samples of individual latent states (after ordering
+#' by row of Q and converting the binary codes to decimal numbers)
+#'
+#' @param H_star_samp A latent state profile array with elements indexed by
+#' (pseudo-cluster, latent state, mcmc iteration for inference)
+#'
+#' @param z_samp A pseudo-cluster indicator matrix with elements indexed by (individual, mcmc
+#' iteration for inference)
+#' @param Q Q matrix; known but could have rows not ordered
+#'
+#' @return
+#' \itemize{
+#' \item \code{marg_prob} the
+#' marginal probabilities of each individual's latent states being active
+#' \item \code{H_pat_ordered_samp} the posterior samples of individual
+#'  latent states (after ordering
+#' by row of Q and converting the binary codes to decmical numbers)
+#' }
+#' @export
+#'
+summarize_latent_state_given_Q <- function(H_star_samp, z_samp, Q){
+  if (sum(rowSums(Q)==0)>0){stop("[rewind] Some rows of Q are all zeros. Please remove these rows in Q and corresponding
+                                 columns in H_star_samp and retry.")}
+  n     <- dim(z_samp)[1]
+  M     <- nrow(Q)
+  n_inf <- dim(H_star_samp)[3]
+  H_res <- matrix(0,nrow=n,ncol=M)
+  H_pat_res <- matrix(0,nrow=n,ncol=n_inf)
+  for (iter in 1:n_inf){
+    tmp_not_ordered <- H_star_samp[z_samp[,iter],,iter]
+    tmp_ordered <- tmp_not_ordered[,order_mat_byrow(Q)$ord,drop=FALSE]
+    H_pat_res[,iter] <- round(bin2dec_vec(tmp_ordered,LOG=FALSE))
+    H_res <- (tmp_ordered+H_res*(iter-1))/iter
+  }
+  list(marg_prob = H_res,H_pat_ordered_samp = H_pat_res)
+  }
 

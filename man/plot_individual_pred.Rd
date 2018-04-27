@@ -4,7 +4,8 @@
 \alias{plot_individual_pred}
 \title{Plot individual probabilities}
 \usage{
-plot_individual_pred(p_samp, state_nm, whoisthis, thedata = NULL, ...)
+plot_individual_pred(p_samp, state_nm, whoisthis, thedata = NULL, mycex = 1,
+  ...)
 }
 \arguments{
 \item{p_samp}{A vector of posterior probabilities for each individual}
@@ -14,6 +15,8 @@ plot_individual_pred(p_samp, state_nm, whoisthis, thedata = NULL, ...)
 \item{whoisthis}{a character string, e.g., subject name.}
 
 \item{thedata}{a vector of binary measurements for a subject; of identical}
+
+\item{mycex}{the cex parameter for the names of the latent states. Default is 1.}
 
 \item{...}{other parameters for adjusting the individual plots.
 length to `state_nm`}
