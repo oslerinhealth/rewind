@@ -6,7 +6,7 @@ Date: 2018-04-26
 Authors@R: c(
      person("Zhenke", "Wu", email="zhenkewu@umich.edu",role=c("cre","aut","cph")),
      person("Scott", "Zeger", email="sz@jhu.edu",role="aut"))
-Maintainer: The package maintainer <yourself@somewhere.net>
+Maintainer: Zhenke Wu <zhenkewu@umich.edu>
 Description: This package implememnts a Bayesian hierarchical model that represents 
     observations as aggregation of a few unobserved binary machines where the aggregation 
     varies by subjects. Our approach is to specify the model likelihood via factorization 
