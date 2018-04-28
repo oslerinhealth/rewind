@@ -13,7 +13,7 @@ hmcols    <- colorRampPalette(YlGnBu5)(256)
 
 # simulate data:
 L0 <- 100
-options_sim0  <- list(N = 100,  # sample size.
+options_sim0  <- list(N = 200,  # sample size.
                       M = 3,    # true number of machines.
                       L = L0,   # number of antibody landmarks.
                       K = 2^3,    # number of true components.
@@ -55,7 +55,7 @@ model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
                                        model_options0$t_max+1)
 # mcmc options:
 mcmc_options0 <- list(
-  n_total = 200,
+  n_total = 1000,
   n_keep  = 200,
   n_split = 5,
   print_mod = 10,
@@ -71,7 +71,7 @@ mcmc_options0 <- list(
 out <- sampler(simu_dat,model_options0,mcmc_options0)
 
 
-################################################################
+###############################################################
 ## Posterior summaries:
 ###############################################################
 out0 <- out

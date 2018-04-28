@@ -63,7 +63,7 @@ arma::vec log_full(arma::mat Y,arma::mat eta_star,arma::mat Q,
     }
     for (int l=0;l<L;l++){
       res_lkd[j] += (n1[l]*log(psi[l])+n0[l]*log(1-psi[l]))*(1-xi(j,l))+
-        (n1[l]*log(theta[l])+n0[l]*log(1-theta[l]))*xi(j,l);
+                    (n1[l]*log(theta[l])+n0[l]*log(1-theta[l]))*xi(j,l);
     }
     res[j] = res_prior[j]+res_lkd[j];
   }

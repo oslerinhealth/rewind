@@ -41,7 +41,10 @@ It is common to observe multiple binary data where the goal is to filter observa
 Examples
 ---------
 
-- 1. binary factor analysis with **pre-specified # of factors** but unknown # of clusters
+- 1. restricted latent class analysis with **pre-specified # of factors** but unknown # of clusters
+
+![](inst/example_figure/factorization.png)
+
 ```r
 library(rewind)
 example(sampler)

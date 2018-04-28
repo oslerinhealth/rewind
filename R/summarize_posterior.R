@@ -200,7 +200,7 @@ plot_individual_pred <- function(p_samp,state_nm,whoisthis,thedata=NULL,mycex=1,
   axis(2,at=-(1:M),
        labels=state_nm,las=2,xpd = NA,cex.axis=mycex)
 
-  points(1:nrow(pat),pat_with_prob[,M+1]*M*multiplier,pch=18,xpd = NA,type="h")
+  points(1:nrow(pat),pat_with_prob[,M+1]*M*multiplier,pch=18,xpd = NA,type="h",lwd=2)
   axis(2,at=M*c(0,0.25,0.5,1)*multiplier,
        labels=c(0,0.25,0.5,1),las=2,xpd = NA)
 

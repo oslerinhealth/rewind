@@ -522,7 +522,7 @@ sampler <- function(dat,model_options,mcmc_options){
     p      <- model_options$p0 # fix prevalence.
   }
 
-  if (is.null(model_options$alpha)){
+  if (is.null(model_options$alpha) && is.null(model_options$p0)){
     alpha_samp <- rep(0,n_keep)  # hyperparameter for machine prevalence.
     alpha      <- m_max           # initialization.
   }else{
@@ -537,6 +537,9 @@ sampler <- function(dat,model_options,mcmc_options){
     mylist[1:t] <- 1:t
   }
 
+  if (!is.null(mcmc_options$predictive_samp) && mcmc_options$predictive_samp){
+    Y_pred_samp <- array(NA,c(n,L,n_keep))
+  }
   cat("[rewind] Begin MCMC for model with #latent states (M =", m_max, ")\n")
   if(!is.null(model_options$Q) && is_identity_Q){cat("> identity Q.\n")}
   for (iter in 1:n_total){
@@ -652,6 +655,7 @@ sampler <- function(dat,model_options,mcmc_options){
 
     if (VERBOSE){
       cat("\n[rewind] iteration ", iter, ":\n");
+      cat("------------ \n");
       cat("> Latent state profiles for t=",t," pseudo-clusters of sizes: ",N[N!=0],"\n")
       cat("> Merging identical rows (pseudo-clusters) and columns (partner latent states):\n")
       cat(">> H^* Before:\n")
@@ -661,7 +665,9 @@ sampler <- function(dat,model_options,mcmc_options){
       if (is.null(model_options$Q)){
         merged_res <- merge_H_Q(H_star,1:t,t,Q,TRUE)
       }
-      cat("> Finite IBP hyperparameter: alpha = ", alpha,"\n")
+      if (is.null(model_options$alpha)){
+        cat("> Finite IBP hyperparameter: alpha = ", alpha,"\n")
+      }
     }
 
     # update true/false positive rates - theta/psi:
@@ -672,7 +678,7 @@ sampler <- function(dat,model_options,mcmc_options){
     }
 
     # update hyperparameter for {p_m}:
-    if (is.null(model_options$alpha)){
+    if (is.null(model_options$alpha) && is.null(model_options$p0)){
       alpha <- update_alpha(H_star,t,m_max)
     }
 
@@ -688,7 +694,9 @@ sampler <- function(dat,model_options,mcmc_options){
       keep_index   <- keep_index +1
       t_samp[keep_index] <- t
       for (j in 1:t){N_samp[mylist[j],keep_index] <- N[mylist[j]]}
-      p_samp[,keep_index]    <- p
+      if (is.null(model_options$p0)){
+        p_samp[,keep_index]    <- p
+      }
       H_star_samp[mylist[1:t],,keep_index] <- H_star # <-- okay, insert H_star at places indicated by mylist.
       for (i in 1:n){z_samp[i,keep_index] <- z[i]}
       mylist_samp[,keep_index] <- mylist
@@ -704,7 +712,18 @@ sampler <- function(dat,model_options,mcmc_options){
       if (is.null(model_options$alpha)){
         alpha_samp[keep_index] <- alpha
       }
+      if (!is.null(mcmc_options$predictive_samp) && mcmc_options$predictive_samp){ # <-- slow.
+        Y_pred <- (H_star_redun[z,]%*%Q>0.5)+0
+        for (i_pred in 1:n){
+          for (l_pred in 1:L){
+            curr_p_pred <- c(theta[l_pred],psi[l_pred])[2-Y_pred[i_pred,l_pred]]
+            Y_pred[i_pred,l_pred] <- rbinom(1,1,curr_p_pred)
+          }
+        }
+        Y_pred_samp[,,keep_index] <- Y_pred
+      }
     }
+
   }# END mcmc iterations.
 
   res <- list(keepers=keepers,t_samp=t_samp,N_samp=N_samp,z_samp=z_samp,
@@ -722,8 +741,11 @@ sampler <- function(dat,model_options,mcmc_options){
   if (is.null(model_options$p0)){
     res$p_samp <- p_samp
   }
-  if (is.null(model_options$alpha)){
+  if (is.null(model_options$alpha) && is.null(model_options$p0)){
     res$alpha_samp <- alpha_samp
+  }
+  if (!is.null(mcmc_options$predictive_samp) && mcmc_options$predictive_samp){
+    res$Y_pred_samp <- Y_pred_samp
   }
   res
 }
