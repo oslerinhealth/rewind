@@ -447,7 +447,8 @@ dev.off()
 # posterior distribution of active/effective dimensions (machines):
 pdf(file.path("inst/example_figure/","posterior_effective_machines_number.pdf"),
     width=10,height=6)
-plot(table(apply(out$col_merged_H_star_samp,c(3),function(x) sum(colSums(x)>0)))/mcmc_options0$n_keep,
+plot(table(apply(out$col_merged_H_star_samp,c(3),
+                 function(x) sum(colSums(x)>0)))/mcmc_options0$n_keep,
      xlab = "Effect Number of Machines",xlim=c(1,model_options0$m_max),
      ylab ="Posterior Probability",
      main="",lwd=4)
