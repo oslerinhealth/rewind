@@ -120,8 +120,8 @@ options_sim0  <- list(N = 200,  # sample size.
                       M = 3,    # true number of machines.
                       L = L0,   # number of antibody landmarks.
                       K = 2^3,    # number of true components.
-                      theta = rep(0.9,L0), # true positive rates.
-                      psi   = rep(0.1,L0), # false positive rates.
+                      theta = rep(0.8,L0), # true positive rates.
+                      psi   = rep(0.2,L0), # false positive rates.
                       alpha1 = 1 # half of the people have the first machine.
 )
 
@@ -158,13 +158,17 @@ model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
                                        model_options0$t_max+1)
 # mcmc options:
 mcmc_options0 <- list(
-  n_total = 1000,
-  n_keep  = 200,
+  n_total = 200,
+  n_keep  = 100,
   n_split = 5,
   print_mod = 10,
   constrained = TRUE, # <-- need to write a manual about when these options are okay.
   block_update_H = TRUE,
   block_update_Q = !TRUE,
+  ALL_IN_ONE_START =!TRUE,  # <--- TRUE for putting all subjects in one cluster,
+                            # FALSE by starting from a hierechical clustering
+                            # (complete linkage) and cut
+                    # to produce floor(t_max/4). Consider this as a warm start.
   hmcols = hmcols
 )
 
@@ -376,9 +380,11 @@ if (!is.null(model_options0$Q)){ # <--- Q known.
     H_res <- (tmp + H_res*(l-1))/l
   }
   apply(H_pat_res,1,table)
+  pdf(file.path("inst/example_figure/","H_estimated_marginal_prob_vs_truth.pdf"),width=12,height=6)
   par(mfrow=c(1,2))
-  image(f(H_res),col=hmcols,main="estimated marginal prob")
+  image(f(H_res),col=hmcols,main="estimated marginal prob") # <--- get marg prob.
   image(f(simu$Eta[,order_mat_byrow(simu$Q)$ord]),col=hmcols,main="truth")
+  dev.off()
   # issues: the order of the rows of Q at ind_of_Q might be different, so need to order them.
 }
 
@@ -394,6 +400,58 @@ for (i in 1:nrow(simu_dat)){
 }
 dev.off()
 
+# check positive rate estimates:
+pdf(file.path("inst/example_figure/","check_PR_post_vs_prior.pdf"),width=12,height=6)
+par(mfrow=c(5,2))
+for (l in 1:L0){
+  par(mar=c(1,1,1,2))
+  baker::beta_plot(model_options0$a_psi[1,l],model_options0$a_psi[2,l])
+  hist(out$psi_samp[l,],add=TRUE,freq=FALSE)
+  legend("topright",legend = l)
+  baker::beta_plot(model_options0$a_theta[1,l],model_options0$a_theta[2,l])
+  hist(out$theta_samp[l,],add=TRUE,freq=FALSE)
+}
+dev.off()
+
+
+#
+# posterior of scientific clusters:
+#
+scatterhist = function(x, y, xlab="", ylab=""){
+  zones=matrix(c(2,0,1,3), ncol=2, byrow=TRUE)
+  layout(zones, widths=c(4/5,1/5), heights=c(1/5,4/5))
+  xhist = hist(x, plot=FALSE)
+  yhist = hist(y, plot=FALSE)
+  top = max(c(xhist$counts, yhist$counts))
+  par(mar=c(3,3,1,1))
+  plot(x,y,type="l",cex.lab=1.5)
+  par(mar=c(0,3,1,1))
+  #barplot(xhist$counts, axes=FALSE, ylim=c(0, top), space=0)
+  plot.new()
+  par(mar=c(3,0,1,1))
+  barplot(table(y) , axes=FALSE, xlim=c(0, top), space=0, horiz=TRUE)
+  par(oma=c(3,3,0,0))
+  mtext(xlab, side=1, line=1, outer=TRUE, adj=0,
+        at=.8 * (mean(x) - min(x))/(max(x)-min(x)))
+  mtext(ylab, side=2, line=2, outer=TRUE, adj=0,
+        at=(.8 * (mean(y) - min(y))/(max(y) - min(y))))
+}
+
+pdf(file.path("inst/example_figure/","posterior_sci_cluster_number.pdf"),
+    width=10,height=6)
+scatterhist(1:ncol(out$z_sci_samp),apply(out$z_sci_samp,2,
+                                         function(v){length(unique(v))}),
+            "Index","tilde{T}: #scientific clusters")
+dev.off()
+
+# posterior distribution of active/effective dimensions (machines):
+pdf(file.path("inst/example_figure/","posterior_effective_machines_number.pdf"),
+    width=10,height=6)
+plot(table(apply(out$col_merged_H_star_samp,c(3),function(x) sum(colSums(x)>0)))/mcmc_options0$n_keep,
+     xlab = "Effect Number of Machines",xlim=c(1,model_options0$m_max),
+     ylab ="Posterior Probability",
+     main="",lwd=4)
+dev.off()
 
 }
 

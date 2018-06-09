@@ -151,8 +151,6 @@ plot_population_fractions <- function(p_samp,state_nm,mycex=1,...){
 
 }
 
-
-
 #' Plot individual probabilities
 #'
 #' @param p_samp A vector of posterior probabilities for each individual
@@ -264,7 +262,11 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
   H_star  <- H_star_redun[mylist[1:t],,drop=FALSE] #<-- focus on Eta vectors
   # associated with a pseudo-cluster;
   ind_zero_col <- which(colSums(H_star)==0)
-  if (nrow(H_star)>1 && sum(H_star)>0 && length(ind_zero_col)>0){H_star <- H_star[,-ind_zero_col]} #<<<<- removed zero columns here.
+  if (nrow(H_star)>1 && sum(H_star)>0 && length(ind_zero_col)>0){H_star <- H_star[,-ind_zero_col,drop=FALSE];
+          string_removed_zero_column <-  paste0(">> ignored ",length(ind_zero_col)," `non-active` latent states ---> ", ncol(H_star)," latent states. \n")
+          if (VERBOSE){
+            cat(string_removed_zero_column)
+            }} #<<<<- removed zero columns here.
   # merge rows (pseudo clusters to scientific clusters defined by \bEta_j):
   pat_H_star    <- apply(H_star,1,paste,collapse="")
   curr_merge    <- merge_map(pat_H_star,unique(pat_H_star))
@@ -295,12 +297,12 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
   H_star_merge  <- t(curr_merge_col$uniq_pat)
   string_merge2 <- NULL
   if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
-    string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)+1,"` partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
+    string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)+1," `partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
     cat(string_merge2)
   }
   if (!skip_Q){
     if (nrow(H_star)>1 && length(ind_zero_col)>0){
-      Q_merge <- merge_Q(Q[-ind_zero_col,],curr_merge_col$map)
+      Q_merge <- merge_Q(Q[-ind_zero_col,,drop=FALSE],curr_merge_col$map)
     } else {
       Q_merge <- merge_Q(Q,curr_merge_col$map)
     }
@@ -358,7 +360,7 @@ merge_H_col <- function(H_star_redun,VERBOSE=FALSE){
   H_star_merge  <- t(curr_merge_col$uniq_pat)
   string_merge2 <- NULL
   if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
-    string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)+1,"` partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
+    string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)+1," `partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
     cat(string_merge2)
   }
   # if (nrow(H_star)>1 && length(ind_zero_col)>0){
@@ -436,6 +438,8 @@ merge_map <- function(pseudo_pat,uniq_pat){
 #' image(Q,main="before merging")
 #' image(Q_merge, main="after merging")
 merge_Q <- function(Q,map_id){
+  #print(map_id)
+  #print(Q)
   res <- matrix(NA,nrow=length(unique(map_id)),ncol=ncol(Q))
   for (i in unique(map_id)){
     row_id_to_merge <- which(map_id==i)

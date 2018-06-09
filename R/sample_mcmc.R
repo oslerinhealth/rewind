@@ -442,6 +442,7 @@ sampler <- function(dat,model_options,mcmc_options){
   n <- nrow(dat) # number of observations
   L <- ncol(dat) # number of dimensions (e.g.,protein landmarks).
 
+  ALL_IN_ONE_START <- mcmc_options$ALL_IN_ONE_START # start the chain with all individuals in one cluster.
   n_total <- mcmc_options$n_total # total number of mcmc iterations.
   n_keep  <- mcmc_options$n_keep  # toral number of samples kept for posterior inference.
   keepers <- seq(ceiling(n_total/n_keep),n_total,len=n_keep)
@@ -476,20 +477,34 @@ sampler <- function(dat,model_options,mcmc_options){
   }
 
 
-  # initialize the sampling chain:
-  t <- 1        # number of clusters.
-  z <- rep(1,n) # z[i] is the cluster ID for observation i.
-  mylist <- rep(0,t_max+3); mylist[1] <- 1  # mylist[1:t] is the list of active cluster IDs.
-  # mylist is maintained in increasing order for 1:t, and
-  # is 0 after that.
-  c_next <- 2                    # an available cluster ID to be used next.
-  N <- rep(0,t_max+3); N[1] <- n # N[c] is the size of cluster c. Note that N is different from n.
+  # initialize the sampling chain: (improve this by warm start!)
+  if (ALL_IN_ONE_START){
+    t <- 1        # number of clusters.
+    z <- rep(1,n) # z[i] is the cluster ID for observation i.
+    mylist <- rep(0,t_max+3); mylist[1] <- 1  # mylist[1:t] is the list of active cluster IDs.
+    # mylist is maintained in increasing order for 1:t, and
+    # is 0 after that.
+    c_next <- 2                    # an available cluster ID to be used next.
+    N <- rep(0,t_max+3); N[1] <- n # N[c] is the size of cluster c. Note that N is different from n.
 
-  log_p <- rep(0,n+1) # probability for sampling z; n+1 because at most there could be n clusters;
-  # and sometimes one needs to assign an observation to a new cluster - by current bookkeeping,
-  # we are not efficient in memory and create a new cluster ID - hence +1.
-  zs <- rep(1,n)  # temporary cluster indicators for split-merge assignments.
-  S  <- rep(0,n)  # temporary variable for indicies used during split-merge step.
+    log_p <- rep(0,n+1) # probability for sampling z; n+1 because at most there could be n clusters;
+    # and sometimes one needs to assign an observation to a new cluster - by current bookkeeping,
+    # we are not efficient in memory and create a new cluster ID - hence +1.
+    zs <- rep(1,n)  # temporary cluster indicators for split-merge assignments.
+    S  <- rep(0,n)  # temporary variable for indicies used during split-merge step.
+  } else{
+    hc <- hclust(dist(dat),"complete")
+    t <- floor(t_max/4)
+    z <- cutree(hc,k = t)
+    mylist <- rep(0,t_max+3); mylist[1:t] <- 1:t  # mylist[1:t] is the list of active cluster IDs.
+    c_next <- t+1
+    N <- rep(0,t_max+3); N[1:t] <- table(z)
+    log_p <- rep(0,n+1)
+    zs <- z
+    S  <- rep(0,n)
+  }
+
+
 
   log_Nb <- log(1:n)+b # the multipliers needed when assigning an observation to an existing cluster. Restaurant process stuff.
 
@@ -665,7 +680,7 @@ sampler <- function(dat,model_options,mcmc_options){
       if (is.null(model_options$Q)){
         merged_res <- merge_H_Q(H_star,1:t,t,Q,TRUE)
       }
-      if (is.null(model_options$alpha)){
+      if (is.null(model_options$alpha) && is.null(model_options$p0)){
         cat("> Finite IBP hyperparameter: alpha = ", alpha,"\n")
       }
     }
@@ -709,7 +724,7 @@ sampler <- function(dat,model_options,mcmc_options){
       if (is.null(model_options$Q)){
         Q_samp[,,keep_index]       <- Q
       }
-      if (is.null(model_options$alpha)){
+      if (is.null(model_options$alpha) && is.null(model_options$p0)){
         alpha_samp[keep_index] <- alpha
       }
       if (!is.null(mcmc_options$predictive_samp) && mcmc_options$predictive_samp){ # <-- slow.
