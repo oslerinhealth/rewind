@@ -72,6 +72,14 @@ otherwise, set to \code{FALSE}.
 \item \code{block_update_Q} update columns of Q (if \code{TRUE}) or not
 (if \code{NULL} or \code{FALSE} - must be so for slice_sampler to come).
 Then no identifiability constraint is imposed upon Q at any iterations.
+\item \code{ALL_IN_ONE_START} \code{TRUE} for putting all subjects in one cluster,
+\code{FALSE} by starting from a hierechical clustering (complete linkage) and cut
+to produce floor(t_max/4) clusters. Consider this as a warm start.
+\item \code{MORE_SPLIT} when getting to launch state of the partition,
+\code{TRUE} for biasing towards split; FALSE for uniformly choose a pair (i,j)
+and then deciding to merge (if they belong to distinct clusters)
+or split (if they belong to the identical cluster)
+\item \code{hmcols} color palette.
 }}
 }
 \value{
@@ -119,7 +127,7 @@ L0 <- 100
 options_sim0  <- list(N = 200,  # sample size.
                       M = 3,    # true number of machines.
                       L = L0,   # number of antibody landmarks.
-                      K = 2^3,    # number of true components.
+                      K = 8,    # number of true components.
                       theta = rep(0.8,L0), # true positive rates.
                       psi   = rep(0.2,L0), # false positive rates.
                       alpha1 = 1 # half of the people have the first machine.
@@ -158,8 +166,8 @@ model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
                                        model_options0$t_max+1)
 # mcmc options:
 mcmc_options0 <- list(
-  n_total = 200,
-  n_keep  = 100,
+  n_total = 2000,
+  n_keep  = 500,
   n_split = 5,
   print_mod = 10,
   constrained = TRUE, # <-- need to write a manual about when these options are okay.
@@ -169,6 +177,7 @@ mcmc_options0 <- list(
                             # FALSE by starting from a hierechical clustering
                             # (complete linkage) and cut
                     # to produce floor(t_max/4). Consider this as a warm start.
+  MORE_SPLIT = TRUE,
   hmcols = hmcols
 )
 
@@ -453,6 +462,8 @@ plot(table(apply(out$col_merged_H_star_samp,c(3),
      ylab ="Posterior Probability",
      main="",lwd=4)
 dev.off()
+
+image(f(simu$Q),col=hmcols)
 
 }
 

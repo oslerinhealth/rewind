@@ -175,6 +175,10 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
 #' @param p a vector of machine (factor) prevalences of length M
 #' @param theta a vector of true positive rates of length L
 #' @param psi a vector of false positive rates of length L
+#' @param MORE_SPLIT Default is \code{NULL}. When getting to launch state of the partition,
+#' \code{TRUE} for biasing towards split; FALSE for uniformly choose a pair (i,j)
+#' and then deciding to merge (if they belong to distinct clusters)
+#' or split (if they belong to the identical cluster)
 #' @return Returns the values at the end of the current iteration \itemize{
 #' \item \code{t} the number of clusters;
 #' \item \code{z} the cluster assignment indicators for all subjects (taking values from \code{mylist});
@@ -183,7 +187,7 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
 #' }
 #'
 #' @export
-split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
+split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_SPLIT=NULL){
   # for non-conjugate sampler, there needs to be n_merge
   n <- nrow(Y)
   M <- nrow(Q)
@@ -208,50 +212,52 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi){
   }
 
   # <<<<<<<
-  #print(mylist)
-  #print(z)
-  if (length(unique(z))>1){
-    log_p_bias <- rep(NA,length(unique(z))) # <--- biased towards split.
-    count <- 1
-    for (k_cj0 in unique(z)){
+  if (!is.null(MORE_SPLIT) & MORE_SPLIT){
+    #print(mylist)
+    #print(z)
+    if (length(unique(z))>1){
+      log_p_bias <- rep(NA,length(unique(z))) # <--- biased towards split.
+      count <- 1
+      for (k_cj0 in unique(z)){
+        ns <- 0
+        for (k in 1:n){
+          if (z[k]==ci0 || z[k]==k_cj0){
+            ns <- ns+1
+            S[ns] <- k
+          }
+        }
+        if (k_cj0!=ci0){
+          if (!is_identity_Q){
+            log_p_bias[count] <- log_marginal(Y[S,,drop=FALSE],H_enumerate,Q,p,theta,psi) -
+              log_marginal(Y[z==ci0,,drop=FALSE],H_enumerate,Q,p,theta,psi)-log_marginal(Y[z==k_cj0,,drop=FALSE],H_enumerate,Q,p,theta,psi) # computed for original (not launch state) and proposed states.
+          } else{
+            log_p_bias[count] <- log_marginal_Q_identity(Y[S,,drop=FALSE],p,theta,psi) -
+              log_marginal_Q_identity(Y[z==ci0,,drop=FALSE],p,theta,psi)-log_marginal_Q_identity(Y[z==k_cj0,,drop=FALSE],p,theta,psi) # computed for original (not launch state) and proposed states.
+          }
+        }
+        count <- count+1
+      }
+
+      log_p_bias[is.na(log_p_bias)] <- log(4)+ # <-- times more likely to be split.
+        matrixStats::logSumExp(log_p_bias[!is.na(log_p_bias)])
+      p_bias <- exp(log_p_bias-matrixStats::logSumExp(log_p_bias))
+      #print(p_bias)
+
+      #print(unique(z))
+      cj0 <- sample(unique(z),1,replace=FALSE,prob=p_bias)
+      #print(which(z==cj0))
+      zz <- z; zz[i] <- 10000
+      if (sum(zz==cj0)>0){
+        j   <- sample(which(zz==cj0),1,replace=FALSE)
+      } else{
+        j   <- sample((1:n)[-i],1,replace=FALSE)
+      }
       ns <- 0
       for (k in 1:n){
-        if (z[k]==ci0 || z[k]==k_cj0){
+        if (z[k]==ci0 ||  z[k]==cj0){
           ns <- ns+1
           S[ns] <- k
         }
-      }
-      if (k_cj0!=ci0){
-        if (!is_identity_Q){
-          log_p_bias[count] <- log_marginal(Y[S,,drop=FALSE],H_enumerate,Q,p,theta,psi) -
-            log_marginal(Y[z==ci0,,drop=FALSE],H_enumerate,Q,p,theta,psi)-log_marginal(Y[z==k_cj0,,drop=FALSE],H_enumerate,Q,p,theta,psi) # computed for original (not launch state) and proposed states.
-        } else{
-          log_p_bias[count] <- log_marginal_Q_identity(Y[S,,drop=FALSE],p,theta,psi) -
-            log_marginal_Q_identity(Y[z==ci0,,drop=FALSE],p,theta,psi)-log_marginal_Q_identity(Y[z==k_cj0,,drop=FALSE],p,theta,psi) # computed for original (not launch state) and proposed states.
-        }
-      }
-      count <- count+1
-    }
-
-    log_p_bias[is.na(log_p_bias)] <- log(4)+
-      matrixStats::logSumExp(log_p_bias[!is.na(log_p_bias)]) # <-- 2 times more likely to be split.
-    p_bias <- exp(log_p_bias-matrixStats::logSumExp(log_p_bias))
-    #print(p_bias)
-
-    #print(unique(z))
-    cj0 <- sample(unique(z),1,replace=FALSE,prob=p_bias)
-    #print(which(z==cj0))
-    zz <- z; zz[i] <- 10000
-    if (sum(zz==cj0)>0){
-      j   <- sample(which(zz==cj0),1,replace=FALSE)
-    } else{
-      j   <- sample((1:n)[-i],1,replace=FALSE)
-    }
-    ns <- 0
-    for (k in 1:n){
-      if (z[k]==ci0 ||  z[k]==cj0){
-        ns <- ns+1
-        S[ns] <- k
       }
     }
   }

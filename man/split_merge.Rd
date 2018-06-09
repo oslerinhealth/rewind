@@ -4,7 +4,8 @@
 \alias{split_merge}
 \title{Split-merge type update of clusterings}
 \usage{
-split_merge(Y, z, zs, S, mylist, N, t, b, log_v, n_split, Q, p, theta, psi)
+split_merge(Y, z, zs, S, mylist, N, t, b, log_v, n_split, Q, p, theta, psi,
+  MORE_SPLIT = NULL)
 }
 \arguments{
 \item{Y}{multivariate binary data (row for subjects, column for dimensions)}
@@ -34,6 +35,11 @@ split_merge(Y, z, zs, S, mylist, N, t, b, log_v, n_split, Q, p, theta, psi)
 \item{theta}{a vector of true positive rates of length L}
 
 \item{psi}{a vector of false positive rates of length L}
+
+\item{MORE_SPLIT}{Default is \code{NULL}. When getting to launch state of the partition,
+\code{TRUE} for biasing towards split; FALSE for uniformly choose a pair (i,j)
+and then deciding to merge (if they belong to distinct clusters)
+or split (if they belong to the identical cluster)}
 }
 \value{
 Returns the values at the end of the current iteration \itemize{

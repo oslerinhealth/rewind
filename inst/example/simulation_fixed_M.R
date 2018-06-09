@@ -13,12 +13,12 @@ hmcols    <- colorRampPalette(YlGnBu5)(256)
 
 # simulate data:
 L0 <- 100
-options_sim0  <- list(N = 200,  # sample size.
-                      M = 3,    # true number of machines.
+options_sim0  <- list(N = 50,  # sample size.
+                      M = 5,    # true number of machines.
                       L = L0,   # number of antibody landmarks.
-                      K = 2^3,    # number of true components.
-                      theta = rep(0.8,L0), # true positive rates.
-                      psi   = rep(0.2,L0), # false positive rates.
+                      K = 5,    # number of true components.
+                      theta = rep(0.9,L0), # true positive rates.
+                      psi   = rep(0.1,L0), # false positive rates.
                       alpha1 = 1 # half of the people have the first machine.
 )
 
@@ -44,6 +44,7 @@ model_options0 <- list(
   #psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
   #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
+  p0 = 0.5,
   log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
   #Prior for the number of components.
 )
@@ -55,8 +56,8 @@ model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
                                        model_options0$t_max+1)
 # mcmc options:
 mcmc_options0 <- list(
-  n_total = 200,
-  n_keep  = 100,
+  n_total = 2000,
+  n_keep  = 500,
   n_split = 5,
   print_mod = 10,
   constrained = TRUE, # <-- need to write a manual about when these options are okay.
@@ -66,6 +67,7 @@ mcmc_options0 <- list(
                             # FALSE by starting from a hierechical clustering
                             # (complete linkage) and cut
                     # to produce floor(t_max/4). Consider this as a warm start.
+  MORE_SPLIT = TRUE,
   hmcols = hmcols
 )
 
@@ -350,6 +352,8 @@ plot(table(apply(out$col_merged_H_star_samp,c(3),
      ylab ="Posterior Probability",
      main="",lwd=4)
 dev.off()
+
+image(f(simu$Q),col=hmcols)
 
 }
 

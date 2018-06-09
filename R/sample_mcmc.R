@@ -98,7 +98,7 @@ update_positive_rate <- function(Y,H,Q,a_theta,a_psi){
   theta_samp <- sapply(1:ncol(Q),function(i) {#stats::rbeta(1,theta_a1[i],theta_a2[i])
     u <- runif(1,pbeta(psi_samp[i],theta_a1[i],theta_a2[i]),1)
     #u <- runif(1,pbeta(0.5,theta_a1[i],theta_a2[i]),1) # set the lower limit to be 0.5.
-    qbeta(u,theta_a1[i],theta_a2[i])
+    max(min(0.999999,qbeta(u,theta_a1[i],theta_a2[i])),0.000001)
     #cat(u," - u\n")
     #cat(res,"\n")
     #res
@@ -403,6 +403,14 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' \item \code{block_update_Q} update columns of Q (if \code{TRUE}) or not
 #' (if \code{NULL} or \code{FALSE} - must be so for slice_sampler to come).
 #' Then no identifiability constraint is imposed upon Q at any iterations.
+#' \item \code{ALL_IN_ONE_START} \code{TRUE} for putting all subjects in one cluster,
+#' \code{FALSE} by starting from a hierechical clustering (complete linkage) and cut
+#' to produce floor(t_max/4) clusters. Consider this as a warm start.
+#' \item \code{MORE_SPLIT} when getting to launch state of the partition,
+#' \code{TRUE} for biasing towards split; FALSE for uniformly choose a pair (i,j)
+#' and then deciding to merge (if they belong to distinct clusters)
+#' or split (if they belong to the identical cluster)
+#' \item \code{hmcols} color palette.
 #' }
 #'
 #' @example /inst/example/simulation_fixed_M.R
@@ -494,8 +502,8 @@ sampler <- function(dat,model_options,mcmc_options){
     S  <- rep(0,n)  # temporary variable for indicies used during split-merge step.
   } else{
     hc <- hclust(dist(dat),"complete")
-    t <- floor(t_max/4)
-    z <- cutree(hc,k = t)
+    t  <- floor(t_max/4)
+    z  <- cutree(hc,k = t)
     mylist <- rep(0,t_max+3); mylist[1:t] <- 1:t  # mylist[1:t] is the list of active cluster IDs.
     c_next <- t+1
     N <- rep(0,t_max+3); N[1:t] <- table(z)
@@ -614,7 +622,8 @@ sampler <- function(dat,model_options,mcmc_options){
 
     if (do_update_partition){
       # if (use_splitmerge){}
-      res_split_merge <- split_merge(dat,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi)
+      MORE_SPLIT <- mcmc_options$MORE_SPLIT
+      res_split_merge <- split_merge(dat,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_SPLIT)
       t <- res_split_merge$t
       z <- res_split_merge$z
       N <- res_split_merge$N
@@ -671,6 +680,7 @@ sampler <- function(dat,model_options,mcmc_options){
     if (VERBOSE){
       cat("\n[rewind] iteration ", iter, ":\n");
       cat("------------ \n");
+      if (do_update_partition && !is.null(MORE_SPLIT) && MORE_SPLIT){cat("> Biasing towards splitting.\n")}
       cat("> Latent state profiles for t=",t," pseudo-clusters of sizes: ",N[N!=0],"\n")
       cat("> Merging identical rows (pseudo-clusters) and columns (partner latent states):\n")
       cat(">> H^* Before:\n")
