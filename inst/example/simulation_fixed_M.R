@@ -13,10 +13,10 @@ hmcols    <- colorRampPalette(YlGnBu5)(256)
 
 # simulate data:
 L0 <- 100
-options_sim0  <- list(N = 50,  # sample size.
-                      M = 5,    # true number of machines.
+options_sim0  <- list(N = 100,  # sample size.
+                      M = 3,    # true number of machines.
                       L = L0,   # number of antibody landmarks.
-                      K = 5,    # number of true components.
+                      K = 8,    # number of true components.
                       theta = rep(0.9,L0), # true positive rates.
                       psi   = rep(0.1,L0), # false positive rates.
                       alpha1 = 1 # half of the people have the first machine.
@@ -25,16 +25,18 @@ options_sim0  <- list(N = 50,  # sample size.
 image(simulate_data(options_sim0,SETSEED = TRUE)$datmat,col=hmcols)
 simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 simu_dat <- simu$datmat
+rle(simu$Z)
 
 #
 # specifying options:
 #
 
 # model options:
+m_max0 <- 5
 model_options0 <- list(
   n   = nrow(simu_dat),
   t_max  = 40,
-  m_max  = 5,
+  m_max  = m_max0,
   b  = 1, # Dirichlet hyperparameter; in the functions above,
   # we used "b" - also can be called "gamma"!.
   #Q  = simu$Q,
@@ -44,7 +46,7 @@ model_options0 <- list(
   #psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
   #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
-  p0 = 0.5,
+  p0 = rep(0.5,m_max0),
   log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
   #Prior for the number of components.
 )

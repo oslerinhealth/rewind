@@ -62,11 +62,19 @@ simulate_data <- function(options_sim, SETSEED=FALSE){
     eta_atom <- matrix(c(1,0,1),nrow=K,ncol=M,byrow=TRUE)
   } else{
 
-    if (K==5){eta_atom <- matrix(c(0,0,0,1,0,
-                                   1,1,0,1,0,
-                                   1,0,0,1,0,
-                                   1,1,1,0,0,
-                                   0,0,1,1,1),nrow=K,ncol=M,byrow=TRUE)
+    if (K==3 && M==2){eta_atom <- matrix(c(0,0,
+                                           1,1,
+                                           1,0),nrow=K,ncol=M,byrow=TRUE)
+    }
+    # if (K==3 && M== 5){eta_atom <- matrix(c(0,0,0,0,0,
+    #                                         1,1,0,0,0,
+    #                                         1,1,1,1,1),nrow=K,ncol=M,byrow=TRUE)
+    # }
+    if (K==5 && M== 5){eta_atom <- matrix(c(0,0,0,0,0,
+                                            1,1,0,1,0,
+                                            1,0,0,1,0,
+                                            1,1,1,0,0,
+                                            0,0,1,1,1),nrow=K,ncol=M,byrow=TRUE)
     }
     #
     # eta_atom <- matrix(c(0,0,0,1,0,0,0,0,1,0,
@@ -75,7 +83,7 @@ simulate_data <- function(options_sim, SETSEED=FALSE){
     #                      1,1,1,0,0,1,1,1,0,0,
     #                      0,0,1,1,1,0,0,1,1,1),nrow=K,ncol=M,byrow=TRUE)
 
-    if (K>=8){eta_atom <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
+    if (K==2^M){eta_atom <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
   }
 
   Z  <- sample(1:K,N,prob=rep(1/K,K),replace=TRUE)

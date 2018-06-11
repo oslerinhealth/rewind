@@ -297,7 +297,7 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
   H_star_merge  <- t(curr_merge_col$uniq_pat)
   string_merge2 <- NULL
   if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
-    string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)+1," `partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
+    string_merge2 <- paste0(">> absorbed ",ncol(H_star)-ncol(H_star_merge)," `partner` latent states ---> ", ncol(H_star_merge)," latent states. \n")
     cat(string_merge2)
   }
   if (!skip_Q){

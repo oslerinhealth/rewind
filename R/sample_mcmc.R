@@ -232,18 +232,23 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
     for (k in sample(1:M,replace=FALSE)){
       for (l in sample(1:L,replace=FALSE)){ # begin iteration over elements.
         if (do_update_Q_one(Q_old,k,l)){ # begin an update if needed.
-          L0 <- L1 <- 0
+          L0 <- L1   <- 0
           Q_old[k,l] <- 0
+          interact   <- 0 # <--- negative value to encourage sparse patterns per dimension.
+          ising_tmp  <- sum(outer(Q_old[k,],Q_old[k,],"*")[upper.tri(outer(Q_old[k,],Q_old[k,],"*"))])
           for (j in 1:t){ #Yl,eta_star,Ql,thetal,psil
             L0 <- L0 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
                                        H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
           }
+          L0 <- L0  - log(1+exp(-interact*ising_tmp)) # <-- encourage sparse columns.
           Q_old[k,l] <- 1
+          ising_tmp <- sum(outer(Q_old[k,],Q_old[k,],"*")[upper.tri(outer(Q_old[k,],Q_old[k,],"*"))])
           for (j in 1:t){
             L1 <- L1 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
                                        H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
           }
-          curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1)))
+          L1 <- L1 - log(1+exp(-interact*ising_tmp)) # <-- encourage sparse columns.
+          curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1))) 
           #print(curr_prob)
           #Q_old[k,l] <- metrop_flip(Q_old[k,l],curr_prob) # <-- if doing metroplized flipping.
           Q_old[k,l] <- stats::rbinom(1,1,prob = curr_prob)

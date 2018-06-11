@@ -124,18 +124,19 @@ hmcols    <- colorRampPalette(YlGnBu5)(256)
 
 # simulate data:
 L0 <- 100
-options_sim0  <- list(N = 200,  # sample size.
+options_sim0  <- list(N = 100,  # sample size.
                       M = 3,    # true number of machines.
                       L = L0,   # number of antibody landmarks.
                       K = 8,    # number of true components.
-                      theta = rep(0.8,L0), # true positive rates.
-                      psi   = rep(0.2,L0), # false positive rates.
+                      theta = rep(0.9,L0), # true positive rates.
+                      psi   = rep(0.1,L0), # false positive rates.
                       alpha1 = 1 # half of the people have the first machine.
 )
 
 image(simulate_data(options_sim0,SETSEED = TRUE)$datmat,col=hmcols)
 simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 simu_dat <- simu$datmat
+rle(simu$Z)
 
 #
 # specifying options:
@@ -155,6 +156,7 @@ model_options0 <- list(
   #psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
   #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
+  p0 = 0.5,
   log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
   #Prior for the number of components.
 )
