@@ -357,6 +357,12 @@ dev.off()
 
 image(f(simu$Q),col=hmcols)
 
+
+image(f(simu$xi),col=hmcols)
+pred_xi <- 0+(out$H_star_samp[out$z_samp[,100],,100]%*%apply(out$Q_samp[,,100],c(1,2),mean))>0.5
+image(f(pred_xi),col=hmcols)
+image(f(pred_xi- simu$xi),col=hmcols)
+
 }
 
 
