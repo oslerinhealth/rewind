@@ -143,10 +143,11 @@ rle(simu$Z)
 #
 
 # model options:
+m_max0 <- 5
 model_options0 <- list(
   n   = nrow(simu_dat),
   t_max  = 40,
-  m_max  = 5,
+  m_max  = m_max0,
   b  = 1, # Dirichlet hyperparameter; in the functions above,
   # we used "b" - also can be called "gamma"!.
   #Q  = simu$Q,
@@ -156,7 +157,7 @@ model_options0 <- list(
   #psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
   #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
-  p0 = 0.5,
+  p0 = rep(0.5,m_max0),
   log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
   #Prior for the number of components.
 )
@@ -466,6 +467,12 @@ plot(table(apply(out$col_merged_H_star_samp,c(3),
 dev.off()
 
 image(f(simu$Q),col=hmcols)
+
+
+image(f(simu$xi),col=hmcols)
+pred_xi <- 0+(out$H_star_samp[out$z_samp[,100],,100]\%*\%apply(out$Q_samp[,,100],c(1,2),mean))>0.5
+image(f(pred_xi),col=hmcols)
+image(f(pred_xi- simu$xi),col=hmcols)
 
 }
 
