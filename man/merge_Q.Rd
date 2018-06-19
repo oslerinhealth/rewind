@@ -7,7 +7,8 @@
 merge_Q(Q, map_id)
 }
 \arguments{
-\item{Q}{A Q matrix (row for ACTIVE factors that might be partners, columns for dimension of multivariate binary data)}
+\item{Q}{A Q matrix (row for ACTIVE factors that might be partners, 
+columns for dimension of multivariate binary data)}
 
 \item{map_id}{a vector taking possibly duplicated values in {1,...,M^+}, where M^+ is the number
 of active factors. \code{map_id=c(1,1,2,2,2,3)} means factor 1 and 2 are partner factors, factor 3 to 5 are another group
@@ -15,6 +16,13 @@ of partner factors.}
 }
 \value{
 A Q matrix with merged rows (by taking maximum within each group of partner factors)
+NB: does this work for other restricted LCM models? (DINO - ok; what
+about two latent states that never co-exist? DINA - okay by duality. For
+general RLCM, the log-linear representation will only have q_jk*q_jk',
+after merging, the term will be q_jk'', where k'' is merged version of k and k'.
+The population model will be find because if there is no person with k or k' only,
+the parameter for q_jk or q_jk' alone could not be estimated - no differentials
+in response probability levels.)
 }
 \description{
 Some rows of Q correspond to partner factors that are present or absent together;

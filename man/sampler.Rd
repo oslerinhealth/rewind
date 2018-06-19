@@ -157,7 +157,7 @@ model_options0 <- list(
   #psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
   #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
-  p0 = rep(0.5,m_max0),
+  #p0 = rep(0.5,m_max0), # <--- this seems to make a difference in convergence.
   log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
   #Prior for the number of components.
 )

@@ -15,5 +15,8 @@ a new output with extra elements:
 \code{z_sci_samp}, \code{col_merged_H_star_samp}.
 }
 \description{
-NB: need to add another option to skip merge Q when Q is known.
+NB: need to add another option to skip merge Q when Q is known, in
+which case, no col merging, no Q merging, just simple row-wise merging.
+Currently function merge_H_Q can deal with this. So just need to use that 
+functionality by specifying skip_Q = TRUE.
 }

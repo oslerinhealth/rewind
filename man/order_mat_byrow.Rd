@@ -4,14 +4,22 @@
 \alias{order_mat_byrow}
 \title{Order a binary matrix by row}
 \usage{
-order_mat_byrow(mat)
+order_mat_byrow(mat, decreasing = TRUE)
 }
 \arguments{
 \item{mat}{A binary matrix to be ordered by row}
+
+\item{decreasing}{\code{TRUE} (default) to order rows in a decreasing order;
+\code{FALSE} otherwise.}
 }
 \value{
 a list of res - the ordered matrix from large to small, ord - the order
 }
 \description{
-The order is determined by magnitude of the rows as in a binary system
+The order is determined by magnitude of the rows as in a binary system (decreasing)
+}
+\examples{
+themat <- matrix(c(0,1,0,1,0,0,1,1,1,0,1,1),ncol=3)
+order_mat_byrow(themat)
+order_mat_byrow(themat,decreasing=FALSE)
 }

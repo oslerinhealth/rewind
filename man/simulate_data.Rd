@@ -2,32 +2,46 @@
 % Please edit documentation in R/simulate.R
 \name{simulate_data}
 \alias{simulate_data}
-\title{simulate data from boolean matrix factorization model}
+\title{simulate data from restricted latent class models}
 \usage{
 simulate_data(options_sim, SETSEED = FALSE)
 }
 \arguments{
-\item{options_sim}{options for simulating data: N - sample size; M - number of machines;
-L - number of protein landmarks; K - number of ture components; alpha1 - hyperparameter
-for determining the machine prevalence {p_m}; theta - true positive rates for
-all protein landmarks; psi - false positive rates for all protein landmarks.}
+\item{options_sim}{options for simulating data: 
+\itemize{
+\item \code{N} - sample size; 
+\item \code{M} - number of machines;
+\item \code{L} - number of protein landmarks; 
+\item \code{K} - number of ture components; 
+\item \code{alpha1} - hyperparameter for determining the machine prevalence {p_m}; (NB: delete?)
+\item \code{theta} - true positive rates for all protein landmarks; 
+\item \code{psi} - false positive rates for all protein landmarks.
+\item \code{frac} - Percentage of (L-2M) dimensions that are positive in \code{Q};
+See \code{\link{simulate_Q}}.
+\item \code{pop_frac} - population prevalences of the \code{K} components.
 
-\item{SETSEED}{FALSE by default; Set to TRUE if to fix random number generation.}
+}}
+
+\item{SETSEED}{\code{FALSE} by default; Set to \code{TRUE} if to fix 
+random number generation.}
 }
 \value{
 \itemize{
 \item \code{datmat} a matrix for multivariate binary observations from the assumed boolean
 matrix factorization,
 \item \code{Q} A Q-matrix,
-\item \code{H_star} A binary matrix of dimension K by M, for K clusters, and M factors,
+\item \code{H_star} A binary matrix of dimension K by M, for K clusters, and M 
+latent states,
 \item \code{Z} A vector of length N for individual cluster indicators,
 \item \code{xi} a binary matrix of dimension N by L for true presence or absence of proteins
-\item \code{Eta} A binary matrix of dimension N by M for presence or absence of factors among
-all subejcts.
+\item \code{Eta} A binary matrix of dimension N by M for presence or absence of 
+latent states among all subjects.
 }
 }
 \description{
-This function takes in options_sim and simulate as specified by the options.
+This function takes in \code{options_sim} and simulate as specified by the options.
+NB: currently only supports logical "Or", or DINO model. Other restricted latent
+class models need to be added.
 }
 \examples{
 # simulate data:
@@ -41,7 +55,8 @@ options_sim0  <- list(N = 200,  # sample size.
                      alpha1 = 1 # half of the people have the first machine.
 )
 
-image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
 simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 simu_dat <- simu$datmat
+image(simu_dat)
+
 }

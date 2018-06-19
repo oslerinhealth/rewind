@@ -52,7 +52,7 @@ simulate_Q <- function(M,L,p=0.1){
 #'
 #' @return a binary matrix of dimension M by L
 #' @export
-simulate_Q_dat <- function(M,dat,p=0.1,frac=1/5){
+simulate_Q_dat <- function(M,dat,p=0.1,frac=1/4){
   ind_all <- which(colSums(dat)>nrow(dat)*frac) # this initial value helps MCMC sampling!.
   res <- matrix(0,nrow=M,ncol=ncol(dat))
   for (m in 1:M){
@@ -234,20 +234,26 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
         if (do_update_Q_one(Q_old,k,l)){ # begin an update if needed.
           L0 <- L1   <- 0
           Q_old[k,l] <- 0
-          interact   <- 0 # <--- negative value to encourage sparse patterns per dimension.
-          ising_tmp  <- sum(outer(Q_old[k,],Q_old[k,],"*")[upper.tri(outer(Q_old[k,],Q_old[k,],"*"))])
+          #interact   <- - 0.1 # <--- negative value to encourage sparse patterns per dimension.
+          #vec_interact <- c(Q_old[k,])
+          #vec_interact <- c(Q_old[k,],Q_old[-k,l])
+          #ising_tmp  <- sum(outer(vec_interact,vec_interact,"*")[upper.tri(outer(vec_interact,vec_interact,"*"))])
           for (j in 1:t){ #Yl,eta_star,Ql,thetal,psil
             L0 <- L0 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
                                        H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
           }
-          L0 <- L0  - log(1+exp(-interact*ising_tmp)) # <-- encourage sparse columns.
+          L0 <- L0 # + dbinom(sum(vec_interact),L-2*M,0.1,log=TRUE) # <-- encourage sparse columns.
+          #L0 <- L0  - log(1+exp(-interact*ising_tmp)) # <-- encourage sparse columns.
           Q_old[k,l] <- 1
-          ising_tmp <- sum(outer(Q_old[k,],Q_old[k,],"*")[upper.tri(outer(Q_old[k,],Q_old[k,],"*"))])
+          #vec_interact <- c(Q_old[k,])
+          #vec_interact <- c(Q_old[k,],Q_old[-k,l])
+          #ising_tmp <- sum(outer(vec_interact,vec_interact,"*")[upper.tri(outer(vec_interact,vec_interact,"*"))])
           for (j in 1:t){
             L1 <- L1 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
                                        H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
           }
-          L1 <- L1 - log(1+exp(-interact*ising_tmp)) # <-- encourage sparse columns.
+          L1 <- L1  #+ dbinom(sum(vec_interact),L-2*M,0.1,log=TRUE)# <-- encourage sparse columns.
+          #L1 <- L1 - log(1+exp(-interact*ising_tmp)) # <-- encourage sparse columns.
           curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1))) 
           #print(curr_prob)
           #Q_old[k,l] <- metrop_flip(Q_old[k,l],curr_prob) # <-- if doing metroplized flipping.

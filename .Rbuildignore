@@ -2,3 +2,4 @@
 ^\.Rproj\.user$
 R/rewind_junk.R
 .travis.yml
+simulations

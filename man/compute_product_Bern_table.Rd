@@ -15,7 +15,8 @@ compute_product_Bern_table(p, LOG = TRUE)
 a vector of probabilities that sum to one
 }
 \description{
-Compute the product Bernoulli probability table
+This function maybe useful for marginalization or just to visualize the
+probability table.
 }
 \examples{
 

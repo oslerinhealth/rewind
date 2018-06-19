@@ -4,7 +4,7 @@
 \alias{simulate_Q_dat}
 \title{Randomly generate a Q matrix within the identifying condition (data-driven)}
 \usage{
-simulate_Q_dat(M, dat, p = 0.1, frac = 1/5)
+simulate_Q_dat(M, dat, p = 0.1, frac = 1/4)
 }
 \arguments{
 \item{M}{latent state dimension}

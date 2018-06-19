@@ -2,20 +2,23 @@
 % Please edit documentation in R/summarize_posterior.R
 \name{z2comat}
 \alias{z2comat}
-\title{Convert the cluster indicators to the co-activation patterns.}
+\title{Compute the posterior co-clustering probability matrix (probability that i and j 
+are clustered together).}
 \usage{
 z2comat(z)
 }
 \arguments{
-\item{z}{a vector of integers indicating cluster assignments for all subjects}
+\item{z}{a matrix of posterior samples, with subjects and MCMC samples in 
+the rows and columns, respectively.}
 }
 \value{
-an N by N binary; an 1 represents that two subjects are in the same
-cluster; 0 otherwise.
+a matrix of empirical co-clustering frequencies based on the
+posterior samples
 }
 \description{
-Convert the cluster indicators to the co-activation patterns.
+This function is to evaluate the recovered clusters
 }
 \examples{
-z2comat(c(1,1,2,2,3,4,5,6,5,7))
+z2comat(matrix(c(1,1,2,2,3,4,5,6,5,7),ncol=1))
+
 }

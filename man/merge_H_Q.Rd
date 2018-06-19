@@ -10,7 +10,8 @@ merge_H_Q(H_star_redun, mylist, t, Q, VERBOSE = FALSE, z_pseudo = NULL,
 \arguments{
 \item{H_star_redun}{A binary matrix of rows \code{t_max+3} by \code{m_max};
 It may be redundant because it has rows corresponding to empty pseudo-clusters,
-and if the entire matrix is non-zero, the zero columns mean inactive latent states}
+and if the matrix has at least one non-zero element, the zero columns indicate 
+inactive latent states}
 
 \item{mylist}{Cluster labels; A vector of length \code{t_max+3} comprised of
 integers that need not be consecutive.}
@@ -23,11 +24,13 @@ integers that need not be consecutive.}
 set to \code{TRUE}.}
 
 \item{z_pseudo}{Default is \code{NULL}.
-A vector of pseudo-cluster indicators to be merged into
-scientific cluster indicators \code{z_sci}.}
+A vector of pseudo-cluster indicators to be merged into scientific cluster 
+indicators \code{z_sci}.}
 
-\item{skip_Q}{Default is \code{FALSE} - merge Q rows with partner states;
-Set to \code{TRUE} if \code{Q} is given.}
+\item{skip_Q}{Default is \code{FALSE} - merge the rows of Q that
+correspond to partner states; Set to \code{TRUE} if \code{Q} is given 
+in which case only rows of \code{H_star_redun} will be merged (keep
+the zero columns in H_star_redun, and not merging partner states).}
 }
 \value{
 A list comprised of two elements named:
@@ -39,14 +42,16 @@ This function
 \itemize{
 \item merges identical rows in H: pseudo-cluster ---> scientific clusters;
 \item merges partner latent states (identical non-zero columns in H);
-merge the corresponding rows in Q by \code{pmax}.
+merge the corresponding rows in Q by \code{pmax}. Even though identifiability
+condition may prevent non-identical columns in H, because we specify
+a maximum latent state dimension \code{m_max}, MCMC may produce identical 
+columns in some iterations.
 }
 }
 \examples{
-
 # the third latent state is inactive among non-empty pseudo-clusters;
 # the 2nd and 4th latent states are partners.
-# merge 1 and 2 pseudo-clusters.
+# merge 1st and 2nd pseudo-clusters.
  H_star_redun <- matrix(c(0,1,0,1,
                           0,1,0,1,
                           1,0,0,0,
@@ -58,8 +63,8 @@ mylist <- c(1,2,3,5,0,0,0)
 t <- 4
 Q <- simulate_Q(4,100,p=0.1)
 z_pseudo <- c(1,1,3,5,2,2,2,1,3,3,5,1,2,2,1)
+# Q is unknown and sampled
 merge_H_Q(H_star_redun,mylist,t,Q,TRUE,z_pseudo)
-
-# if all zero columns in H_star exists, they will be ignored.
-
+# Q is known:
+merge_H_Q(H_star_redun,mylist,t,Q,TRUE,z_pseudo,TRUE)
 }

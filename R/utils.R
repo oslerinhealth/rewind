@@ -31,12 +31,18 @@ bin2dec_vec <- function(mat,LOG=TRUE){# This is the log version:
 
 #' Order a binary matrix by row
 #'
-#' The order is determined by magnitude of the rows as in a binary system
+#' The order is determined by magnitude of the rows as in a binary system (decreasing)
 #'
 #' @param mat A binary matrix to be ordered by row
+#' @param decreasing \code{TRUE} (default) to order rows in a decreasing order;
+#' \code{FALSE} otherwise.
 #' @return a list of res - the ordered matrix from large to small, ord - the order
+#' @examples 
+#' themat <- matrix(c(0,1,0,1,0,0,1,1,1,0,1,1),ncol=3)
+#' order_mat_byrow(themat)
+#' order_mat_byrow(themat,decreasing=FALSE)
 #' @export
-order_mat_byrow <- function(mat){
+order_mat_byrow <- function(mat,decreasing=TRUE){
   L <- ncol(mat)
   M <- nrow(mat)
   v <- log(as.matrix(2^{(L-1):0},ncol=1))
@@ -44,15 +50,44 @@ order_mat_byrow <- function(mat){
   diag(diag_v) <- v
   tmp_prod <- mat%*%diag_v
   permute_M_vec <- sapply(1:M,function(i){matrixStats::logSumExp(tmp_prod[i,mat[i,]!=0])})
-  list(res = mat[rev(order(permute_M_vec)),,drop=FALSE],
-       ord = rev(order(permute_M_vec)))
+  if (decreasing){
+    return(list(res = mat[rev(order(permute_M_vec)),,drop=FALSE],
+                ord = rev(order(permute_M_vec))))
+  } else{
+    return(list(res = mat[(order(permute_M_vec)),,drop=FALSE],
+                ord = (order(permute_M_vec))))
+  }
 }
 
-#' flip the matrix to the right form for image()
+#' flip the matrix to the right form for \code{image()}
 #'
-#' This function makes the result of image() to be plotted as shown in a matrix
+#' This function makes the result of \code{image()} to be plotted as shown in a matrix
 #'
 #' @param m a matrix
 #' @return a matrix after image() will look the same as the matrix
 #' @export
 f <- function(m) {t(m)[,nrow(m):1]}
+
+
+#' create a string with parts that need to be replaced by a variable's actual values
+#' 
+#' 
+#' @param x quote(something)
+#' @param nm_in_x the string to in x to be replaced by val (could be a vector)
+#' @param val the value to be inserted at "nm_in_x" (could be a vector)
+#' @return an expression with 
+#' @export
+#' 
+#' @examples 
+#' mytitle <- quote(paste("(",Y[il],"): ",blabla,collapse=""))
+#' xx <- "design"
+#' eval_string(mytitle,"blabla",xx)
+#' 
+#' eval_string(quote(paste(a,"--",b,"--","--",c,"--",d)),
+#'    c("a","b","c","d"),c("Thanks","for","using","rewind!"))
+eval_string <- function(x,nm_in_x,val){
+  if (length(nm_in_x)!=length(val)){stop("[rewind] nm_in_x and val of different lengths.")}
+  string_list <- as.list(val)
+  names(string_list) <- nm_in_x
+  as.expression(do.call('substitute', list(x, string_list)))
+}

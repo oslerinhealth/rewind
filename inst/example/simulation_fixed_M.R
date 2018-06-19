@@ -46,7 +46,7 @@ model_options0 <- list(
   #psi   = options_sim0$psi,
   #alpha   = options_sim0$M,
   #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
-  p0 = rep(0.5,m_max0),
+  #p0 = rep(0.5,m_max0), # <--- this seems to make a difference in convergence.
   log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
   #Prior for the number of components.
 )
@@ -313,30 +313,6 @@ for (l in 1:L0){
   hist(out$theta_samp[l,],add=TRUE,freq=FALSE)
 }
 dev.off()
-
-
-#
-# posterior of scientific clusters:
-#
-scatterhist = function(x, y, xlab="", ylab=""){
-  zones=matrix(c(2,0,1,3), ncol=2, byrow=TRUE)
-  layout(zones, widths=c(4/5,1/5), heights=c(1/5,4/5))
-  xhist = hist(x, plot=FALSE)
-  yhist = hist(y, plot=FALSE)
-  top = max(c(xhist$counts, yhist$counts))
-  par(mar=c(3,3,1,1))
-  plot(x,y,type="l",cex.lab=1.5)
-  par(mar=c(0,3,1,1))
-  #barplot(xhist$counts, axes=FALSE, ylim=c(0, top), space=0)
-  plot.new()
-  par(mar=c(3,0,1,1))
-  barplot(table(y) , axes=FALSE, xlim=c(0, top), space=0, horiz=TRUE)
-  par(oma=c(3,3,0,0))
-  mtext(xlab, side=1, line=1, outer=TRUE, adj=0,
-        at=.8 * (mean(x) - min(x))/(max(x)-min(x)))
-  mtext(ylab, side=2, line=2, outer=TRUE, adj=0,
-        at=(.8 * (mean(y) - min(y))/(max(y) - min(y))))
-}
 
 pdf(file.path("inst/example_figure/","posterior_sci_cluster_number.pdf"),
     width=10,height=6)

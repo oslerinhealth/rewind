@@ -8,12 +8,12 @@ summarize_latent_state_given_Q(H_star_samp, z_samp, Q)
 }
 \arguments{
 \item{H_star_samp}{A latent state profile array with elements indexed by
-(pseudo-cluster, latent state, mcmc iteration for inference)}
+(pseudo-cluster, latent state, MCMC iteration for inference)}
 
-\item{z_samp}{A pseudo-cluster indicator matrix with elements indexed by (individual, mcmc
+\item{z_samp}{A pseudo-cluster indicator matrix with elements indexed by (individual, MCMC
 iteration for inference)}
 
-\item{Q}{Q matrix; known but could have rows not ordered}
+\item{Q}{Q matrix; known but could have rows to be ordered}
 }
 \value{
 \itemize{
@@ -26,9 +26,12 @@ by row of Q and converting the binary codes to decmical numbers)
 }
 \description{
 This function takes in posterior samples of individual latent states,
-orders latent states according to the rows of Q and output 1) the
+orders latent states according to the rows of Q and output 
+\itemize{
+\item 1) the
 marginal probabilities of each individual's latent states being active
 and
-2) the posterior samples of individual latent states (after ordering
+\item 2) the posterior samples of individual latent states (after ordering
 by row of Q and converting the binary codes to decimal numbers)
+}
 }

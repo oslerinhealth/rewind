@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{f}
 \alias{f}
-\title{flip the matrix to the right form for image()}
+\title{flip the matrix to the right form for \code{image()}}
 \usage{
 f(m)
 }
@@ -13,5 +13,5 @@ f(m)
 a matrix after image() will look the same as the matrix
 }
 \description{
-This function makes the result of image() to be plotted as shown in a matrix
+This function makes the result of \code{image()} to be plotted as shown in a matrix
 }
