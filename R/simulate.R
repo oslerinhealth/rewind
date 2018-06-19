@@ -58,8 +58,16 @@ simulate_data <- function(options_sim, SETSEED=FALSE){
   alpha1 <- options_sim$alpha1
   theta  <- options_sim$theta
   psi    <- options_sim$psi
-  frac   <- options_sim$frac
-  pop_frac <- options_sim$pop_frac
+  if (is.null(options_sim$frac)){
+    frac <- 0.2
+  } else{
+    frac   <- options_sim$frac
+  }
+  if (is.null(options_sim$pop_frac)){
+    pop_frac <- rep(1/K,K)
+  } else{
+    pop_frac <- options_sim$pop_frac
+  }
   
   # Q matrix: Check Chen 2015 JASA for sufficient condition for identification (
   #  under DINA or DINO model); check Xu 2017 AoS for general restricted LCM.

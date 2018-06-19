@@ -130,7 +130,10 @@ options_sim0  <- list(N = 100,  # sample size.
                       K = 8,    # number of true components.
                       theta = rep(0.9,L0), # true positive rates.
                       psi   = rep(0.1,L0), # false positive rates.
-                      alpha1 = 1 # half of the people have the first machine.
+                      alpha1 = 1, # half of the people have the first machine.
+                      frac = 0.2, # fraction of positive dimensions (L-2M) in Q.
+                      #pop_frac = rep(1/K0,K0) # population prevalences.
+                      pop_frac = c(rep(2,4),rep(1,4)) # population prevalences.
 )
 
 image(simulate_data(options_sim0,SETSEED = TRUE)$datmat,col=hmcols)
@@ -424,30 +427,6 @@ for (l in 1:L0){
   hist(out$theta_samp[l,],add=TRUE,freq=FALSE)
 }
 dev.off()
-
-
-#
-# posterior of scientific clusters:
-#
-scatterhist = function(x, y, xlab="", ylab=""){
-  zones=matrix(c(2,0,1,3), ncol=2, byrow=TRUE)
-  layout(zones, widths=c(4/5,1/5), heights=c(1/5,4/5))
-  xhist = hist(x, plot=FALSE)
-  yhist = hist(y, plot=FALSE)
-  top = max(c(xhist$counts, yhist$counts))
-  par(mar=c(3,3,1,1))
-  plot(x,y,type="l",cex.lab=1.5)
-  par(mar=c(0,3,1,1))
-  #barplot(xhist$counts, axes=FALSE, ylim=c(0, top), space=0)
-  plot.new()
-  par(mar=c(3,0,1,1))
-  barplot(table(y) , axes=FALSE, xlim=c(0, top), space=0, horiz=TRUE)
-  par(oma=c(3,3,0,0))
-  mtext(xlab, side=1, line=1, outer=TRUE, adj=0,
-        at=.8 * (mean(x) - min(x))/(max(x)-min(x)))
-  mtext(ylab, side=2, line=2, outer=TRUE, adj=0,
-        at=(.8 * (mean(y) - min(y))/(max(y) - min(y))))
-}
 
 pdf(file.path("inst/example_figure/","posterior_sci_cluster_number.pdf"),
     width=10,height=6)

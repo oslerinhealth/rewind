@@ -1,3 +1,9 @@
+# Define some variables shared within the package:
+package_env <- new.env(parent = emptyenv())
+# color palette for heatmaps:
+package_env$YlGnBu5   <- c('#ffffd9','#c7e9b4','#41b6c4','#225ea8','#081d58',"#092d94")
+package_env$hmcols    <- colorRampPalette(package_env$YlGnBu5)(256)
+
 # helper functions:
 
 #' convert binary codes to decimal integers

@@ -125,7 +125,7 @@ plot_population_fractions <- function(p_samp,state_nm,mycex=1,...){
   # #<- f(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res)
   # image(seq(1,nrow(pat),length=ncol(dat_rlcm_case)),-rev(1:NROW_Q_PLOT)-NROW_Q_PLOT-1,
   #       Q_PLOT,
-  #       main="Best Q (merged & ordered)",col=hmcols,
+  #       main="Best Q (merged & ordered)",col=package_env$hmcols,
   #       xlab="Dimension (1:L)",
   #       ylab="Latent State (1:M)",yaxt="n",cex.lab=1.2,add=TRUE)
   # for (k in 1:(NROW_Q_PLOT+1)){
@@ -445,12 +445,16 @@ merge_H_col <- function(H_star_redun,VERBOSE=FALSE){
 #' #' # simulate data:
 #' L0 <- 100
 #' options_sim0  <- list(N = 200,  # sample size.
-#'                      M = 3,   # true number of machines.
-#'                      L = L0,   # number of antibody landmarks.
-#'                      K = 8,    # number of true components.,
+#'                       M = 3,   # true number of machines.
+#'                       L = L0,   # number of antibody landmarks.
+#'                       K = 8,    # number of true components.,
 #'                      theta = rep(0.8,L0), # true positive rates
 #'                      psi   = rep(0.01,L0), # false positive rates
-#'                      alpha1 = 1 # half of the people have the first machine.
+#'                      alpha1 = 1, # half of the people have the first machine.
+#'                      frac = 0.2, # fraction of positive dimensions (L-2M) in Q.
+#'                      #pop_frac = rep(1/K0,K0) # population prevalences.
+#'                      #pop_frac = (1:K0)/sum(1:K0) # population prevalences.
+#'                      pop_frac = c(rep(2,4),rep(1,4)) # population prevalences.
 #')
 #'
 #' #image(simulate_data(options_sim0,SETSEED = TRUE)$datmat)
@@ -639,7 +643,7 @@ plot_rewind <- function(x,simu,type="data",title_val=type){
   if (type=="data" | type =="design"){
     image(1:L,1:N,
           f(x),
-          col=hmcols,
+          col=package_env$hmcols,
           xlab="Dimension (1:L)",yaxt="n",
           ylab="Subject (1:N)",cex.lab=1.2)
     axis(side=2,at=seq(0,N,by=10)+1,
@@ -652,7 +656,7 @@ plot_rewind <- function(x,simu,type="data",title_val=type){
     }
   } else if (type =="cocluster"){
     image(1:N,1:N,
-          f(x),col=hmcols,
+          f(x),col=package_env$hmcols,
           main=title_val,
           xlab="Subject (1:N)",
           ylab="Subject (1:N)",cex.lab=1.2,yaxt="n")

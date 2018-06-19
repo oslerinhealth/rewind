@@ -32,12 +32,16 @@ rates (theta and psi), the Q matrix and {p}-the prevalence parameter for each ma
 # simulate data:
 L0 <- 100
 options_sim0  <- list(N = 200,  # sample size.
-                     M = 3,   # true number of machines.
-                     L = L0,   # number of antibody landmarks.
-                     K = 8,    # number of true components.,
+                      M = 3,   # true number of machines.
+                      L = L0,   # number of antibody landmarks.
+                      K = 8,    # number of true components.,
                      theta = rep(0.8,L0), # true positive rates
                      psi   = rep(0.01,L0), # false positive rates
-                     alpha1 = 1 # half of the people have the first machine.
+                     alpha1 = 1, # half of the people have the first machine.
+                     frac = 0.2, # fraction of positive dimensions (L-2M) in Q.
+                     #pop_frac = rep(1/K0,K0) # population prevalences.
+                     #pop_frac = (1:K0)/sum(1:K0) # population prevalences.
+                     pop_frac = c(rep(2,4),rep(1,4)) # population prevalences.
 )
 
  simu     <- simulate_data(options_sim0, SETSEED=TRUE)
