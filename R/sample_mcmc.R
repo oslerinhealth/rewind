@@ -698,9 +698,9 @@ sampler <- function(dat,model_options,mcmc_options){
       print_mat <- H_star; rownames(print_mat) <- paste(c("pseudo-cluster",rep("",t-1)),1:t,sep=" ");
       colnames(print_mat) <- paste(c("factor(machine)",rep("",ncol(print_mat)-1)),1:ncol(print_mat),sep=" ")
       print(print_mat) # <-- removed all zero columns.
-      if (is.null(model_options$Q)){
+      #if (is.null(model_options$Q)){
         merged_res <- merge_H_Q(H_star,1:t,t,Q,TRUE)
-      }
+      #}
       if (is.null(model_options$alpha) && is.null(model_options$p0)){
         cat("> Finite IBP hyperparameter: alpha = ", alpha,"\n")
       }
