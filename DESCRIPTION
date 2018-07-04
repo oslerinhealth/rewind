@@ -1,8 +1,8 @@
 Package: rewind
 Type: Package
 Title: Reconstructing Etiology with Binary Decomposition
-Version: 0.3.0
-Date: 2018-06-20
+Version: 0.4.0
+Date: 2018-07-04
 Authors@R: c(
      person("Zhenke", "Wu", email="zhenkewu@umich.edu",role=c("cre","aut","cph")),
      person("Scott", "Zeger", email="sz@jhu.edu",role="aut"))

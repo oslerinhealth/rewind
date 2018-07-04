@@ -14,15 +14,15 @@ simulate_Q_dat(M, dat, p = 0.1, frac = 1/4)
 \item{p}{Bernoulli probability of 1 in the Q matrix (except two diagonal matrices)}
 
 \item{frac}{A threshold - this function only initializes the dimensions with at least
-\code{frac}*100\% observed frequencies. Default: 20\%.}
+\code{frac}*100\% observed frequencies.}
 }
 \value{
 a binary matrix of dimension M by L
 }
 \description{
 This function initializes Q (if unknown) during MCMC sampling chain within identifiability
-cosntraints. It is a warm start - because it will not assign a one to a dimension with
-few ones in the data
+cosntraints. It is a warm start - because it will not assign an "1" to dimension "l" with
+few ones in the data. NB: harder to get 1 to zero? easy to get zero to one?
 }
 \examples{
 # simulate data:

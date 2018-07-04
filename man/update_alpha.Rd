@@ -23,5 +23,6 @@ an updated alpha value (positive)
 }
 \description{
 Function to sample the parameters from a grid (this is used only for model
-with pre-specified latent state dimension M)
+with pre-specified latent state dimension M); NB: currently use uniform
+prior for the reparameterized hyperparameter; check if this is can be replaced by gamma.
 }

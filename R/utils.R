@@ -97,3 +97,23 @@ eval_string <- function(x,nm_in_x,val){
   names(string_list) <- nm_in_x
   as.expression(do.call('substitute', list(x, string_list)))
 }
+
+
+#' Sample truncated Beta random variables 
+#'
+#' @param n sample size
+#' @param a first Beta parameter
+#' @param b second Beta parameter
+#' @param lower lower limit
+#' @param upper upper limit
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' hist(trunc_rbeta(100000,1,1,0.2,0.8),freq=FALSE,xlim=c(0,1));abline(h=1.67)
+#' hist(trunc_rbeta(100000,2,3,0.2,0.8),freq=FALSE,xlim=c(0,1))
+trunc_rbeta <- function(n,a,b,lower=0,upper=1){
+  u <- runif(n,pbeta(lower,a,b),pbeta(upper,a,b))
+  pmax(pmin(0.999999,qbeta(u,a,b)),0.000001)
+}

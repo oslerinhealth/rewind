@@ -2,9 +2,9 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{update_positive_rate}
 \alias{update_positive_rate}
-\title{update true and false positive rates WITHOUT constraints}
+\title{update true and false positive rates}
 \usage{
-update_positive_rate(Y, H, Q, a_theta, a_psi)
+update_positive_rate(Y, H, Q, a_theta, a_psi, old_theta_vec = NULL)
 }
 \arguments{
 \item{Y}{binary data matrix}
@@ -13,11 +13,16 @@ update_positive_rate(Y, H, Q, a_theta, a_psi)
 
 \item{Q}{Q matrix}
 
-\item{a_theta, a_psi}{hyperparameters for priors on theta and psi, respectively.}
+\item{a_theta, a_psi}{Beta hyperparameters for priors on theta and psi, respectively.
+2 by L matrices.}
+
+\item{old_theta_vec}{sampled theta parameters from the previous iteration (vector
+of length L)}
 }
 \value{
-a list of true positive rates theta and false positive rates psi, each of length L.
+a list of true \code{theta} and false \code{psi} positive rates, each of length L.
 }
 \description{
-This function samples the true positive rates (theta) and false positive rates (psi)
+This function samples the true (theta) and false positive rates (psi); 
+Constraint: \code{theta[l]>psi[l]}
 }

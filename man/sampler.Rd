@@ -19,8 +19,16 @@ In an infinite dimension model, \code{m_max} is
 the maximum (guessed) latent state dimension during the posterior inference
 (see slice_sampler to come); one can increase this number if
 this pacakge recommends so in the printed message;
+\item \code{pooling_pr} \code{TRUE} for pooling theta and psi (must NOT
+set a_theta or a_psi; must set a0_TPR,a0_FPR,e0_TPR,f0_TPR,e0_FPR,f0_FPR)
 \item \code{a_theta, a_psi} hyperparameters for true and false positive rates;
 a_theta and a_psi are both a vector of length two.
+\item \code{a0_TPR} mean Beta parameter for the TPR hyperparameter
+\item \code{a0_FPR} mean Beta parameter for the FPR hyperparameter
+\item \code{e0_TPR} the first Gamma parameter for the TPR pesudo sample size hyperparameter
+\item \code{f0_TPR} the second Gamma parameter for the TPR pesudo sample size hyperparameter
+\item \code{e0_FPR} the first Gamma parameter for the FPR pesudo sample size hyperparameter
+\item \code{f0_FPR} the second Gamma parameter for the FPR pesudo sample size hyperparameter
 \item \code{a_alpha, b_alpha} Just for infinite latent state dimension model  -
 Gamma hyperparameter for the hyperprior on \code{alpha}.
 (see slice_sampler to come)
@@ -103,7 +111,8 @@ to see which ones to use for inference after \code{n_burnin}.
 }
 \description{
 This function performs MCMC sampling with user-specified options.
-NB: 1) add flexibility to specify other parameters as fixed. 2) sample component-specific
+NB: 1) add flexibility to specify other parameters as fixed (or partially
+fixed such as the rows of Q). 2) sample component-specific
 parameters. 3) sample other model parameters. 4) add timing and printing functionality.
 5) add posterior summary functions.
 6) edit verbose contents.
@@ -172,8 +181,8 @@ model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
                                        model_options0$t_max+1)
 # mcmc options:
 mcmc_options0 <- list(
-  n_total = 2000,
-  n_keep  = 500,
+  n_total = 200,
+  n_keep  = 50,
   n_split = 5,
   print_mod = 10,
   constrained = TRUE, # <-- need to write a manual about when these options are okay.

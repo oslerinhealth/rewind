@@ -61,8 +61,8 @@ model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
                                        model_options0$t_max+1)
 # mcmc options:
 mcmc_options0 <- list(
-  n_total = 2000,
-  n_keep  = 500,
+  n_total = 200,
+  n_keep  = 50,
   n_split = 5,
   print_mod = 10,
   constrained = TRUE, # <-- need to write a manual about when these options are okay.
