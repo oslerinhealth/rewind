@@ -89,10 +89,11 @@ f <- function(m) {t(m)[,nrow(m):1]}
 #' xx <- "design"
 #' eval_string(mytitle,"blabla",xx)
 #' 
-#' eval_string(quote(paste(a,"--",b,"--","--",c,"--",d)),
+#' mytitle <- eval_string(quote(paste(a,"--",b,"--","--",c,"--",d)),
 #'    c("a","b","c","d"),c("Thanks","for","using","rewind!"))
+#' plot(rnorm(10),rnorm(10),main=mytitle)
 eval_string <- function(x,nm_in_x,val){
-  if (length(nm_in_x)!=length(val)){stop("[rewind] nm_in_x and val of different lengths.")}
+  if (length(nm_in_x)!=length(val)){stop("[rewind] 'nm_in_x' and 'val' are of different lengths.")}
   string_list <- as.list(val)
   names(string_list) <- nm_in_x
   as.expression(do.call('substitute', list(x, string_list)))

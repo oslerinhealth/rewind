@@ -24,6 +24,7 @@ mytitle <- quote(paste("(",Y[il],"): ",blabla,collapse=""))
 xx <- "design"
 eval_string(mytitle,"blabla",xx)
 
-eval_string(quote(paste(a,"--",b,"--","--",c,"--",d)),
+mytitle <- eval_string(quote(paste(a,"--",b,"--","--",c,"--",d)),
    c("a","b","c","d"),c("Thanks","for","using","rewind!"))
+plot(rnorm(10),rnorm(10),main=mytitle)
 }
