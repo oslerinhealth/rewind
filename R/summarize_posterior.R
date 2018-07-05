@@ -360,7 +360,7 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
       return(list(H_star_merge=H_star_merge, Q_merge=Q_merge))
     }
   } else{
-        if (!is.null(z_pseudo)){
+    if (!is.null(z_pseudo)){
       return(list(H_star_merge=H_star_row_merge, Q_merge=Q,z_sci=z_sci))
     } else{
       return(list(H_star_merge=H_star_row_merge, Q_merge=Q))
@@ -520,12 +520,13 @@ merge_Q <- function(Q,map_id){
 #' functionality by specifying skip_Q = TRUE.
 #'
 #' @param outres output from \code{\link{sampler}}
+#' @param Q Q can be specified to be known. Default is \code{NULL}.
 #'
 #' @return a new output with extra elements:
 #' \code{H_star_merge_samp}, \code{Q_merge_samp},
 #' \code{z_sci_samp}, \code{col_merged_H_star_samp}.
 #' @export
-postprocess_H_Q <- function(outres){
+postprocess_H_Q <- function(outres,Q=NULL){
   n_kept <- dim(outres$H_star_samp)[3]
   curr_m_max <- ncol(outres$H_star_samp)
   curr_L <- dim(outres$theta_samp)[1]
@@ -534,24 +535,39 @@ postprocess_H_Q <- function(outres){
   col_merged_H_star_samp <- H_star_merge_samp
   z_sci_samp <- matrix(0,nrow=dim(outres$z_samp)[1],ncol=n_kept)
   for (iter in 1:n_kept){
-    merged_res <- merge_H_Q(outres$H_star_samp[,,iter],
-                            outres$mylist[,iter],
-                            outres$t_samp[iter],
-                            outres$Q_samp[,,iter],
-                            FALSE,
-                            outres$z_samp[,iter])
+    if (is.null(Q)){
+      merged_res <- merge_H_Q(outres$H_star_samp[,,iter],
+                              outres$mylist[,iter],
+                              outres$t_samp[iter],
+                              outres$Q_samp[,,iter],
+                              VERBOSE=FALSE,
+                              outres$z_samp[,iter],FALSE)
+    } else{
+      merged_res <- merge_H_Q(outres$H_star_samp[,,iter],
+                              outres$mylist[,iter],
+                              outres$t_samp[iter],
+                              Q,
+                              VERBOSE=FALSE,
+                              outres$z_samp[,iter],TRUE)
+    }
+    
     merged_H <- merged_res$H_star_merge
     merged_Q <- merged_res$Q_merge
     H_star_merge_samp[1:nrow(merged_H),1:ncol(merged_H),iter] <- merged_H
-    Q_merge_samp[1:nrow(merged_Q),1:ncol(merged_Q),iter]      <- merged_Q
+    Q_merge_samp[1:nrow(merged_Q),1:ncol(merged_Q),iter] <- merged_Q
     z_sci_samp[,iter]    <- merged_res$z_sci
-    col_merged_H_star_samp[,1:ncol(merged_H),iter] <- merge_H_col(
-      outres$H_star_samp[,,iter])$H_star_merge # <-- may still have extra zeros.
+    if (is.null(Q)){
+      col_merged_H_star_samp[,1:ncol(merged_H),iter] <- merge_H_col(
+        outres$H_star_samp[,,iter])$H_star_merge # <-- may still have extra zeros.
+    } else{
+      col_merged_H_star_samp[,1:ncol(merged_H),iter] <- 
+        outres$H_star_samp[,,iter]
+    }
   }
   outres$H_star_merge_samp <- H_star_merge_samp # <-- could have zero columns.
   outres$Q_merge_samp      <- Q_merge_samp # <-- could have zero rows.
   outres$z_sci_samp        <- z_sci_samp # <-- add scientific indicators.
-  outres$col_merged_H_star_samp <- col_merged_H_star_samp
+  outres$col_merged_H_star_samp <- col_merged_H_star_samp # <-- for visualizing marginal probabilities of latent states.
   outres
 }
 
@@ -668,5 +684,5 @@ plot_rewind <- function(x,simu,type="data",title_val=type){
     }
   } else{
     stop("[rewind] Requested 'type' not available. Please reselect.")
-    }
+  }
 }

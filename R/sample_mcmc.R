@@ -336,39 +336,45 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
   M  <- nrow(Q_old)
   N  <- nrow(Y)
   L  <- ncol(Y)
+  H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)
   if (constrained){ # constrained Gibbs sampling:
-    for (k in sample(1:M,replace=FALSE)){
-      for (l in sample(1:L,replace=FALSE)){ # begin iteration over elements.
+    for (k in sample(1:M,replace=FALSE)){ # begin iteration over elements of Q.
+      for (l in sample(1:L,replace=FALSE)){ 
         if (do_update_Q_one(Q_old,k,l)){ # begin an update if needed.
           L0 <- L1   <- 0
+          #q_now <- Q_old[k,l]
           Q_old[k,l] <- 0
           #interact   <- - 0.1 # <--- negative value to encourage sparse patterns per dimension.
           #vec_interact <- c(Q_old[k,])
           #vec_interact <- c(Q_old[k,],Q_old[-k,l])
           #ising_tmp  <- sum(outer(vec_interact,vec_interact,"*")[upper.tri(outer(vec_interact,vec_interact,"*"))])
           for (j in 1:t){ #Yl,eta_star,Ql,thetal,psil
+            #L0 <- L0 + log_marginal(Y[z==mylist[j],,drop=FALSE],
+            #                        H_star_enumerate,Q_old,p,theta,psi) # <--- integrate over H.
             L0 <- L0 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
                                        H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
           }
-          L0 <- L0 # + dbinom(sum(vec_interact),L-2*M,0.1,log=TRUE) # <-- encourage sparse columns.
+          L0 <- L0  #+ dbinom(sum(vec_interact),L-2*M,0.1,log=TRUE) # <-- encourage sparse columns.
           #L0 <- L0  - log(1+exp(-interact*ising_tmp)) # <-- encourage sparse columns.
           Q_old[k,l] <- 1
           #vec_interact <- c(Q_old[k,])
           #vec_interact <- c(Q_old[k,],Q_old[-k,l])
           #ising_tmp <- sum(outer(vec_interact,vec_interact,"*")[upper.tri(outer(vec_interact,vec_interact,"*"))])
           for (j in 1:t){
-            L1 <- L1 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
-                                       H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
+            #L1 <- L1 + log_marginal(Y[z==mylist[j],,drop=FALSE],
+            #                        H_star_enumerate,Q_old,p,theta,psi) # <---- integrate over H.
+             L1 <- L1 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
+                                        H[j,,drop=FALSE],Q_old[,l],theta[l],psi[l])
           }
           L1 <- L1  #+ dbinom(sum(vec_interact),L-2*M,0.1,log=TRUE)# <-- encourage sparse columns.
           #L1 <- L1 - log(1+exp(-interact*ising_tmp)) # <-- encourage sparse columns.
           curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1))) 
           #print(curr_prob)
-          #Q_old[k,l] <- metrop_flip(Q_old[k,l],curr_prob) # <-- if doing metroplized flipping.
+          #Q_old[k,l] <- metrop_flip(q_now,curr_prob) #           <-- if doing metroplized flipping.
           Q_old[k,l] <- stats::rbinom(1,1,prob = curr_prob)
         }# end an update if needed.
       }
-    }  #end iteration over elements.
+    } #end iteration over elements of Q.
   } else { # Gibbs update without constraints of Q within a set.
     for (k in sample(1:M,replace=FALSE)){
       for (l in sample(1:L,replace=FALSE)){ # begin iteration over elements.
@@ -564,9 +570,9 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 sampler <- function(dat,model_options,mcmc_options){
   
   # # <<<<------ testing data:
-  # dat <- simu_dat
-  # model_options <- model_options0
-  # mcmc_options  <- mcmc_options0
+  dat <- simu_dat
+  model_options <- model_options0
+  mcmc_options  <- mcmc_options0
   # # <<<<------ end of testing data.
   
   # # <<<<------ testing data:
@@ -609,7 +615,7 @@ sampler <- function(dat,model_options,mcmc_options){
     is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))<1e-3
   }
   
-  if (is.null(model_options$Q) | block_update_H){ # <-- if Q may be non-diagonal; or if we block update H.
+  if (is.null(model_options$Q) | (!is.null(is_identity_Q) && !is_identity_Q) | block_update_H){ # <-- if Q may be non-diagonal; or if we block update H.
     H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_max)),ncol=m_max) # all binary patterns for latent state profiles. 2^m_max of them.
   }
   
@@ -666,10 +672,11 @@ sampler <- function(dat,model_options,mcmc_options){
         hyper_mu_TPR      <- model_options$hyper_mu_TPR
       }
       tmp_hyper_TPR <-hyper_pseudo_n_TPR*hyper_mu_TPR
-      theta <- rbeta(L,tmp_hyper_TPR,hyper_pseudo_n_TPR-tmp_hyper_TPR)  
+      theta <- trunc_rbeta(L,tmp_hyper_TPR,hyper_pseudo_n_TPR-tmp_hyper_TPR,0.8,1)  
     } else{ # <--- not pooling PRs:
       a_theta <- model_options$a_theta # <--------------------------- 2 by L matrix.
-      theta   <- sapply(1:L,function(i){stats::rbeta(1,a_theta[1,i],a_theta[2,i])}) # initialization.
+      #theta   <- sapply(1:L,function(i){stats::rbeta(1,a_theta[1,i],a_theta[2,i])}) # initialization.
+      theta <- rep(0.9,L)
     }
   } else{
     theta   <- model_options$theta # use specified true positive rates.
@@ -690,10 +697,11 @@ sampler <- function(dat,model_options,mcmc_options){
         hyper_mu_FPR      <- model_options$hyper_mu_FPR
       }
       tmp_hyper_FPR <-hyper_pseudo_n_FPR*hyper_mu_FPR
-      psi <- rbeta(L,tmp_hyper_FPR,hyper_pseudo_n_FPR-tmp_hyper_FPR)  
+      psi <- trunc_rbeta(L,tmp_hyper_FPR,hyper_pseudo_n_FPR-tmp_hyper_FPR,0.001,0.2)  
     } else{
       a_psi <- model_options$a_psi  # <--------------------------- 2 by L matrix.
-      psi <- sapply(1:L,function(i){stats::rbeta(1,a_psi[1,i],a_psi[2,i])}) # initialization.
+      #psi <- sapply(1:L,function(i){stats::rbeta(1,a_psi[1,i],a_psi[2,i])}) # initialization.
+      psi <- rep(0.1, L) # initialization.
     }
   } else{
     psi     <- model_options$psi # use specified false positive rates.
@@ -703,7 +711,7 @@ sampler <- function(dat,model_options,mcmc_options){
     p_samp <- matrix(0,nrow=m_max,ncol=n_keep)
     p      <- rep(0.5,m_max)  # initialization.
   } else{
-    p      <- model_options$p0 # fix prevalence.
+    p      <- model_options$p0 # fix prevalence as specified.
   }
   
   if (is.null(model_options$alpha) && is.null(model_options$p0)){
@@ -732,7 +740,7 @@ sampler <- function(dat,model_options,mcmc_options){
       N <- sapply(1:t,function(uu){sum(z==uu)})
     }else{
       # update cluster indicators z for all subjects - one complete Gibbs scan to refine clusters:
-      for (i in 1:n){ # iterate over subjects:
+      for (i in sample(1:n)){ # iterate over subjects:
         # remove obs i from its current cluster:
         c    <- z[i]
         N[c] <- N[c]-1
@@ -746,22 +754,20 @@ sampler <- function(dat,model_options,mcmc_options){
         # compute probability for Gibbs updating - the probability of assigning a subject
         # to a cluster.
         
-        if (is.null(is_identity_Q)){
+        if (!is.null(model_options$Q) && is_identity_Q){ # <--- if Q is specified and identity:
+          for (j in 1:t){
+            cc       <- mylist[j]
+            log_p[j] <- log_Nb[N[cc]]+log_marginal_Q_identity(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),p,theta,psi)-
+              log_marginal_Q_identity(dat[(z==cc)[-i],,drop=FALSE],p, theta,psi) # existing cluster.
+          }
+          log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal_Q_identity(dat[i,,drop=FALSE],p,theta,psi) # new cluster.
+        } else{ # <--- if Q is not specified or specified but not identity:
           for (j in 1:t){
             cc       <- mylist[j]
             log_p[j] <- log_Nb[N[cc]]+log_marginal(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),H_star_enumerate,Q,p,theta,psi)-
               log_marginal(dat[(z==cc)[-i],,drop=FALSE],H_star_enumerate,Q,p, theta,psi) # existing cluster.
           }
           log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],H_star_enumerate,Q,p,theta,psi) # new cluster.
-        } else{
-          if (is_identity_Q){
-            for (j in 1:t){
-              cc       <- mylist[j]
-              log_p[j] <- log_Nb[N[cc]]+log_marginal_Q_identity(rbind(dat[(z==cc)[-i],,drop=FALSE],dat[i,]),p,theta,psi)-
-                log_marginal_Q_identity(dat[(z==cc)[-i],,drop=FALSE],p, theta,psi) # existing cluster.
-            }
-            log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal_Q_identity(dat[i,,drop=FALSE],p,theta,psi) # new cluster.
-          }
         }
         j <- sample(t+1,1,prob = exp(log_p[1:(t+1)]))
         
@@ -856,27 +862,32 @@ sampler <- function(dat,model_options,mcmc_options){
       }
     }
     
+    #
     # update true/false positive rates - theta/psi:
+    #
     if (is.null(model_options$theta) && is.null(model_options$psi)){
+      xi_temp <- (H_star%*%Q>0.5)+0; ind_eff <- which(colSums(xi_temp)>0)
       if (POOL_PR){
         if (is.null(model_options$hyper_pseudo_n_TPR)){
-          hyper_pseudo_n_TPR <- update_pseudo_n_PR(theta, hyper_mu_TPR, e = model_options$e0_TPR, f = model_options$f0_TPR, show_density = FALSE) # <-- hard coded.
+          hyper_pseudo_n_TPR <- update_pseudo_n_PR(theta[ind_eff], hyper_mu_TPR, e = model_options$e0_TPR, f = model_options$f0_TPR, show_density = FALSE) # <-- hard coded.
         }
         if (is.null(model_options$hyper_mu_TPR)){
-          hyper_mu_TPR       <- update_mu_PR(theta,hyper_pseudo_n_TPR,a=model_options$a0_TPR,b=1-model_options$a0_TPR,show_density=FALSE) # <-- hard coded.
+          hyper_mu_TPR       <- update_mu_PR(theta[ind_eff],hyper_pseudo_n_TPR,a=model_options$a0_TPR,b=1-model_options$a0_TPR,show_density=FALSE) # <-- hard coded.
         }
         if (is.null(model_options$hyper_pseudo_n_FPR)){
-          hyper_pseudo_n_FPR <- update_pseudo_n_PR(psi, hyper_mu_FPR, e = model_options$e0_FPR, f = model_options$f0_FPR, show_density = FALSE)    # <-- hard coded.
+          hyper_pseudo_n_FPR <- update_pseudo_n_PR(psi[-ind_eff], hyper_mu_FPR, e = model_options$e0_FPR, f = model_options$f0_FPR, show_density = FALSE)    # <-- hard coded.
         }
         if (is.null(model_options$hyper_mu_FPR)){
-          hyper_mu_FPR      <- update_mu_PR(psi,hyper_pseudo_n_FPR,a=model_options$a0_FPR,b=1-model_options$a0_FPR,show_density=FALSE) # <-- hard coded.
+          hyper_mu_FPR      <- update_mu_PR(psi[-ind_eff],hyper_pseudo_n_FPR,a=model_options$a0_FPR,b=1-model_options$a0_FPR,show_density=FALSE) # <-- hard coded.
         }
         a_theta <- replicate(L,hyper_pseudo_n_TPR*c(hyper_mu_TPR,1-hyper_mu_TPR))
         a_psi   <- replicate(L,hyper_pseudo_n_FPR*c(hyper_mu_FPR,1-hyper_mu_FPR))
       }
       res_update_pr <- update_positive_rate(dat,H_star_redun[z,,drop=FALSE],Q,a_theta,a_psi,theta)
       theta <- res_update_pr$theta
+      #print(theta)
       psi   <- res_update_pr$psi
+      #print(psi)
     }
     
     # update hyperparameter for {p_m}:
@@ -1046,4 +1057,37 @@ log_f_logprima <- function(log_p0,alpha,t){
   }
   alpha-t*exp(log_p0)/(1-exp(log_p0))+
     alpha*res
+}
+
+
+
+#' Metroplis flipping to improve mixing
+#'
+#' 
+#' @param x current value, 0 or 1
+#' @param curr_prob current probability of being 1
+#'
+#' @return a binary value
+#' @export
+#'
+#' @examples
+#' 
+#' metrop_flip(1,0.2)
+metrop_flip <- function(x,curr_prob){
+  if (x==1){
+    if (curr_prob <= 0.5) {
+      alpha <- 1
+    } else{
+      alpha <- exp(log(1-curr_prob) - log(curr_prob))
+    }
+    res <- rbinom(1,1,prob=1-alpha)
+  } else{
+    if (curr_prob >= 0.5){
+      alpha <- 1
+    } else{
+      alpha <- exp(log(curr_prob) - log(1-curr_prob))
+    }
+    res <- rbinom(1,1,prob=alpha)
+  } #end flipping.
+  res
 }

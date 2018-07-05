@@ -4,10 +4,12 @@
 \alias{postprocess_H_Q}
 \title{Merge H and Q}
 \usage{
-postprocess_H_Q(outres)
+postprocess_H_Q(outres, Q = NULL)
 }
 \arguments{
 \item{outres}{output from \code{\link{sampler}}}
+
+\item{Q}{Q can be specified to be known. Default is \code{NULL}.}
 }
 \value{
 a new output with extra elements:

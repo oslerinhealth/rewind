@@ -17,6 +17,9 @@ trunc_rbeta(n, a, b, lower = 0, upper = 1)
 
 \item{upper}{upper limit}
 }
+\value{
+a vector of truncated Beta random variables of size n.
+}
 \description{
 Sample truncated Beta random variables
 }

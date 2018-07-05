@@ -108,7 +108,7 @@ eval_string <- function(x,nm_in_x,val){
 #' @param lower lower limit
 #' @param upper upper limit
 #'
-#' @return
+#' @return a vector of truncated Beta random variables of size n.
 #' @export
 #'
 #' @examples
