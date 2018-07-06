@@ -28,8 +28,7 @@
 #' and system/software requirements to use \code{rewind} for your data.
 #' }
 #'
-#'
-#' @section rewind functions:
+#' @section Main rewind functions:
 #' \code{\link{sampler}}
 #'
 #' @useDynLib rewind

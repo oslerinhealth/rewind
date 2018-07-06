@@ -118,3 +118,97 @@ trunc_rbeta <- function(n,a,b,lower=0,upper=1){
   u <- runif(n,pbeta(lower,a,b),pbeta(upper,a,b))
   pmax(pmin(0.999999,qbeta(u,a,b)),0.000001)
 }
+
+
+
+
+#' Cuthill McKee (CM) algorithm
+#' 
+#' Transform sparse matrix into a band matrix
+#' 
+#' @author Fabian Schmich
+#' @param x Input matrix
+#' @return Band matrix
+#' @export
+#' 
+#' @seealso \code{\link{mblock}}
+#' 
+#' @examples
+#' 
+#' L0 <- 100   # dimension of measurements.
+#' M0 <- 30    # true dimension of latent states.
+#' frac <- 0.05
+#' NITER <- 1
+#' maxlen_simu <- rep(NA,NITER)
+#' for (iter in 1:NITER){
+#'   Q    <- simulate_Q(M0,L0,p = frac)
+#'   simu <- list(Q=Q)
+#'   block_ind_list <- mblock(simu$Q,PLOT = TRUE)
+#'   maxlen_simu[iter] <- max(unlist(lapply(block_ind_list,length)))
+#' }
+#' #hist(maxlen_simu)
+#' table(maxlen_simu)
+cuthill_mckee <- function(x) {
+  degs <- data.frame(Idx=1:ncol(x), NonZero=apply(x, 1, function(x) length(which(x != 0))))
+  R <- degs$Idx[which.min(degs$NonZero)]
+  i <- 1
+  for (i in 1:ncol(x)) {
+    Ai <- setdiff(which(x[R[i],] != 0), R)
+    if (length(Ai) > 0) {
+      Ai <- Ai[order(degs$NonZero[Ai], decreasing = FALSE)]
+      R <- append(R, Ai)
+    } else {
+      R <- append(R, degs$Idx[-R][which.min(degs$NonZero[-R])])
+    }
+    i <- i + 1
+  }
+  rR <- rev(R)
+  return(list(rR=rR,rcm=x[rR, rR]))
+}
+
+#' obtain the indices of rows of Q that form orthogonal blocks
+#'
+#' @param Q binary Q matrix (M by L), the rows of which are to be split
+#' @param PLOT plot blocks in the band matrix or not
+#'
+#' @return a list of indices that form blocks
+#' @export
+#' @seealso \code{\link{cuthill_mckee}}
+#' 
+mblock <- function(Q, PLOT=FALSE){
+  res_RCM <- cuthill_mckee(Q%*%t(Q))
+  y <- rep(0,M0)
+  for (i in 1:M0){
+    y[i] <- sum(res_RCM$rcm[1:i,1:i])-sum(diag(res_RCM$rcm)[1:i])
+  }
+  if (PLOT){
+    plot(y)
+    par(mfrow=c(2,2))
+    image(t(Q),col=package_env$hmcols)
+    image(t(Q)[,res_RCM$rR],col=package_env$hmcols)
+    image(f(Q%*%t(Q)),col=package_env$hmcols)
+    image(f(res_RCM$rcm),col=package_env$hmcols)
+  }
+  
+  nblock <- sum((diff(y)==0))
+  
+  if (nblock ==0 ){
+    return(list(1:nrow(Q)))
+  } else{
+    res <- matrix(NA,nrow=2,ncol=nblock)
+    s <- 1
+    res[1,s] <- 1
+    res[2,s] <- which(diff(y)==0)[s]
+    if (nblock>1){
+      for (s in 2:nblock){
+        res[1,s] <- res[2,s-1]+1
+        res[2,s] <- which(diff(y)==0)[s]
+      }
+    }
+    res_ind <- list()
+    for (s in 1:nblock){
+      res_ind[[s]] <- res_RCM$rR[res[1,s]:res[2,s]]
+    }
+    return(res_ind)
+  }
+}

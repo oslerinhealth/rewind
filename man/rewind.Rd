@@ -29,7 +29,7 @@ The posterior distributions of model parameters are estimated via Markov chain
 Monte Carlo which makes a list of molecular machine profiles with uncertainty
 quantification as well as patient-specific posterior probability of having each machine.
 }
-\section{rewind functions}{
+\section{Main rewind functions}{
 
 \code{\link{sampler}}
 }
