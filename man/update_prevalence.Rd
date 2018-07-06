@@ -17,5 +17,5 @@ update_prevalence(H_star, alpha, M)
 vector of length M (each between 0 and 1).
 }
 \description{
-This function updates the prevelance paramters
+This function updates the prevalence parameters
 }

@@ -7,14 +7,14 @@
 log_pr_Qml_cond(Yl, eta_star, Ql, thetal, psil)
 }
 \arguments{
-\item{Yl}{a column of the multivariate binary data}
+\item{Yl}{binary vector (e.g., observed values at dimension l)}
 
 \item{eta_star}{a matrix of latent state profiles, rows for clusters,
 columns for M latent states}
 
 \item{Ql}{l-th column of the Q matrix}
 
-\item{thetal, psil}{The true, false positive rate (both between 0 and 1)}
+\item{thetal, psil}{true, false positive rate (both between 0 and 1)}
 }
 \value{
 log conditional probability of Q_ml given other unknown parameters

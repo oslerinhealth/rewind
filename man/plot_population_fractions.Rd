@@ -12,7 +12,7 @@ rows for latent state dimensions, columns for MCMC iterations.)}
 
 \item{state_nm}{A string vector for the names of the latent state dimensions}
 
-\item{mycex}{The cex paramter for the size of the latent state names
+\item{mycex}{The cex parameter for the size of the latent state names
 plotted on the left margin; Default is 1.}
 
 \item{...}{other parameters for adjusting the individual plots.}

@@ -25,14 +25,14 @@ columns for M latent states}
 \item{theta, psi}{True and false positive rates. Both are vectors of length L}
 
 \item{constrained}{Default to FALSE; Set to TRUE if doing constrained Gibbs sampling
-with identifiability constraints.}
+within identifiability constraints.}
 }
 \value{
 A Q matrix with all its elements updated.
 }
 \description{
-This function updates Q matrix by Gibbs sampler (with option to do constarined
-updates within the identifiability constraint)
+This function updates Q matrix by Gibbs sampler (with option to do constrained
+updates within the identifiability constraint). Only used when Q is not known.
 NB: - do we need M here? do we modify M after collapsing partner machines.
     - need to speed up.
 }

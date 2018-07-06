@@ -9,7 +9,7 @@ bin2dec_vec(mat, LOG = TRUE)
 \arguments{
 \item{mat}{A binary matrix the rows of which are the binary codes to be converted.}
 
-\item{LOG}{Take the logarithm of the decimal integer (defauly this \code{TRUE});
+\item{LOG}{Take the logarithm of the decimal integer (default is \code{TRUE});
 otherwise, set to \code{FALSE}.}
 }
 \value{

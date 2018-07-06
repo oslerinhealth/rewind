@@ -18,6 +18,5 @@ a binary value
 Metroplis flipping to improve mixing
 }
 \examples{
-
 metrop_flip(1,0.2)
 }

@@ -8,7 +8,7 @@
 #' This package provides a tool for statistical inference of a model that assumes human body generates antibodies to
 #' a small number of protein complexes (or, machines), each comprised of a few important antigens.
 #'
-#' \code{rewind} This package implememnts a Bayesian hierarchical model that represents
+#' \code{rewind} This package implements a Bayesian hierarchical model that represents
 #' observations as aggregation of a few unobserved binary machines where the aggregation
 #' varies by subjects. Our approach is to specify the model likelihood via factorization
 #' into two latent binary matrices: machine profiles and individual factors.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{sampler}
 \alias{sampler}
-\title{MCMC sampling for pre-specified latent state dimension M}
+\title{Main function for model estimation}
 \usage{
 sampler(dat, model_options, mcmc_options)
 }
@@ -18,21 +18,26 @@ the posterior inference
 In an infinite dimension model, \code{m_max} is
 the maximum (guessed) latent state dimension during the posterior inference
 (see slice_sampler to come); one can increase this number if
-this pacakge recommends so in the printed message;
+this package recommends so in the printed message;
+\item \code{a_theta, a_psi} hyperparameters for true and false positive rates;
+a_theta and a_psi are both a vector of length two. If these parameters
+are specified, then no pooling across dimensions, just distinct parameters
+each with their own priors.
 \item \code{pooling_pr} \code{TRUE} for pooling theta and psi (must NOT
 set a_theta or a_psi; must set a0_TPR,a0_FPR,e0_TPR,f0_TPR,e0_FPR,f0_FPR)
-\item \code{a_theta, a_psi} hyperparameters for true and false positive rates;
-a_theta and a_psi are both a vector of length two.
+\item \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR} pseudo sample 
+size in \code{Beta(hyper_pseudo_n_TPR*a0_TPR,hyper_pseudo_n_TPR*(1-a0_TPR))};
+usually works well by setting this to a large number, say 10 or 50.
 \item \code{a0_TPR} mean Beta parameter for the TPR hyperparameter
 \item \code{a0_FPR} mean Beta parameter for the FPR hyperparameter
-\item \code{e0_TPR} the first Gamma parameter for the TPR pesudo sample size hyperparameter
-\item \code{f0_TPR} the second Gamma parameter for the TPR pesudo sample size hyperparameter
-\item \code{e0_FPR} the first Gamma parameter for the FPR pesudo sample size hyperparameter
-\item \code{f0_FPR} the second Gamma parameter for the FPR pesudo sample size hyperparameter
+The following four parameters are not needed if \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR}
+are specified.
+\item \code{e0_TPR,f0_TPR} the first, second Gamma parameter for the TPR pseudo sample size hyperparameter
+\item \code{e0_FPR,f0_FPR} the first, second Gamma parameter for the FPR pseudo sample size hyperparameter
 \item \code{a_alpha, b_alpha} Just for infinite latent state dimension model  -
 Gamma hyperparameter for the hyperprior on \code{alpha}.
 (see slice_sampler to come)
-\item \code{log_v} The charaster string representing the prior
+\item \code{log_v} The character string representing the prior
 distribution for the number of true clusters, e.g.,
 \code{"function(k) {log(0.1) + (k-1)*log(0.9)}"}. We pre-computed
 log of the coefficients in Mixture of Finite Mixtures
@@ -58,7 +63,7 @@ For infinite dimension model, the hyperparameter for IBP (can set to 1).
 }
 Options for specifying data, sample size, max cluster number,
 coefficients in MFM (Miller and Harrison 2017 JASA), Gamma parameter in the MFM
-Dirchlet prior, number of intermediate Gibbs scan to arrive at the launch state,
+Dirichlet prior, number of intermediate Gibbs scan to arrive at the launch state,
 and other hyperparamter specification if needed, \code{n_total} for total number of
 MCMC iterations and \code{n_keep} for the number of samples kept for posterior inference.
 Note that the options involve other parameters for sampling hyperparameters such as
@@ -81,13 +86,12 @@ otherwise, set to \code{FALSE}.
 (if \code{NULL} or \code{FALSE} - must be so for slice_sampler to come).
 Then no identifiability constraint is imposed upon Q at any iterations.
 \item \code{ALL_IN_ONE_START} \code{TRUE} for putting all subjects in one cluster,
-\code{FALSE} by starting from a hierechical clustering (complete linkage) and cut
+\code{FALSE} by starting from a hierarchical clustering (complete linkage) and cut
 to produce floor(t_max/4) clusters. Consider this as a warm start.
 \item \code{MORE_SPLIT} when getting to launch state of the partition,
 \code{TRUE} for biasing towards split; FALSE for uniformly choose a pair (i,j)
 and then deciding to merge (if they belong to distinct clusters)
-or split (if they belong to the identical cluster)
-\item \code{hmcols} color palette.
+or split (if they belong to the identical cluster).
 }}
 }
 \value{
@@ -110,12 +114,15 @@ to see which ones to use for inference after \code{n_burnin}.
 }
 }
 \description{
-This function performs MCMC sampling with user-specified options.
-NB: 1) add flexibility to specify other parameters as fixed (or partially
-fixed such as the rows of Q). 2) sample component-specific
-parameters. 3) sample other model parameters. 4) add timing and printing functionality.
-5) add posterior summary functions.
-6) edit verbose contents.
+Estimating restricted latent class models (RLCM) by MCMC sampling 
+given pre-specified latent state dimension M. This function performs MCMC sampling 
+with user-specified options.
+NB: 
+1) add flexibility to specify other parameters as fixed (or partially
+fixed such as the rows of Q). 
+2) add timing and printing functionality.
+3) add posterior summary functions.
+4) edit verbose contents.
 }
 \examples{
 \dontrun{
@@ -192,8 +199,7 @@ mcmc_options0 <- list(
                             # FALSE by starting from a hierechical clustering
                             # (complete linkage) and cut
                     # to produce floor(t_max/4). Consider this as a warm start.
-  MORE_SPLIT = TRUE,
-  hmcols = hmcols
+  MORE_SPLIT = TRUE
 )
 
 #

@@ -10,7 +10,7 @@ do_update_Q_one(Q, k, l)
 \item{Q}{a matrix with rows corresponding to latent states and columns
 for number of binary measurements}
 
-\item{k, l}{row and column indices for checking wether to update Q_kl}
+\item{k, l}{row and column indices for checking whether to update Q_kl}
 }
 \value{
 A logical value. TRUE for updating in constrained Gibbs sampler, FALSE

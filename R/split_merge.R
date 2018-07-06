@@ -93,11 +93,11 @@ ordered_next <- function(mylist){
 #'            modified/updated.
 #' @param cia,cja cluster indicator for subject i,j prior to updating
 #' @param cib,cjb cluster indicator for subject i,j after updating
-#' @param ni,nj the number of subects clustered with i (j) - including i (j).
-#' @param i,j two distinct subejcts' indices
+#' @param ni,nj the number of subjects clustered with i (j) - including i (j).
+#' @param i,j two distinct subjects' indices
 #' @param S the set of indices clustered with either i or j (including i and j)
 #' @param ns size of S
-#' @param b gamma in the dirichlet distribution in MFM.
+#' @param b gamma in the Dirichlet distribution in MFM.
 #' @param active TRUE for performing a split update (both updating cluster indicators and computing the transition probabilities), FALSE otherwise (only for calculating
 #' proposal density; used in q(Z|Z_merge) = q(Z|Z_launch)).
 #' @param Q a Q matrix of dimension M by L

@@ -2,19 +2,19 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{update_mu_PR}
 \alias{update_mu_PR}
-\title{sample a_theta_one - hyperparameter for positive rates theta_l, psi_l (mean)}
+\title{sample a_theta_one - hyperparameter (mean) for positive rates theta_l, psi_l}
 \usage{
 update_mu_PR(theta_vec, s, a = 2, b = 1, show_density = TRUE)
 }
 \arguments{
-\item{theta_vec}{vector of positive rates}
+\item{theta_vec}{vector of positive rates that share a population mean}
 
-\item{s}{a positive scalar value; represent the current sampled value of pseudo-sample size}
+\item{s}{positive scalar; represents the current sampled value of pseudo-sample size}
 
-\item{a, b}{hyperparameter for beta distribution over original a_theta_one.}
+\item{a, b}{hyperparameter for Beta distribution over original a_theta_one.}
 
-\item{show_density}{Default to FALSE - hide the full conditional density of alpha_s
-given other unknown parameters; TRUE otherwise.}
+\item{show_density}{Show the full conditional density 
+given other unknown parameters; Default to \code{FALSE}}
 }
 \value{
 an updated alpha_s value (positive)

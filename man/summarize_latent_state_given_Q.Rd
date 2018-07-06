@@ -21,7 +21,7 @@ iteration for inference)}
 marginal probabilities of each individual's latent states being active
 \item \code{H_pat_ordered_samp} the posterior samples of individual
  latent states (after ordering
-by row of Q and converting the binary codes to decmical numbers)
+by row of Q and converting the binary codes to decimal numbers)
 }
 }
 \description{

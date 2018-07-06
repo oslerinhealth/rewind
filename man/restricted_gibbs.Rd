@@ -20,15 +20,15 @@ modified/updated.}
 
 \item{cib, cjb}{cluster indicator for subject i,j after updating}
 
-\item{ni, nj}{the number of subects clustered with i (j) - including i (j).}
+\item{ni, nj}{the number of subjects clustered with i (j) - including i (j).}
 
-\item{i, j}{two distinct subejcts' indices}
+\item{i, j}{two distinct subjects' indices}
 
 \item{S}{the set of indices clustered with either i or j (including i and j)}
 
 \item{ns}{size of S}
 
-\item{b}{gamma in the dirichlet distribution in MFM.}
+\item{b}{gamma in the Dirichlet distribution in MFM.}
 
 \item{active}{TRUE for performing a split update (both updating cluster indicators and computing the transition probabilities), FALSE otherwise (only for calculating
 proposal density; used in q(Z|Z_merge) = q(Z|Z_launch)).}

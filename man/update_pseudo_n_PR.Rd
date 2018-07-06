@@ -10,18 +10,20 @@ update_pseudo_n_PR(theta_vec, a_theta_one, e = 1, f = 0.1,
 \arguments{
 \item{theta_vec}{vector of positive rates}
 
-\item{a_theta_one}{a scalar value between 0 and 1.}
+\item{a_theta_one}{scalar between 0 and 1.}
 
-\item{e, f}{hyperparameter for Gamma distribution over original alpha_s.}
+\item{e, f}{hyperparameter for Gamma distribution over original alpha_s (mean
+e/f, variance e/f^2).}
 
-\item{show_density}{Default to FALSE - hide the full conditional density of alpha_s
-given other unknown parameters; TRUE otherwise.}
+\item{show_density}{show the full conditional density of alpha_s
+given other unknown parameters; default is \code{FALSE}.}
 }
 \value{
 an updated alpha_s value (positive)
 }
 \description{
-Function to sample the parameters from a grid
+Function to sample the parameters from a grid. NB: can just fix it at
+a particular value.
 }
 \examples{
 s  <- 10#rgamma(1,0.1,0.01)

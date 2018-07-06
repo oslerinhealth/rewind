@@ -7,7 +7,8 @@
 update_alpha(H_star, t, M, a = 1, b = 1, show_density = FALSE)
 }
 \arguments{
-\item{H_star}{the matrix of latent state profiles across clusters}
+\item{H_star}{binary matrix of latent state profiles (row for clusters, column for
+latent states)}
 
 \item{t}{number of clusters}
 
@@ -15,14 +16,15 @@ update_alpha(H_star, t, M, a = 1, b = 1, show_density = FALSE)
 
 \item{a, b}{hyperparameter for Beta distribution over reparameterized alpha.}
 
-\item{show_density}{Default to FALSE - hide the full conditional density of alpha
-given other unknown parameters; TRUE otherwise.}
+\item{show_density}{show the full conditional density of alpha
+given other unknown parameters; \code{FALSE} by default.}
 }
 \value{
 an updated alpha value (positive)
 }
 \description{
-Function to sample the parameters from a grid (this is used only for model
-with pre-specified latent state dimension M); NB: currently use uniform
-prior for the reparameterized hyperparameter; check if this is can be replaced by gamma.
+This function samples the parameters from a grid (this is used only for model
+with pre-specified latent state dimension M); 
+NB: currently it uses uniform prior or Beta prior for the reparameterized 
+hyperparameter; check if this is can be replaced by Gamma.
 }

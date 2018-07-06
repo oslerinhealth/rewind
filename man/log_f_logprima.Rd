@@ -2,7 +2,7 @@
 % Please edit documentation in R/sample_mcmc.R
 \name{log_f_logprima}
 \alias{log_f_logprima}
-\title{compute the deriviative of the log of density of inactive states'
+\title{compute the derivative of the log of density of inactive states'
 probability given the previous one (Teh et al., 07')}
 \usage{
 log_f_logprima(log_p0, alpha, t)

@@ -9,20 +9,20 @@ update_positive_rate(Y, H, Q, a_theta, a_psi, old_theta_vec = NULL)
 \arguments{
 \item{Y}{binary data matrix}
 
-\item{H}{a matrix whose rows are individual specific latent states (all subjects)}
+\item{H}{a binary matrix: rows for all individuals, columns for latent states}
 
 \item{Q}{Q matrix}
 
-\item{a_theta, a_psi}{Beta hyperparameters for priors on theta and psi, respectively.
-2 by L matrices.}
+\item{a_theta, a_psi}{Beta hyperparameters for priors on \code{theta} and 
+\code{psi}, respectively. 2 by L matrices.}
 
-\item{old_theta_vec}{sampled theta parameters from the previous iteration (vector
-of length L)}
+\item{old_theta_vec}{sampled \code{theta} parameters from the previous iteration (vector
+of length L); to sample \code{psi} given the constraint}
 }
 \value{
 a list of true \code{theta} and false \code{psi} positive rates, each of length L.
 }
 \description{
-This function samples the true (theta) and false positive rates (psi); 
-Constraint: \code{theta[l]>psi[l]}
+This function samples the true (theta) and false (psi) positive rates; 
+Constraint: \code{theta[l]> 0.5 > psi[l]}
 }

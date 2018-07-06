@@ -9,7 +9,7 @@ package_env$hmcols    <- colorRampPalette(package_env$YlGnBu5)(256)
 #' convert binary codes to decimal integers
 #'
 #' @param mat A binary matrix the rows of which are the binary codes to be converted.
-#' @param LOG Take the logarithm of the decimal integer (defauly this \code{TRUE});
+#' @param LOG Take the logarithm of the decimal integer (default is \code{TRUE});
 #' otherwise, set to \code{FALSE}.
 #'
 #' @return A vector of numbers after conversion

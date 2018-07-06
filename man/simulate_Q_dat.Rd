@@ -21,7 +21,7 @@ a binary matrix of dimension M by L
 }
 \description{
 This function initializes Q (if unknown) during MCMC sampling chain within identifiability
-cosntraints. It is a warm start - because it will not assign an "1" to dimension "l" with
+constraints. It is a warm start - because it will not assign an "1" to dimension "l" with
 few ones in the data. NB: harder to get 1 to zero? easy to get zero to one?
 }
 \examples{

@@ -72,7 +72,7 @@ compute_product_Bern_table <- function(p,LOG=TRUE){
 #' @param p_samp A matrix of posterior samples of Bernoulli probabilities (
 #' rows for latent state dimensions, columns for MCMC iterations.)
 #' @param state_nm A string vector for the names of the latent state dimensions
-#' @param mycex The cex paramter for the size of the latent state names
+#' @param mycex The cex parameter for the size of the latent state names
 #' plotted on the left margin; Default is 1.
 #' @param ... other parameters for adjusting the individual plots.
 #'
@@ -597,7 +597,7 @@ postprocess_H_Q <- function(outres,Q=NULL){
 #' marginal probabilities of each individual's latent states being active
 #' \item \code{H_pat_ordered_samp} the posterior samples of individual
 #'  latent states (after ordering
-#' by row of Q and converting the binary codes to decmical numbers)
+#' by row of Q and converting the binary codes to decimal numbers)
 #' }
 #' @export
 summarize_latent_state_given_Q <- function(H_star_samp, z_samp, Q){

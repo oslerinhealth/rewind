@@ -72,8 +72,7 @@ mcmc_options0 <- list(
                             # FALSE by starting from a hierechical clustering
                             # (complete linkage) and cut
                     # to produce floor(t_max/4). Consider this as a warm start.
-  MORE_SPLIT = TRUE,
-  hmcols = hmcols
+  MORE_SPLIT = TRUE
 )
 
 #
