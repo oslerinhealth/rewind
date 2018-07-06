@@ -19,4 +19,14 @@ Metroplis flipping to improve mixing
 }
 \examples{
 metrop_flip(1,0.2)
+
+
+p = 0.3
+x <- rep(NA,1000)
+x[1] <- 0
+for (iter in 2:1000){
+  x[iter] <- metrop_flip(x[iter-1],p)
+}
+
+plot(x,type="l",main=mean(x))
 }

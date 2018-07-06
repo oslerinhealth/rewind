@@ -350,7 +350,7 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
       for (l in sample(1:L,replace=FALSE)){ 
         if (do_update_Q_one(Q_old,k,l)){ # begin an update if needed.
           L0 <- L1   <- 0
-          #q_now <- Q_old[k,l]
+          q_now <- Q_old[k,l]
           Q_old[k,l] <- 0
           #interact   <- - 0.1 # <--- negative value to encourage sparse patterns per dimension.
           #vec_interact <- c(Q_old[k,])
@@ -387,6 +387,7 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
     for (k in sample(1:M,replace=FALSE)){
       for (l in sample(1:L,replace=FALSE)){ # begin iteration over elements.
         L0 <- L1 <- 0
+        q_now <- Q_old[k,l]
         Q_old[k,l] <- 0
         for (j in 1:t){ #Yl,eta_star,Ql,thetal,psil
           L0 <- L0 + log_pr_Qml_cond(Y[z==mylist[j],l,drop=FALSE],
@@ -400,7 +401,7 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
         curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1)))
         #print(curr_prob)
         
-        #Q_old[k,l] <- metrop_flip(Q_old[k,l],curr_prob)
+        #Q_old[k,l] <- metrop_flip(q_now,curr_prob)
         Q_old[k,l] <- stats::rbinom(1,1,prob = curr_prob)
       }
     }  #end iteration over elements.
@@ -1026,6 +1027,16 @@ sampler <- function(dat,model_options,mcmc_options){
 #'
 #' @examples
 #' metrop_flip(1,0.2)
+#' 
+#' 
+#' p = 0.3
+#' x <- rep(NA,1000)
+#' x[1] <- 0
+#' for (iter in 2:1000){
+#'   x[iter] <- metrop_flip(x[iter-1],p)
+#' }
+#' 
+#' plot(x,type="l",main=mean(x))
 metrop_flip <- function(x,curr_prob){
   if (x==1){
     if (curr_prob <= 0.5) {
