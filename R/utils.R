@@ -177,6 +177,7 @@ cuthill_mckee <- function(x) {
 #' 
 mblock <- function(Q, PLOT=FALSE){
   res_RCM <- cuthill_mckee(Q%*%t(Q))
+  M0 <- nrow(Q)
   y <- rep(0,M0)
   for (i in 1:M0){
     y[i] <- sum(res_RCM$rcm[1:i,1:i])-sum(diag(res_RCM$rcm)[1:i])
