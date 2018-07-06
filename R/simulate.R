@@ -195,8 +195,7 @@ simulate_data <- function(options_sim, SETSEED=FALSE){
 #' plot_truth(simu,options_sim0)
 #' @importFrom grDevices colorRampPalette
 plot_truth <- function(simu,options_sim0){
-  YlGnBu5   <- c('#ffffd9','#c7e9b4','#41b6c4','#225ea8','#081d58',"#092d94")
-  hmcols    <- colorRampPalette(YlGnBu5)(256)
+  hmcols    <- package_env$hmcols
   par(mfcol=c(4,1),tcl=-0.5,
       mai=c(0.7,0.7,0.3,0.3))
   
@@ -222,7 +221,7 @@ plot_truth <- function(simu,options_sim0){
   axis(side=2,at=1:options_sim0$N,labels=rev(1:options_sim0$N),las=2,cex.axis=0.5)
   mtext(expression(paste("(",Gamma[il],"): Design Matrix",collapse="")),3,1)
   for (k in 1:options_sim0$K){
-    abline(h=100-cumsum(rle(simu$Z)$lengths)[k]+0.5,
+    abline(h=nrow(simu$datmat)-cumsum(rle(simu$Z)$lengths)[k]+0.5,
            lty=2,col="grey",lwd=2)
   }
   

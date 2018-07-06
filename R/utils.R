@@ -119,9 +119,6 @@ trunc_rbeta <- function(n,a,b,lower=0,upper=1){
   pmax(pmin(0.999999,qbeta(u,a,b)),0.000001)
 }
 
-
-
-
 #' Cuthill McKee (CM) algorithm
 #' 
 #' Transform sparse matrix into a band matrix
