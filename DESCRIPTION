@@ -27,7 +27,7 @@ Imports:
     Rcpp(>= 0.12.15),
     stats(>= 3.4.1),
     graphics(>= 3.4.1),
-    grDevices(>= 3.5.0)
+    grDevices(>= 3.4.1)
 Suggests:
     knitr,
     testthat,
