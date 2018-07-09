@@ -5,7 +5,7 @@
 \title{Split-merge type update of clusterings}
 \usage{
 split_merge(Y, z, zs, S, mylist, N, t, b, log_v, n_split, Q, p, theta, psi,
-  MORE_SPLIT = NULL)
+  MORE_SPLIT = NULL, partition_partial = NULL)
 }
 \arguments{
 \item{Y}{multivariate binary data (row for subjects, column for dimensions)}
@@ -40,6 +40,8 @@ split_merge(Y, z, zs, S, mylist, N, t, b, log_v, n_split, Q, p, theta, psi,
 \code{TRUE} for biasing towards split; FALSE for uniformly choose a pair (i,j)
 and then deciding to merge (if they belong to distinct clusters)
 or split (if they belong to the identical cluster)}
+
+\item{partition_partial}{a list of subject ids that each belong to a few known clusters.}
 }
 \value{
 Returns the values at the end of the current iteration \itemize{

@@ -210,3 +210,224 @@ mblock <- function(Q, PLOT=FALSE){
     return(res_ind)
   }
 }
+
+
+#' Get frequency count for each integer
+#'
+#' tabulate v by 1:maxk
+#'
+#' @param v the vector of integers to be tabulated
+#' @param maxk maximum integer to search within v
+#'
+#' @return a vector of probabilities that sum to one
+#' @export
+#'
+get_freq <- function(v,maxk = 20){
+  sapply(1:maxk,function(k) sum(v==k)/length(v))
+}
+
+
+
+
+
+
+
+##
+##  For slice sampler for infinite dimension models:
+##
+
+#' compute the log of density of inactive states' probability given
+#' the previous one (Teh et al., 07')
+#'
+#' This function is used in sampling a model with infinite number of columns in H
+#'
+#' @param log_p0 log probability (the argument of this function)
+#' @param alpha hyperparameter for Indian Buffet Process (Infinite version)
+#' @param t the number of rows in the IBP
+#'
+#' @return a value corresponding to the log density f(log_p0)
+#' @examples
+#'
+#' library(ars)
+#' n_grid  <- 10000
+#' p0_grid <- seq(log(0.001),0,len=n_grid)
+#' y_den  <- log_f_logden(p0_grid,5,8)
+#'
+#' y <- ars::ars(n_grid,log_f_logden,log_f_logprima,
+#' c(-6,-4,-2,-1),m=4,
+#' ub=TRUE,xub=0,alpha=5,t=8)
+#' hist(y,breaks="Scott",main='Adaptive Rjection Sampling',freq=FALSE)
+#' rug(y)
+#' points(density(y),type="l",col="blue")
+#' points(p0_grid,exp(y_den-rewind:::logsumexp(y_den)-log(diff(p0_grid)[2])),
+#'       type="l",col="red") # <-- true density; log_f_logden is only
+#'                          #  correct upto a proportionality constant.
+#'
+#' legend("topleft",c("Sample Density","True Density"),lty=c(1,1),col=c("blue","red"),
+#'       bty="n")
+#'
+#' @export
+log_f_logden <- function(log_p0,alpha,t){
+  #if (p0 > p0_minus_one || p0 < 0){return(-Inf)}
+  res <- 0
+  for (j in 1:t){
+    res  <- res+(1/j)*(1-exp(log_p0))^j
+  }
+  alpha*res+(alpha-1)*log_p0+
+    t*log(1-exp(log_p0))+log_p0
+}
+
+
+#' compute the derivative of the log of density of inactive states'
+#' probability given the previous one (Teh et al., 07')
+#'
+#' This function is used in sampling a model with an infinite number of columns in H
+#'
+#' @inheritParams log_f_logden
+#'
+#' @return a value corresponding to the derivative of the log density d/du f(log_p0)
+#' @seealso \code{\link{log_f_logden}} provides an example
+#' @export
+log_f_logprima <- function(log_p0,alpha,t){
+  #if (p0 > p0_minus_one || p0 < 0){return(-Inf)}
+  res <- 0
+  for (j in 1:t){
+    res  <- res - exp(log_p0)*(1-exp(log_p0))^(j-1)
+  }
+  alpha-t*exp(log_p0)/(1-exp(log_p0))+
+    alpha*res
+}
+
+
+
+#' Metroplis flipping to improve mixing
+#'
+#' @param x current value, 0 or 1
+#' @param curr_prob current probability of being 1
+#'
+#' @return a binary value
+#' @export
+#'
+#' @examples
+#' metrop_flip(1,0.2)
+#' 
+#' 
+#' p = 0.3
+#' x <- rep(NA,1000)
+#' x[1] <- 0
+#' for (iter in 2:1000){
+#'   x[iter] <- metrop_flip(x[iter-1],p)
+#' }
+#' 
+#' plot(x,type="l",main=mean(x))
+metrop_flip <- function(x,curr_prob){
+  if (x==1){
+    if (curr_prob <= 0.5) {
+      alpha <- 1
+    } else{
+      alpha <- exp(log(1-curr_prob) - log(curr_prob))
+    }
+    res <- rbinom(1,1,prob=1-alpha)
+  } else{
+    if (curr_prob >= 0.5){
+      alpha <- 1
+    } else{
+      alpha <- exp(log(curr_prob) - log(1-curr_prob))
+    }
+    res <- rbinom(1,1,prob=alpha)
+  } #end flipping.
+  res
+}
+
+
+
+
+
+
+
+#' adjust cluster ids by specification
+#'
+#' @param cluster_list a list of clusters, each comprised of subject ids known
+#' to fall in the same cluster.
+#' @param z,N,t,mylist cluster ids for all subjects, cluster sizes, total # clusters, unique cluster ids (includes 0).
+#'
+#' @return z,N,t,mylist,c_next
+#' @export
+#' @examples
+#' 
+#' # simulate data:
+#' L0 <- 100   # dimension of measurements.
+#' M0 <- 3     # true dimension of latent states.
+#' K0 <- 2^M0     # true number of clusters.
+#' options_sim0  <- list(N = 100,    # sample size.
+#'                       M = M0,     # true number of machines.
+#'                       L = L0,     # number of antibody landmarks.
+#'                       K = K0,     # number of true components.
+#'                       theta = rep(0.8,L0),  # true positive rates.
+#'                       psi   = rep(0.15,L0), # false positive rates.
+#'                       #alpha1 = 1, # half of the people have the first machine.
+#'                       frac = 0.2, # fraction of positive dimensions (L-2M) in Q.
+#'                       #pop_frac = rep(1/K0,K0) # population prevalences.
+#'                       #pop_frac = (1:K0)/sum(1:K0) # population prevalences.
+#'                       pop_frac = c(rep(2,4),rep(1,4)) # population prevalences.
+#'                       #pop_frac = c(rep(0.75/4,4),rep(0.25/4,4))
+#' )
+#' 
+#' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
+#' 
+#' dat <- simu$datmat
+#' t_max <- 40
+#' n <- options_sim0$N
+#' hc <- hclust(dist(dat),"complete")
+#' t  <- floor(t_max/4)
+#' z  <- cutree(hc,k = t)
+#' mylist <- rep(0,t_max+3); mylist[1:t] <- 1:t  # mylist[1:t] is the list of active cluster IDs.
+#' c_next <- t+1
+#' N <- rep(0,t_max+3); N[1:t] <- table(z)
+#' log_p <- rep(0,n+1)
+#' zs <- z
+#' S  <- rep(0,n)
+#' 
+#' # before forcing clusters:
+#' list(z=z,N=N,t=t,mylist=mylist,c_next=c_next)
+#' 
+#' cl_list <- list(c(1:(rle(simu$Z)$lengths[1])), 
+#'                 c((1+rle(simu$Z)$lengths[1]):(rle(simu$Z)$lengths[2])))
+#' cl_list
+#' fix_cluster(cl_list,z,N,t,mylist)
+
+
+fix_cluster <- function(cluster_list,z,N,t,mylist){
+  G <- length(cluster_list)
+  for (g in 1:G){
+    curr_fixed_ind <- cluster_list[[g]]
+    diff_clust_id <- setdiff(names(table(z)),names(table(z[-curr_fixed_ind])))
+    c_to_reduce <- (mylist[1:t])[match(z[curr_fixed_ind],mylist[1:t])]
+    N[as.numeric(names(table(c_to_reduce)))] <- N[as.numeric(names(table(c_to_reduce)))]- table(c_to_reduce)
+    #print(length(diff_clust_id))
+    if (length(diff_clust_id)==0){
+      c_fixed <- ordered_next(mylist)
+      z[curr_fixed_ind] <-  c_fixed
+      mylist <- ordered_insert(c_fixed,mylist,t)
+      t <- t+1
+      c_next <- ordered_next(mylist)
+      N[c_fixed] <- length(curr_fixed_ind)
+    } else{
+      for (ss in 1:length(diff_clust_id)){
+        # c_to_reduce <- (mylist[1:t])[match(z[curr_fixed_ind],mylist[1:t])]
+        # N[as.numeric(names(table(c_to_reduce)))] <- N[as.numeric(names(table(c_to_reduce)))]- table(c_to_reduce)
+        mylist <- ordered_remove(as.numeric(diff_clust_id)[ss],mylist,t)
+        t <- t-1
+        if(ss==1){
+          c_fixed <- ordered_next(mylist)
+          z[curr_fixed_ind] <- c_fixed
+          mylist <- ordered_insert(c_fixed,mylist,t)
+          t <- t+1
+          N[c_fixed] <- length(curr_fixed_ind)
+        }
+        c_next <- ordered_next(mylist)
+      }
+    }
+  }
+  list(z=z,N=N,t=t,mylist=mylist,c_next=c_next)
+}

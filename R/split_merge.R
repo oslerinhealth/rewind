@@ -128,7 +128,7 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
       } else{
         nj <- nj-1 # <--mod
       }
-
+      
       # compute probability to assign observation k to the cluster to which obs i belongs:
       if (!is_identity_Q){
         Li <- log_marginal(rbind(Y[(zsa==cia)[-k],,drop=FALSE],Y[k,]),H_enumerate,Q,p,theta,psi) - log_marginal(Y[(zsa==cia)[-k],,drop=FALSE],H_enumerate,Q,p,theta,psi) # from restaurant process.
@@ -138,7 +138,7 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
         Lj <- log_marginal_Q_identity(rbind(Y[(zsa==cja)[-k],,drop=FALSE],Y[k,]),p,theta,psi) - log_marginal_Q_identity(Y[(zsa==cja)[-k],,drop=FALSE],p,theta,psi)
       }
       Pi <- exp(log(ni+b)+Li- matrixStats::logSumExp(c(log(ni+b)+Li,log(nj+b)+Lj))) # the (ni+b) also comes from restaurant process.
-
+      
       # if we need to update the assignment indicators:
       if (active){
         zsb[k] <- ifelse(stats::runif(1) < Pi, cib, cjb)
@@ -179,6 +179,7 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
 #' \code{TRUE} for biasing towards split; FALSE for uniformly choose a pair (i,j)
 #' and then deciding to merge (if they belong to distinct clusters)
 #' or split (if they belong to the identical cluster)
+#' @param partition_partial a list of subject ids that each belong to a few known clusters.
 #' @return Returns the values at the end of the current iteration \itemize{
 #' \item \code{t} the number of clusters;
 #' \item \code{z} the cluster assignment indicators for all subjects (taking values from \code{mylist});
@@ -187,7 +188,7 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
 #' }
 #'
 #' @export
-split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_SPLIT=NULL){
+split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_SPLIT=NULL,partition_partial=NULL){
   # for non-conjugate sampler, there needs to be n_merge
   n <- nrow(Y)
   M <- nrow(Q)
@@ -197,11 +198,27 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
   rand_pair <- sample(n,2,replace=FALSE)
   i <- rand_pair[1]
   j <- rand_pair[2]
-
+  # print(i)
+  # print(j)
+  
+  if (!is.null(partition_partial)){
+    i_is_here <- NA
+    if (i %in% unlist(partition_partial)){
+      i_is_here <- which(unlist(lapply(partition_partial,function(v) {i%in%v}))==TRUE)
+      j <- sample((1:n)[-partition_partial[[i_is_here]]],1,replace=TRUE)
+    }
+    # rand_pair <- sample((1:n)[-unlist(partition_partial)],2,replace=FALSE)
+    # i <- rand_pair[1]
+    # j <- rand_pair[2]
+  }
+  # print(i)
+  # print(j)
+  # print(i_is_here)
+  
   ci0 <- z[i]
   cj0 <- z[j] # original states.
-
-
+  
+  
   # set S[1],...,S[ns] to the indices of the observations in clusters ci0 and cj0:
   ns <- 0
   for (k in 1:n){
@@ -210,7 +227,7 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
       S[ns] <- k
     }
   }
-
+  
   # <<<<<<<
   if (!is.null(MORE_SPLIT) & MORE_SPLIT){
     #print(mylist)
@@ -237,12 +254,12 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
         }
         count <- count+1
       }
-
+      
       log_p_bias[is.na(log_p_bias)] <- log(4)+ # <-- times more likely to be split.
         matrixStats::logSumExp(log_p_bias[!is.na(log_p_bias)])
       p_bias <- exp(log_p_bias-matrixStats::logSumExp(log_p_bias))
       #print(p_bias)
-
+      
       #print(unique(z))
       cj0 <- sample(unique(z),1,replace=FALSE,prob=p_bias)
       #print(which(z==cj0))
@@ -261,25 +278,25 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
       }
     }
   }
-
+  
   # <<<<<<<<<
-
-
+  
+  
   # find available cluster IDs for split and merge parameters:
   k <- 1
   while (mylist[k]==k){ k=k+ 1};     cm = k
   while (mylist[k]==k+1){ k =k+ 1};  ci = k+1
   while (mylist[k]==k+2) {k =k+ 1};  cj = k+2
-
+  
   # merge state:
   # for (ks in 1:ns){
   #   #??
   # }
-
+  
   # randomly choose the launch split state:
   zs[i] <- ci; ni <- 1
   zs[j] <- cj; nj <- 1
-
+  
   for (ks in 1:ns){# start with a uniformly chosen split:
     k <- S[ks]
     if (k !=i && k!= j){
@@ -292,7 +309,7 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
       }
     }
   }
-
+  
   for (rep in 1:n_split){#make several restricte Gibb scan moves:
     res_intermediate_GS <- restricted_gibbs(Y,zs,zs,ci,ci,cj,cj,ni,nj,i,j,S,ns,b,TRUE,Q,p,theta,psi) # make sure arguments are updated.
     log_p <- res_intermediate_GS$log_p
@@ -300,7 +317,7 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
     nj <- res_intermediate_GS$nj
     zs <- res_intermediate_GS$zsb
   }
-
+  
   # make MH proposal:
   if (ci0==cj0){#propose a split:
     # make one final sweep and compute the probability density:
@@ -309,10 +326,10 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
     ni <- res_intermediate_GS$ni
     nj <- res_intermediate_GS$nj
     zs <- res_intermediate_GS$zsb
-
+    
     # probability of transitioning from the merge state to original state:
     log_prop_ba <- 0 #log(1). Because given current split state, with probability 1 we get the merged state.
-
+    
     # compute MH acceptance probability
     log_prior_b <- log_v[t+1]+lgamma(ni+b)+lgamma(nj+b)-2*lgamma(b)
     log_prior_a <- log_v[t] + lgamma(ns+b)-lgamma(b)
@@ -324,7 +341,7 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
         log_marginal_Q_identity(Y[z==ci0,,drop=FALSE],p,theta,psi)
     }
     p_accept <- min(1,exp(log_prop_ba-log_prop_ab+log_prior_b-log_prior_a+log_lik_ratio))
-
+    
     # accept or reject:
     if (stats::runif(1)<p_accept){#accept split:
       for (ks in 1:ns){
@@ -341,13 +358,13 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
   } else{ # propose a merge:
     # probability of transitioning to merge state:
     log_prop_ab <- 0  # log(1)
-
+    
     # compute probability density of going from split launch state to original state:
     res_imaginary_GS <- restricted_gibbs(Y,zs,z,ci,ci0,cj,cj0,ni,nj,i,j,S,ns,b,FALSE,Q,p,theta,psi)
     log_prop_ba <- res_imaginary_GS$log_p
     ni <- res_imaginary_GS$ni
     nj <- res_imaginary_GS$nj
-
+    
     # compute acceptance probability:
     log_prior_b <- log_v[t-1]+lgamma(ns+b)-lgamma(b)
     log_prior_a <- log_v[t]+lgamma(ni+b)+lgamma(nj+b)-2*lgamma(b)
@@ -357,10 +374,10 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
     } else{
       log_lik_ratio <- log_marginal_Q_identity(Y[S,,drop=FALSE],p,theta,psi) -
         log_marginal_Q_identity(Y[z==ci0,,drop=FALSE],p,theta,psi)-log_marginal_Q_identity(Y[z==cj0,,drop=FALSE],p,theta,psi) # computed for original (not launch state) and proposed states.
-
+      
     }
     p_accept <- min(1,log_prop_ba-log_prop_ab+log_prior_b-log_prior_a+log_lik_ratio)
-
+    
     #accept or reject:
     if (stats::runif(1)<p_accept){
       for (ks in 1:ns){
@@ -375,7 +392,7 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
       t <- t-1
     }
   }
-
+  
   return(list(t=t,z=z,N=N,mylist=mylist)) # be extremely clear about what variables got updated.
 }
 
