@@ -104,6 +104,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// z2comat
+arma::mat z2comat(arma::mat z);
+RcppExport SEXP _rewind_z2comat(SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type z(zSEXP);
+    rcpp_result_gen = Rcpp::wrap(z2comat(z));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rewind_logsumexp", (DL_FUNC) &_rewind_logsumexp, 1},
@@ -113,6 +124,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rewind_log_marginal_Q_identity", (DL_FUNC) &_rewind_log_marginal_Q_identity, 4},
     {"_rewind_equal_unit_vec", (DL_FUNC) &_rewind_equal_unit_vec, 2},
     {"_rewind_compute_Q_condpr", (DL_FUNC) &_rewind_compute_Q_condpr, 7},
+    {"_rewind_z2comat", (DL_FUNC) &_rewind_z2comat, 1},
     {NULL, NULL, 0}
 };
 

@@ -395,8 +395,6 @@ metrop_flip <- function(x,curr_prob){
 #'                 c((1+rle(simu$Z)$lengths[1]):(rle(simu$Z)$lengths[2])))
 #' cl_list
 #' fix_cluster(cl_list,z,N,t,mylist)
-
-
 fix_cluster <- function(cluster_list,z,N,t,mylist){
   G <- length(cluster_list)
   for (g in 1:G){

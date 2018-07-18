@@ -280,3 +280,44 @@ double compute_Q_condpr(arma::mat Q, arma::mat H, arma::vec Yl,
 // }
 
 
+
+//' Compute the posterior co-clustering probability matrix (probability that i and j 
+//' are clustered together).
+//'
+//' This function is to evaluate the recovered clusters
+//' 
+//' @param z a matrix of posterior samples, with subjects and MCMC samples in 
+//' the rows and columns, respectively.
+//'
+//' @return a matrix of empirical co-clustering frequencies based on the
+//' posterior samples
+//' 
+//' @examples 
+//' z2comat(matrix(c(1,1,2,2,3,4,5,6,5,7),ncol=1))
+//' 
+//' @export
+// [[Rcpp::export]]
+arma::mat z2comat(arma::mat z){
+  int n_inference = z.n_cols;
+  int n = z.n_rows;
+  arma::mat res; res.zeros(n,n);
+  int count = 0;
+  for (int index=0; index < n_inference;index++){
+    for (int i=0; i<n;i++){
+      for (int j=0;j<n;j++){
+        if (z(i,index)==z(j,index)){
+          res(i,j) = res(i,j)+1;
+        }
+      }
+    }
+    count++;
+  }
+  for (int i=0; i<n;i++){
+    for (int j=0;j<n;j++){
+      res(i,j) = res(i,j)/count;
+    }
+  }
+  return(res);
+}
+
+

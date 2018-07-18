@@ -13,7 +13,7 @@ measurement errors, please cite the following paper:
 
 |       | Citation     | Paper Link
 | -------------  | -------------  | -------------  |
-| Bayesian restricted LCM    | Wu, Z. and Zeger, S. L. (2018+), Clustering Multivariate Binary Outcomes with Restricted Latent Class Models: A Bayesian Approach. Working Paper   |[Link]()| 
+| Bayesian restricted LCM    | Wu, Z. and Zeger, S. L. (2018+), A Bayesian Approach to Restricted Latent Class Models for Scientifically-Structured Clustering of Multivariate Binary Outcomes. Working Paper   |[Link]()| 
 
 
 ## Table of content

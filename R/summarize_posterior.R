@@ -1,36 +1,36 @@
-#' Compute the posterior co-clustering probability matrix (probability that i and j 
-#' are clustered together).
-#'
-#' This function is to evaluate the recovered clusters
-#' 
-#' @param z a matrix of posterior samples, with subjects and MCMC samples in 
-#' the rows and columns, respectively.
-#'
-#' @return a matrix of empirical co-clustering frequencies based on the
-#' posterior samples
-#' 
-#' @examples 
-#' z2comat(matrix(c(1,1,2,2,3,4,5,6,5,7),ncol=1))
-#' 
-#' @export
-z2comat <- function(z){
-  if(!is.matrix(z)){z <- matrix(z,ncol=1)}
-  n_inference <- ncol(z)
-  n <- nrow(z)
-  res     <- matrix(0,n,n)
-  count <- 0
-  for (index in 1:n_inference){
-    for (i in 1:n){
-      for (j in 1:n){
-        if (z[i,index]==z[j,index]){
-          res[i,j] <- res[i,j]+1
-        }
-      }
-    }
-    count <- count+1
-  }
-  res/count
-}
+###### Compute the posterior co-clustering probability matrix (probability that i and j 
+###### are clustered together).
+######
+###### This function is to evaluate the recovered clusters
+###### 
+###### @param z a matrix of posterior samples, with subjects and MCMC samples in 
+###### the rows and columns, respectively.
+######
+###### @return a matrix of empirical co-clustering frequencies based on the
+###### posterior samples
+###### 
+###### @examples 
+###### z2comat(matrix(c(1,1,2,2,3,4,5,6,5,7),ncol=1))
+###### 
+###### @export
+#####z2comat <- function(z){
+#####  if(!is.matrix(z)){z <- matrix(z,ncol=1)}
+#####  n_inference <- ncol(z)
+#####  n <- nrow(z)
+#####  res     <- matrix(0,n,n)
+#####  count <- 0
+#####  for (index in 1:n_inference){
+#####    for (i in 1:n){
+#####      for (j in 1:n){
+#####        if (z[i,index]==z[j,index]){
+#####          res[i,j] <- res[i,j]+1
+#####        }
+#####      }
+#####    }
+#####    count <- count+1
+#####  }
+#####  res/count
+#####}
 
 #' Frobenius norm: ||AA'-BB'||_F
 #'
@@ -38,7 +38,6 @@ z2comat <- function(z){
 #'
 #' @return a positive number
 #' @export
-#'
 distAB <- function(A,B){
   norm(A%*%t(A) - B%*%t(B),"F")
 }
@@ -686,3 +685,5 @@ plot_rewind <- function(x,simu,type="data",title_val=type){
     stop("[rewind] Requested 'type' not available. Please reselect.")
   }
 }
+
+

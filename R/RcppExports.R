@@ -147,3 +147,22 @@ compute_Q_condpr <- function(Q, H, Yl, k, l, theta, psi) {
     .Call('_rewind_compute_Q_condpr', PACKAGE = 'rewind', Q, H, Yl, k, l, theta, psi)
 }
 
+#' Compute the posterior co-clustering probability matrix (probability that i and j 
+#' are clustered together).
+#'
+#' This function is to evaluate the recovered clusters
+#' 
+#' @param z a matrix of posterior samples, with subjects and MCMC samples in 
+#' the rows and columns, respectively.
+#'
+#' @return a matrix of empirical co-clustering frequencies based on the
+#' posterior samples
+#' 
+#' @examples 
+#' z2comat(matrix(c(1,1,2,2,3,4,5,6,5,7),ncol=1))
+#' 
+#' @export
+z2comat <- function(z) {
+    .Call('_rewind_z2comat', PACKAGE = 'rewind', z)
+}
+
