@@ -956,16 +956,16 @@ sampler <- function(dat,model_options,mcmc_options){
       #xi_temp <- (H_star%*%Q>0.5)+0; ind_eff <- which(colSums(xi_temp)>0)
       if (POOL_PR){
         if (is.null(model_options$hyper_pseudo_n_TPR)){
-          hyper_pseudo_n_TPR <- update_pseudo_n_PR(theta, a0_TPR, e = model_options$e0_TPR, f = model_options$f0_TPR, show_density = FALSE) # <-- hard coded.
+          hyper_pseudo_n_TPR <- update_pseudo_n_PR(theta, a0_TPR, e = model_options$e0N_TPR, f = model_options$f0N_TPR, show_density = FALSE) # <-- hard coded.
         }
         if (is.null(model_options$a0_TPR)){
-          a0_TPR       <- update_mu_PR(theta,hyper_pseudo_n_TPR,a=model_options$a0_TPR,b=1-model_options$a0_TPR,show_density=FALSE) # <-- hard coded.
+          a0_TPR       <- update_mu_PR(theta,hyper_pseudo_n_TPR, a=model_options$e0_TPR,b=model_options$f0_TPR,show_density=FALSE) # <-- hard coded.
         }
-        if (is.null(model_options$hyper_pseudo_n_FPR)){
-          hyper_pseudo_n_FPR <- update_pseudo_n_PR(psi, a0_FPR, e = model_options$e0_FPR, f = model_options$f0_FPR, show_density = FALSE)    # <-- hard coded.
+        if (is.null(model_options$hyper_pseudo_n_FPR)){ # e, f are gamma parameters:
+          hyper_pseudo_n_FPR <- update_pseudo_n_PR(psi, a0_FPR, e = model_options$e0N_FPR, f = model_options$f0N_FPR, show_density = FALSE)    # <-- hard coded.
         }
         if (is.null(model_options$a0_FPR)){
-          a0_FPR      <- update_mu_PR(psi,hyper_pseudo_n_FPR,a=model_options$a0_FPR,b=1-model_options$a0_FPR,show_density=FALSE) # <-- hard coded.
+          a0_FPR      <- update_mu_PR(psi,hyper_pseudo_n_FPR,a=model_options$e0_FPR,b=model_options$f0_FPR,show_density=FALSE) # <-- hard coded.
         }
         a_theta <- replicate(L,hyper_pseudo_n_TPR*c(a0_TPR,1-a0_TPR))
         a_psi   <- replicate(L,hyper_pseudo_n_FPR*c(a0_FPR,1-a0_FPR))

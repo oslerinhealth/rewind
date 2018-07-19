@@ -77,14 +77,13 @@ f <- function(m) {t(m)[,nrow(m):1]}
 
 #' create a string with parts that need to be replaced by a variable's actual values
 #' 
-#' 
 #' @param x quote(something)
 #' @param nm_in_x the string to in x to be replaced by val (could be a vector)
 #' @param val the value to be inserted at "nm_in_x" (could be a vector)
 #' @return an expression with 
 #' @export
 #' 
-#' @examples 
+#' @examples
 #' mytitle <- quote(paste("(",Y[il],"): ",blabla,collapse=""))
 #' xx <- "design"
 #' eval_string(mytitle,"blabla",xx)

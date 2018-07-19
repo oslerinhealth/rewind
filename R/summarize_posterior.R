@@ -662,8 +662,9 @@ plot_rewind <- function(x,simu,type="data",title_val=type){
           xlab="Dimension (1:L)",yaxt="n",
           ylab="Subject (1:N)",cex.lab=1.2)
     axis(side=2,at=seq(0,N,by=10)+1,
-         labels=c(rev(seq(0,N,by=10)[-1]),"1"),las=2,cex.axis=0.5)
-    mytitle <- quote(paste("(",Y[il],"): ",tt,collapse=""))
+         labels=c(rev(seq(0,N,by=10)[-1]),"1"),las=2,cex.axis=1.2)
+    if (type=="data"){mytitle <- quote(paste("(",Y[il],"): ",tt,collapse=""))}
+    if (type=="design"){mytitle <- quote(paste("(",Gamma[il],"): ",tt,collapse=""))}
     mtext(eval_string(mytitle,"tt",title_val),3,1)
     for (k in 1:K){
       abline(h=N-cumsum(rle(simu$Z)$lengths)[k]+0.5,
@@ -676,7 +677,7 @@ plot_rewind <- function(x,simu,type="data",title_val=type){
           xlab="Subject (1:N)",
           ylab="Subject (1:N)",cex.lab=1.2,yaxt="n")
     axis(side=2,at=seq(0,N,by=10)+1,
-         labels=c(rev(seq(0,N,by=10)[-1]),"1"),las=2)
+         labels=c(rev(seq(0,N,by=10)[-1]),"1"),las=2,cex=1.2)
     for (k in 1:K){
       abline(h=cumsum(rle(rev(simu$Z))$lengths)[K-k+1]+0.5,lty=2)
       abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
