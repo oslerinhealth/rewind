@@ -188,7 +188,8 @@ restricted_gibbs <- function(Y,zsa,zsb,cia,cib,cja,cjb,ni,nj,i,j,S,ns,b,active,Q
 #' }
 #'
 #' @export
-split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_SPLIT=NULL,partition_partial=NULL){
+split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,
+                        MORE_SPLIT=NULL,partition_partial=NULL){
   # for non-conjugate sampler, there needs to be n_merge
   n <- nrow(Y)
   M <- nrow(Q)
@@ -374,7 +375,6 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
     } else{
       log_lik_ratio <- log_marginal_Q_identity(Y[S,,drop=FALSE],p,theta,psi) -
         log_marginal_Q_identity(Y[z==ci0,,drop=FALSE],p,theta,psi)-log_marginal_Q_identity(Y[z==cj0,,drop=FALSE],p,theta,psi) # computed for original (not launch state) and proposed states.
-      
     }
     p_accept <- min(1,log_prop_ba-log_prop_ab+log_prior_b-log_prior_a+log_lik_ratio)
     
@@ -395,16 +395,3 @@ split_merge <- function(Y,z,zs,S,mylist,N,t,b,log_v,n_split,Q,p,theta,psi,MORE_S
   
   return(list(t=t,z=z,N=N,mylist=mylist)) # be extremely clear about what variables got updated.
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

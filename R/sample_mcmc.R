@@ -619,6 +619,8 @@ sampler <- function(dat,model_options,mcmc_options){
   keep_index <- 0                 # the index to keep during MCMC inference.
   n_split    <- mcmc_options$n_split # number of intermediate GS scan to arrive at launch state.
   
+  init_frac <- mcmc_options$init_frac
+  
   block_update_Q <- !is.null(mcmc_options$block_update_Q) && mcmc_options$block_update_Q # TRUE for updating columns of Q. FALSE otherwise.
   block_update_H <- !is.null(mcmc_options$block_update_H) && mcmc_options$block_update_H # TRUE for updating rows of H. FALSE otherwise.
   constrained    <- !is.null(mcmc_options$constrained) && mcmc_options$constrained
@@ -634,12 +636,13 @@ sampler <- function(dat,model_options,mcmc_options){
   log_v <- model_options$log_v # coefficients for MFM.
   do_update_partition <- is.null(model_options$the_partition)
   POOL_PR        <- !is.null(model_options$pooling_pr) && model_options$pooling_pr
+ 
   
   is_identity_Q <- NULL
   if (is.null(model_options$Q)){
     Q_samp <- array(0,c(m_max,L,n_keep))
     Q_merge_samp <- Q_samp
-    Q      <- simulate_Q_dat(m_max,dat,0.1,min(max(colMeans(dat)),0.3)) # random initialization; warm start.
+    Q      <- simulate_Q_dat(m_max,dat,0.1,min(max(colMeans(dat)),init_frac[1])) # random initialization; warm start.
   }else{
     Q      <- model_options$Q # if Q is given.
     is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))<1e-3
@@ -886,8 +889,10 @@ sampler <- function(dat,model_options,mcmc_options){
     # xi_star <- xi_samp[mylist[1:t],,iter]
     # #}
     
+    
+    ## TODO: determine a good frac threshold.
     if (iter>1 && sum(colSums(H_star)==0)>0){ # this is added..... useful or not??
-     Q[colSums(H_star)==0,] <- simulate_Q_dat(sum(colSums(H_star)==0),dat)
+     Q[colSums(H_star)==0,] <- simulate_Q_dat(sum(colSums(H_star)==0),dat,frac=init_frac[2])
     }
     #image(f(Q),col=hmcols)
     
