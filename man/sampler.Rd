@@ -414,7 +414,8 @@ fixed such as the rows of Q).
       H_res <- (tmp + H_res*(l-1))/l
     }
     apply(H_pat_res,1,table)
-    pdf(file.path("inst/example_figure/","H_estimated_marginal_prob_vs_truth.pdf"),width=12,height=6)
+    pdf(file.path("inst/example_figure/",
+                  "H_estimated_marginal_prob_vs_truth.pdf"),width=12,height=6)
     par(mfrow=c(1,2))
     image(f(H_res),col=hmcols,main="estimated marginal prob") # <--- get marg prob.
     image(f(simu$Eta[,order_mat_byrow(simu$Q)$ord]),col=hmcols,main="truth")
