@@ -472,83 +472,89 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' Main function for model estimation
 #' 
 #' Estimating restricted latent class models (RLCM) by MCMC sampling 
-#' given pre-specified latent state dimension M. This function performs MCMC sampling 
+#' given pre-specified upper bound for (M) latent state dimension. This function performs MCMC sampling 
 #' with user-specified options.
 #' NB: 
 #' 1) add flexibility to specify other parameters as fixed (or partially
 #' fixed such as the rows of Q). 
-#' 2) add timing and printing functionality.
-#' 3) add posterior summary functions.
-#' 4) edit verbose contents.
 #'
 #' @param dat binary data matrix (row for observations and column for dimensions)
 #' @param model_options Specifying assumed model options:
 #' \itemize{
-#' \item \code{n} The number of subjects.
+#' \item \code{n} The number of observations
 #' \item \code{t_max} The maximum (guessed) number of clusters in the data during
 #' the posterior inference
-#' \item \code{m_max} For a model with pre-specified number of factors, \code{m_max};
+#' \item \code{m_max} For a model with pre-specified number of states, \code{m_max};
 #' In an infinite dimension model, \code{m_max} is
 #' the maximum (guessed) latent state dimension during the posterior inference
 #' (see slice_sampler to come); one can increase this number if
 #' this package recommends so in the printed message;
 #' \item \code{a_theta, a_psi} hyperparameters for true and false positive rates;
-#' a_theta and a_psi are both a vector of length two. If these parameters
-#' are specified, then no pooling across dimensions, just distinct parameters
-#' each with their own priors.
-#' \item \code{pooling_pr} \code{TRUE} for pooling theta and psi (must NOT
-#' set a_theta or a_psi; must set a0_TPR,a0_FPR,e0_TPR,f0_TPR,e0_FPR,f0_FPR)
+#' \code{a_theta} and \code{a_psi} are both 2 by L. If provided with these
+#' parameter values, the algorithm does not pool information across measurements. 
+#' It assumes independent priors for all true and false positive rates.
+#' 
+#' \item \code{pooling_pr} Set to \code{TRUE} if to pool theta and psi (must NOT
+#' set \code{a_theta} or \code{a_psi}; must set \code{a0_TPR},
+#' \code{a0_FPR},\code{e0_TPR},\code{f0_TPR},\code{e0_FPR},\code{f0_FPR} that are
+#' hyperparameters of the priors for TPR or FPR: 
+#' 
+#' \code{theta[1] <--Beta-- a_theta[1:2,l] <--deterministic-- 
+#' (a0_TPR, hyper_pseudo_n_TPR <--Gamma-- (e0_TPR, f0_TPR)) 
+#' --deterministic--> a_theta[1:2,l] --Beta-->theta[2]}; (a_theta has duplicated
+#' columns, hence an arbitary column index l)
+#' 
 #' \item \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR} pseudo sample 
 #' size in \code{Beta(hyper_pseudo_n_TPR*a0_TPR,hyper_pseudo_n_TPR*(1-a0_TPR))};
-#' usually works well by setting this to a large number, say 10 or 50.
-#' \item \code{a0_TPR} mean Beta parameter for the TPR hyperparameter
-#' \item \code{a0_FPR} mean Beta parameter for the FPR hyperparameter
+#' usually works well by setting this to a large number, say 10 or 50. Each 
+#' is assigned a \code{Gamma(e0_XPR, f0_XPR)} prior
+#' 
+#' \item \code{a0_TPR} mean of a Beta prior TPR
+#' \item \code{a0_FPR} mean of a Beta prior FPR
+#' 
 #' The following four parameters are not needed if \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR}
 #' are specified.
-#' \item \code{e0_TPR,f0_TPR} the first, second Gamma parameter for the TPR pseudo sample size hyperparameter
-#' \item \code{e0_FPR,f0_FPR} the first, second Gamma parameter for the FPR pseudo sample size hyperparameter
-#' \item \code{a_alpha, b_alpha} Just for infinite latent state dimension model  -
-#' Gamma hyperparameter for the hyperprior on \code{alpha}.
-#' (see slice_sampler to come)
+#' \item \code{e0_TPR,f0_TPR} the first, second Gamma parameter for the TPR 
+#' pseudo sample size hyperparameter: \code{hyper_pseudo_n_TPR}
+#' \item \code{e0_FPR,f0_FPR} the first, second Gamma parameter for the FPR
+#'  pseudo sample size hyperparameter: \code{hyper_pseudo_n_FPR}
 #' \item \code{log_v} The character string representing the prior
 #' distribution for the number of true clusters, e.g.,
 #' \code{"function(k) {log(0.1) + (k-1)*log(0.9)}"}. We pre-computed
 #' log of the coefficients in Mixture of Finite Mixtures
 #' (Miller and Harrison, 2017, JASA). Use this code:
-#' \code{coefficients(eval(parse(text=model_options0$log_pk)),
+#' \code{mfm_coefficients(eval(parse(text=model_options0$log_pk)),
 #' model_options0$gamma,
 #' model_options0$n,
 #' model_options0$t_max+1)}
 #' \item \code{the_partition} Put a vector of z here if not to update
 #' the partition/clustering. The z must be 1) from 1 to t, which is
 #' the number of groups, 2) consecutive from 1 to t.
+#' \item \code{a_alpha, b_alpha} [To come]Just for infinite latent state dimension model  -
+#' Gamma hyperparameter for the hyperprior on \code{alpha}.
+#' (see slice_sampler to come)
 #' }
-#' The following are used if one needs to pre-specify a few unknown parameters to
-#' their respective true or other values
+#' The following are not updated if provided with fixed values
 #' \itemize{
 #' \item \code{Q} Q matrix
 #' \item \code{theta} a vector of true positive rates
 #' \item \code{psi} a vector of false positive rates
 #' \item \code{p} a vector of latent state prevalences
-#' \item \code{alpha} For pre-specified latent state dimension, the hyperparameter
+#' \item \code{alpha} The hyperparameter
 #' for \code{Beta(alpha/m_max,1)} (can set to \code{m_max});
 #' For infinite dimension model, the hyperparameter for IBP (can set to 1).
 #' }
-#' Options for specifying data, sample size, max cluster number,
-#' coefficients in MFM (Miller and Harrison 2017 JASA), Gamma parameter in the MFM
-#' Dirichlet prior, number of intermediate Gibbs scan to arrive at the launch state,
-#' and other hyperparamter specification if needed, \code{n_total} for total number of
-#' MCMC iterations and \code{n_keep} for the number of samples kept for posterior inference.
-#' Note that the options involve other parameters for sampling hyperparameters such as
-#' alpha in the Indian Buffet Process.
-#' @param mcmc_options Options for MCMC sampling:
+#' 
+#' 
+#' 
+#' @param mcmc_options Options for MCMC algorithm:
 #' \itemize{
 #' \item \code{n_total} total number of MCMC iterations
-#' \item \code{n_keep} number of iterations kept
+#' \item \code{n_keep} the number of MCMC samples kept for posterior inference.
 #' \item \code{n_burnin} the number of burnin iterations to be discarded
 #' for drawing the posterior inference.
 #' \item \code{n_split} the number of restricted Gibbs scan to arrive at a launch state;
-#' see \link{restricted_gibbs}
+#' see \code{\link{split_merge}} and \code{\link{restricted_gibbs}}
 #' \item \code{print_mod} print intermediate model fitting information
 #' \item \code{constrained} update the Q matrix with identifiability constraints (if \code{TRUE});
 #' otherwise, set to \code{FALSE}.
@@ -558,11 +564,11 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' (if \code{NULL} or \code{FALSE} - must be so for slice_sampler to come).
 #' Then no identifiability constraint is imposed upon Q at any iterations.
 #' \item \code{ALL_IN_ONE_START} \code{TRUE} for putting all subjects in one cluster,
-#' \code{FALSE} by starting from a hierarchical clustering (complete linkage) and cut
-#' to produce floor(t_max/4) clusters. Consider this as a warm start.
+#' \code{FALSE} by starting from a hierarchical agglomerative clustering (complete linkage) and cut
+#' to produce \code{floor(t_max/4)} clusters. Consider this as a warm start.
 #' \item \code{MORE_SPLIT} when getting to launch state of the partition,
-#' \code{TRUE} for biasing towards split; FALSE for uniformly choose a pair (i,j)
-#' and then deciding to merge (if they belong to distinct clusters)
+#' \code{TRUE} For biasing towards split when reaching a random launch state; 
+#' \code{FALSE} for choosing a pair (i,j) uniformly and then merge (if they belong to distinct clusters)
 #' or split (if they belong to the identical cluster).
 #' }
 #'

@@ -11,72 +11,78 @@ sampler(dat, model_options, mcmc_options)
 
 \item{model_options}{Specifying assumed model options:
 \itemize{
-\item \code{n} The number of subjects.
+\item \code{n} The number of observations
 \item \code{t_max} The maximum (guessed) number of clusters in the data during
 the posterior inference
-\item \code{m_max} For a model with pre-specified number of factors, \code{m_max};
+\item \code{m_max} For a model with pre-specified number of states, \code{m_max};
 In an infinite dimension model, \code{m_max} is
 the maximum (guessed) latent state dimension during the posterior inference
 (see slice_sampler to come); one can increase this number if
 this package recommends so in the printed message;
 \item \code{a_theta, a_psi} hyperparameters for true and false positive rates;
-a_theta and a_psi are both a vector of length two. If these parameters
-are specified, then no pooling across dimensions, just distinct parameters
-each with their own priors.
-\item \code{pooling_pr} \code{TRUE} for pooling theta and psi (must NOT
-set a_theta or a_psi; must set a0_TPR,a0_FPR,e0_TPR,f0_TPR,e0_FPR,f0_FPR)
+\code{a_theta} and \code{a_psi} are both 2 by L. If provided with these
+parameter values, the algorithm does not pool information across measurements. 
+It assumes independent priors for all true and false positive rates.
+
+\item \code{pooling_pr} Set to \code{TRUE} if to pool theta and psi (must NOT
+set \code{a_theta} or \code{a_psi}; must set \code{a0_TPR},
+\code{a0_FPR},\code{e0_TPR},\code{f0_TPR},\code{e0_FPR},\code{f0_FPR} that are
+hyperparameters of the priors for TPR or FPR: 
+
+\code{theta[1] <--Beta-- a_theta[1:2,l] <--deterministic-- 
+(a0_TPR, hyper_pseudo_n_TPR <--Gamma-- (e0_TPR, f0_TPR)) 
+--deterministic--> a_theta[1:2,l] --Beta-->theta[2]}; (a_theta has duplicated
+columns, hence an arbitary column index l)
+
 \item \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR} pseudo sample 
 size in \code{Beta(hyper_pseudo_n_TPR*a0_TPR,hyper_pseudo_n_TPR*(1-a0_TPR))};
-usually works well by setting this to a large number, say 10 or 50.
-\item \code{a0_TPR} mean Beta parameter for the TPR hyperparameter
-\item \code{a0_FPR} mean Beta parameter for the FPR hyperparameter
+usually works well by setting this to a large number, say 10 or 50. Each 
+is assigned a \code{Gamma(e0_XPR, f0_XPR)} prior
+
+\item \code{a0_TPR} mean of a Beta prior TPR
+\item \code{a0_FPR} mean of a Beta prior FPR
+
 The following four parameters are not needed if \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR}
 are specified.
-\item \code{e0_TPR,f0_TPR} the first, second Gamma parameter for the TPR pseudo sample size hyperparameter
-\item \code{e0_FPR,f0_FPR} the first, second Gamma parameter for the FPR pseudo sample size hyperparameter
-\item \code{a_alpha, b_alpha} Just for infinite latent state dimension model  -
-Gamma hyperparameter for the hyperprior on \code{alpha}.
-(see slice_sampler to come)
+\item \code{e0_TPR,f0_TPR} the first, second Gamma parameter for the TPR 
+pseudo sample size hyperparameter: \code{hyper_pseudo_n_TPR}
+\item \code{e0_FPR,f0_FPR} the first, second Gamma parameter for the FPR
+ pseudo sample size hyperparameter: \code{hyper_pseudo_n_FPR}
 \item \code{log_v} The character string representing the prior
 distribution for the number of true clusters, e.g.,
 \code{"function(k) {log(0.1) + (k-1)*log(0.9)}"}. We pre-computed
 log of the coefficients in Mixture of Finite Mixtures
 (Miller and Harrison, 2017, JASA). Use this code:
-\code{coefficients(eval(parse(text=model_options0$log_pk)),
+\code{mfm_coefficients(eval(parse(text=model_options0$log_pk)),
 model_options0$gamma,
 model_options0$n,
 model_options0$t_max+1)}
 \item \code{the_partition} Put a vector of z here if not to update
 the partition/clustering. The z must be 1) from 1 to t, which is
 the number of groups, 2) consecutive from 1 to t.
+\item \code{a_alpha, b_alpha} [To come]Just for infinite latent state dimension model  -
+Gamma hyperparameter for the hyperprior on \code{alpha}.
+(see slice_sampler to come)
 }
-The following are used if one needs to pre-specify a few unknown parameters to
-their respective true or other values
+The following are not updated if provided with fixed values
 \itemize{
 \item \code{Q} Q matrix
 \item \code{theta} a vector of true positive rates
 \item \code{psi} a vector of false positive rates
 \item \code{p} a vector of latent state prevalences
-\item \code{alpha} For pre-specified latent state dimension, the hyperparameter
+\item \code{alpha} The hyperparameter
 for \code{Beta(alpha/m_max,1)} (can set to \code{m_max});
 For infinite dimension model, the hyperparameter for IBP (can set to 1).
-}
-Options for specifying data, sample size, max cluster number,
-coefficients in MFM (Miller and Harrison 2017 JASA), Gamma parameter in the MFM
-Dirichlet prior, number of intermediate Gibbs scan to arrive at the launch state,
-and other hyperparamter specification if needed, \code{n_total} for total number of
-MCMC iterations and \code{n_keep} for the number of samples kept for posterior inference.
-Note that the options involve other parameters for sampling hyperparameters such as
-alpha in the Indian Buffet Process.}
+}}
 
-\item{mcmc_options}{Options for MCMC sampling:
+\item{mcmc_options}{Options for MCMC algorithm:
 \itemize{
 \item \code{n_total} total number of MCMC iterations
-\item \code{n_keep} number of iterations kept
+\item \code{n_keep} the number of MCMC samples kept for posterior inference.
 \item \code{n_burnin} the number of burnin iterations to be discarded
 for drawing the posterior inference.
 \item \code{n_split} the number of restricted Gibbs scan to arrive at a launch state;
-see \link{restricted_gibbs}
+see \code{\link{split_merge}} and \code{\link{restricted_gibbs}}
 \item \code{print_mod} print intermediate model fitting information
 \item \code{constrained} update the Q matrix with identifiability constraints (if \code{TRUE});
 otherwise, set to \code{FALSE}.
@@ -86,11 +92,11 @@ otherwise, set to \code{FALSE}.
 (if \code{NULL} or \code{FALSE} - must be so for slice_sampler to come).
 Then no identifiability constraint is imposed upon Q at any iterations.
 \item \code{ALL_IN_ONE_START} \code{TRUE} for putting all subjects in one cluster,
-\code{FALSE} by starting from a hierarchical clustering (complete linkage) and cut
-to produce floor(t_max/4) clusters. Consider this as a warm start.
+\code{FALSE} by starting from a hierarchical agglomerative clustering (complete linkage) and cut
+to produce \code{floor(t_max/4)} clusters. Consider this as a warm start.
 \item \code{MORE_SPLIT} when getting to launch state of the partition,
-\code{TRUE} for biasing towards split; FALSE for uniformly choose a pair (i,j)
-and then deciding to merge (if they belong to distinct clusters)
+\code{TRUE} For biasing towards split when reaching a random launch state; 
+\code{FALSE} for choosing a pair (i,j) uniformly and then merge (if they belong to distinct clusters)
 or split (if they belong to the identical cluster).
 }}
 }
@@ -115,360 +121,360 @@ to see which ones to use for inference after \code{n_burnin}.
 }
 \description{
 Estimating restricted latent class models (RLCM) by MCMC sampling 
-given pre-specified latent state dimension M. This function performs MCMC sampling 
+given pre-specified upper bound for (M) latent state dimension. This function performs MCMC sampling 
 with user-specified options.
 NB: 
 1) add flexibility to specify other parameters as fixed (or partially
-fixed such as the rows of Q). 
-2) add timing and printing functionality.
-3) add posterior summary functions.
-4) edit verbose contents.
+fixed such as the rows of Q).
 }
 \examples{
 \dontrun{
-rm(list=ls())
-library(rewind)
-library(matrixStats)
-library(ars)
-
-#optional packages:
-library(mcclust.ext) # http://wrap.warwick.ac.uk/71934/1/mcclust.ext_1.0.tar.gz
-
-# color palette for heatmaps:
-YlGnBu5   <- c('#ffffd9','#c7e9b4','#41b6c4','#225ea8','#081d58',"#092d94")
-hmcols    <- colorRampPalette(YlGnBu5)(256)
-
-# simulate data:
-L0 <- 100
-options_sim0  <- list(N = 100,  # sample size.
-                      M = 3,    # true number of machines.
-                      L = L0,   # number of antibody landmarks.
-                      K = 8,    # number of true components.
-                      theta = rep(0.9,L0), # true positive rates.
-                      psi   = rep(0.1,L0), # false positive rates.
-                      alpha1 = 1, # half of the people have the first machine.
-                      frac = 0.2, # fraction of positive dimensions (L-2M) in Q.
-                      #pop_frac = rep(1/K0,K0) # population prevalences.
-                      pop_frac = c(rep(2,4),rep(1,4)) # population prevalences.
-)
-
-image(simulate_data(options_sim0,SETSEED = TRUE)$datmat,col=hmcols)
-simu     <- simulate_data(options_sim0, SETSEED=TRUE)
-simu_dat <- simu$datmat
-rle(simu$Z)
-
-#
-# specifying options:
-#
-
-# model options:
-m_max0 <- 5
-model_options0 <- list(
-  n   = nrow(simu_dat),
-  t_max  = 40,
-  m_max  = m_max0,
-  b  = 1, # Dirichlet hyperparameter; in the functions above,
-  # we used "b" - also can be called "gamma"!.
-  #Q  = simu$Q,
-  a_theta = replicate(L0, c(9,1)),
-  a_psi   = replicate(L0, c(1,9)),
-  #theta = options_sim0$theta,
-  #psi   = options_sim0$psi,
-  #alpha   = options_sim0$M,
-  #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
-  #p0 = rep(0.5,m_max0), # <--- this seems to make a difference in convergence.
-  log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
-  #Prior for the number of components.
-)
-
-# pre-compute the log of coefficients in MFM:
-model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
-                                       model_options0$b,
-                                       model_options0$n,
-                                       model_options0$t_max+1)
-# mcmc options:
-mcmc_options0 <- list(
-  n_total = 200,
-  n_keep  = 50,
-  n_split = 5,
-  print_mod = 10,
-  constrained = TRUE, # <-- need to write a manual about when these options are okay.
-  block_update_H = TRUE,
-  block_update_Q = !TRUE,
-  ALL_IN_ONE_START =!TRUE,  # <--- TRUE for putting all subjects in one cluster,
-                            # FALSE by starting from a hierechical clustering
-                            # (complete linkage) and cut
-                    # to produce floor(t_max/4). Consider this as a warm start.
-  MORE_SPLIT = TRUE
-)
-
-#
-# run posterior algorithm for simulated data:
-#
-out <- sampler(simu_dat,model_options0,mcmc_options0)
-
-
-###############################################################
-## Posterior summaries:
-###############################################################
-out0 <- out
-out <- postprocess_H_Q(out0)
-
-#Z_SAMP_FOR_PLOT <- out$z_samp  # <---- use pseudo-indicators for co-clustering.
-                                # tend to be more granular.
-Z_SAMP_FOR_PLOT <- out$z_sci_samp # <--- use scientific-cluster indicators.
-
-# posterior co-clustering probabilities (N by N):
-comat <- coclust_mat(nrow(simu_dat),Z_SAMP_FOR_PLOT)
-image(1:options_sim0$N,1:options_sim0$N, comat,
-      xlab="Subjects",ylab="Subjects",col=hmcols,main="co-clustering")
-for (k in 1:options_sim0$K){
-  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-}
-
-#
-# Summarize partition C:
-## Approach 0: The maximum a posterior: issue - the space is huge (Bell number).
-##             Not implemented.
-## Approach 1: Minimizing the least squared error between the co-clustering indicators
-##            and the posterior co-clustering probabilities; (Dahl 2006)
-## Approach 2: Wade - estimate the best partition using posterior expected loss
-##             by variation of information (VI) metric.
-
-nsamp_C <- dim(Z_SAMP_FOR_PLOT)[2]
-z_Em    <- rep(NA,nsamp_C)
-
-par(mfrow=c(2,3))
-
-## Approach 1:
-for (iter in 1:nsamp_C){
-  z_Em[iter] <- norm(z2comat(Z_SAMP_FOR_PLOT[,iter])-comat,"F")
-}
-ind_dahl <- which.min(z_Em)
-# plot 1:
-image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(Z_SAMP_FOR_PLOT[,ind_dahl]),col=hmcols,
-      main="Dahl (2006) - least squares to hat{pi}_ij")
-for (k in 1:options_sim0$K){
-  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-}
-#heatmap(z2comat(out$z_samp[,ind_dahl]),col=hmcols)
-
-## Approach 2 - use "mcclust.ext" pacakge:
-# process the posterior samples of cluster indicators:
-psm    <- comp.psm(t(Z_SAMP_FOR_PLOT))
-# point estimate using all methods:
-bmf.VI <- minVI(psm,t(Z_SAMP_FOR_PLOT),method="all",include.greedy=TRUE)
-summary(bmf.VI)
-
-# plot 2:
-image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(bmf.VI$cl["avg",]),col=hmcols,
-      main="Wade clustering")
-
-for (k in 1:options_sim0$K){
-  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-}
-#heatmap(z2comat(bmf.VI$cl["avg",]),col=hmcols)
-
-# credible sets as defined in Wade and Ghahramani 2017.
-bmf.cb <- credibleball(bmf.VI$cl[1,],t(Z_SAMP_FOR_PLOT))
-
-# plot 3:
-image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(bmf.cb$c.horiz[1,]),col=hmcols,
-      main="Wade credible ball - horizontal")
-
-for (k in 1:options_sim0$K){
-  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-}
-#heatmap(z2comat(bmf.cb$c.horiz),col=hmcols)
-
-# plot 4:
-image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(bmf.cb$c.uppervert[1,]),col=hmcols,
-      main="Wade credible ball - upper vertical")
-
-for (k in 1:options_sim0$K){
-  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-}
-#heatmap(z2comat(bmf.cb$c.uppervert),col=hmcols)
-
-# plot 5:
-image(1:options_sim0$N,1:options_sim0$N,
-      z2comat(bmf.cb$c.lowervert),col=hmcols,
-      main="Wade credible ball - lower vertical")
-
-for (k in 1:options_sim0$K){
-  abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-  abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
-}
-#heatmap(z2comat(bmf.cb$c.lowervert),col=hmcols)
-
-#
-# summarize Q (first need to transpose it)
-#
-# Approach 1: compute the error |QQ' - E[QQ'|Y]|_Frobneious
-# Approach 2: compute the marginal co-activation probability
-#             P(\\sum_m Q_ml >= 1, \\sum_m Q_ml' >= 1) -
-#             This is invariant to the relabeling of latent states, or cluster labels.
-
-nsamp_Q <- dim(out$Q_merge_samp)[3]
-EQQ     <- matrix(0,nrow=dim(out$Q_merge_samp)[2],
-                  ncol=dim(out$Q_merge_samp)[2]) # L by L.
-EQQ_binary <- EQQ
-# Approach 1:
-for (iter in 1:nsamp_Q){
-  A   <- t(out$Q_merge_samp[,,iter])
-  EQQ <- (A\%*\%t(A)+EQQ*(iter-1))/iter # invariant to the row reordering of Q.
-  EQQ_binary <- 0+(A\%*\%t(A)>0)+EQQ_binary
-}
-
-# Approach 2:
-EQQ_percent <- EQQ_binary/nsamp_Q
-image(EQQ_percent,col=hmcols,main="co-activation patterns across L dimensions")
-
-# Approach 1:
-Q_Em <- rep(NA,nsamp_Q)
-for (iter in 1:nsamp_Q){
-  A <- t(out$Q_merge_samp[,,iter])
-  Q_Em[iter] <- norm(A\%*\%t(A) - EQQ,"F")
-}
-plot(Q_Em,type="o",main="||QQ'-E[QQ'|Y]||")
-
-# choose the indices minimizing the errors:
-ind_of_Q       <- which(Q_Em==min(Q_Em))
-
-#
-# visualize truth:
-#
-pdf(file.path("inst/example_figure/","bmf_truth.pdf"),width=12,height=6)
-plot_truth(simu,options_sim0)
-dev.off()
-
-#
-# visualize the individual latent states depending on whether Q is known or not.
-#
-if (!is.null(model_options0$Q)){ # <--- Q known.
-  H_res     <- matrix(0,nrow=nrow(simu$datmat),ncol=sum(rowSums(model_options0$Q)!=0))
-  H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=dim(out$H_star_merge_samp)[3])
-  for (l in 1:dim(out$H_star_merge_samp)[3]){
-    tmp_mylist <- out$mylist_samp[,l]
-    tmp0 <- out$H_star_samp[tmp_mylist[match(out$z_samp[,l],tmp_mylist)],,l]
-    #<------ could be simpler!!!
-    tmp1 <- tmp0[,colSums(tmp0)!=0,drop=FALSE]
-    tmp <- tmp1[,order_mat_byrow(model_options0$Q[rowSums(model_options0$Q)!=0,
-                                                  ,drop=FALSE])$ord,drop=FALSE]
-    H_pat_res[,l] <- bin2dec_vec(tmp,LOG=FALSE)
-    H_res <- (tmp + H_res*(l-1))/l
+  rm(list=ls())
+  library(rewind)
+  library(matrixStats)
+  library(ars)
+  
+  #optional packages:
+  library(mcclust.ext) # http://wrap.warwick.ac.uk/71934/1/mcclust.ext_1.0.tar.gz
+  
+  # color palette for heatmaps:
+  YlGnBu5   <- c('#ffffd9','#c7e9b4','#41b6c4','#225ea8','#081d58',"#092d94")
+  hmcols    <- colorRampPalette(YlGnBu5)(256)
+  
+  # simulate data:
+  L0 <- 100
+  options_sim0  <- list(N = 200,  # sample size.
+                        M = 3,    # true number of machines.
+                        L = L0,   # number of antibody landmarks.
+                        K = 8,    # number of true components.
+                        theta = rep(0.9,L0), # true positive rates.
+                        psi   = rep(0.1,L0), # false positive rates.
+                        alpha1 = 1, # half of the people have the first machine.
+                        frac = 0.2, # fraction of positive dimensions (L-2M) in Q.
+                        #pop_frac = rep(1/K0,K0) # population prevalences.
+                        pop_frac = c(rep(2,4),rep(1,4)) # population prevalences.
+  )
+  
+  image(simulate_data(options_sim0,SETSEED = TRUE)$datmat,col=hmcols)
+  simu     <- simulate_data(options_sim0, SETSEED=TRUE)
+  simu_dat <- simu$datmat
+  rle(simu$Z)
+  
+  #
+  # visualize truth:
+  #
+  # plot_truth(simu,options_sim0)
+  
+  #
+  # specifying options:
+  #
+  
+  # model options:
+  m_max0 <- 5
+  model_options0 <- list(
+    n   = nrow(simu_dat),
+    t_max  = 40,
+    m_max  = m_max0,
+    b  = 1, # Dirichlet hyperparameter; in the functions above,
+    # we used "b" - also can be called "gamma"!.
+    #Q  = simu$Q,
+    a_theta = replicate(L0, c(9,1)),
+    a_psi   = replicate(L0, c(1,9)),
+    #theta = options_sim0$theta,
+    #psi   = options_sim0$psi,
+    alpha   = 0.1,
+    frac = 0.2,
+    #p_both      = rep(0.5,3),#,c(0.5,0.5^2,0.5^3,0.5^4,0.5^5)
+    #p0 = rep(0.5,m_max0), # <--- this seems to make a difference in convergence.
+    log_pk = "function(k) {log(0.1) + (k-1)*log(0.9)}"# Geometric(0.1).
+    #Prior for the number of components.
+  )
+  
+  # pre-compute the log of coefficients in MFM:
+  model_options0$log_v<-mfm_coefficients(eval(parse(text=model_options0$log_pk)),
+                                         model_options0$b,
+                                         model_options0$n,
+                                         model_options0$t_max+1)
+  # mcmc options:
+  mcmc_options0 <- list(
+    n_total = 200,
+    n_keep  = 50,
+    n_split = 5,
+    print_mod = 10,
+    constrained = TRUE, # <-- need to write a manual about when these options are okay.
+    block_update_H = TRUE,
+    block_update_Q = !TRUE,
+    ALL_IN_ONE_START =!TRUE,  # <--- TRUE for putting all subjects in one cluster,
+    # FALSE by starting from a hierechical clustering
+    # (complete linkage) and cut
+    # to produce floor(t_max/4). Consider this as a warm start.
+    MORE_SPLIT = TRUE,
+    print_Q    = TRUE,
+    init_frac  = c(0.51,0.99)
+  )
+  
+  # run posterior algorithm for simulated data:
+  out <- sampler(simu_dat,model_options0,mcmc_options0)
+  
+  ###############################################################
+  ## Posterior summaries:
+  ###############################################################
+  out0 <- out
+  out <- postprocess_H_Q(out0)
+  
+  #Z_SAMP_FOR_PLOT <- out$z_samp  # <---- use pseudo-indicators for co-clustering.
+  # tend to be more granular.
+  Z_SAMP_FOR_PLOT <- out$z_sci_samp # <--- use scientific-cluster indicators.
+  
+  # posterior co-clustering probabilities (N by N):
+  comat <- z2comat(Z_SAMP_FOR_PLOT)
+  image(1:options_sim0$N,1:options_sim0$N, comat,
+        xlab="Subjects",ylab="Subjects",col=hmcols,main="co-clustering")
+  for (k in 1:options_sim0$K){
+    abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+    abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
   }
-  apply(H_pat_res,1,table)
-  image(f(H_res))
-} else{   # <---- Q unknown.
-  #
-  # This is the best estimated Q:
-  #
-  Q_merged <- out$Q_merge_samp[,,ind_of_Q[1]] # just picked one.
-  NROW_Q_PLOT <- nrow(Q_merged) # sum(rowSums(Q_merged)!=0)
-  Q_PLOT <- f(order_mat_byrow(Q_merged)$res) # t(Q_merged)
-  #f(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res)
-  image(1:ncol(simu$datmat),1:NROW_Q_PLOT,
-        Q_PLOT,
-        main="Best Q (merged & ordered)",col=hmcols,
-        xlab="Dimension (1:L)",
-        ylab="Latent State (1:M)",yaxt="n",cex.lab=1.2)
-  for (k in 1:NROW_Q_PLOT){
-    abline(h=NROW_Q_PLOT-k+0.5,
-           lty=2,col="grey",lwd=2)
+  
+  # Summarize partition C:
+  ## Approach 0: The maximum a posterior: issue - the space is huge (Bell number).
+  ##             Not implemented.
+  ## Approach 1: Minimizing the least squared error between the co-clustering indicators
+  ##            and the posterior co-clustering probabilities; (Dahl 2006)
+  ## Approach 2: Wade - estimate the best partition using posterior expected loss
+  ##             by variation of information (VI) metric.
+  nsamp_C <- dim(Z_SAMP_FOR_PLOT)[2]
+  z_Em    <- rep(NA,nsamp_C)
+  
+  par(mfrow=c(2,3))
+  ## Approach 1:
+  for (iter in 1:nsamp_C){
+    z_Em[iter] <- norm(z2comat(Z_SAMP_FOR_PLOT[,iter,drop=FALSE])-comat,"F")
   }
-
-  #
-  # Summarize H* and H*(Z) for individual predictions:
-  #
-  # If we compare it to H, then the clustering matters too, not
-  # just H^*.
-  #
-  # Approach: just obtain the H samples from those iterations with the best Q
-  #            obtained above.
-  #
-  H_res     <- matrix(0,nrow=nrow(simu$datmat),ncol=sum(rowSums(Q_merged)!=0))
-  H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=length(ind_of_Q))
-  # columns for the best indices.
-  # here ind_of_Q are those that minimized the Q loss.
-  for (l in seq_along(ind_of_Q)){
-    tmp_mylist <- out$mylist_samp[,ind_of_Q[l]]
-    tmp0 <- out$col_merged_H_star_samp[out$z_samp[,ind_of_Q[l]],,ind_of_Q[l]]
-    tmp1 <- tmp0[,colSums(tmp0)!=0,drop=FALSE]
-    tmp <- tmp1[,order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,
-                                          drop=FALSE])$ord,drop=FALSE]
-    H_pat_res[,l] <- bin2dec_vec(tmp,LOG=FALSE)
-    H_res <- (tmp + H_res*(l-1))/l
+  ind_dahl <- which.min(z_Em)
+  # plot 1:
+  image(1:options_sim0$N,1:options_sim0$N,
+        z2comat(Z_SAMP_FOR_PLOT[,ind_dahl,drop=FALSE]),col=hmcols,
+        main="Dahl (2006) - least squares to hat{pi}_ij")
+  for (k in 1:options_sim0$K){
+    abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+    abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
   }
-  apply(H_pat_res,1,table)
-  pdf(file.path("inst/example_figure/","H_estimated_marginal_prob_vs_truth.pdf"),width=12,height=6)
-  par(mfrow=c(1,2))
-  image(f(H_res),col=hmcols,main="estimated marginal prob") # <--- get marg prob.
-  image(f(simu$Eta[,order_mat_byrow(simu$Q)$ord]),col=hmcols,main="truth")
+  
+  ## Approach 2 - use "mcclust.ext" pacakge:
+  # process the posterior samples of cluster indicators:
+  psm    <- comp.psm(t(Z_SAMP_FOR_PLOT))
+  # point estimate using all methods:
+  bmf.VI <- minVI(psm,t(Z_SAMP_FOR_PLOT),method="all",include.greedy=TRUE)
+  summary(bmf.VI)
+  
+  # plot 2:
+  image(1:options_sim0$N,1:options_sim0$N,
+        z2comat(matrix(bmf.VI$cl["avg",],ncol=1)),col=hmcols,
+        main="Wade clustering")
+  
+  for (k in 1:options_sim0$K){
+    abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+    abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  }
+  #heatmap(z2comat(bmf.VI$cl["avg",]),col=hmcols)
+  
+  # credible sets as defined in Wade and Ghahramani 2017.
+  bmf.cb <- credibleball(bmf.VI$cl[1,],t(Z_SAMP_FOR_PLOT))
+  
+  # plot 3:
+  image(1:options_sim0$N,1:options_sim0$N,
+        z2comat(matrix(bmf.cb$c.horiz[1,],ncol=1)),col=hmcols,
+        main="Wade credible ball - horizontal")
+  
+  for (k in 1:options_sim0$K){
+    abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+    abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  }
+  #heatmap(z2comat(bmf.cb$c.horiz),col=hmcols)
+  
+  # plot 4:
+  image(1:options_sim0$N,1:options_sim0$N,
+        z2comat(matrix(bmf.cb$c.uppervert[1,],ncol=1)),col=hmcols,
+        main="Wade credible ball - upper vertical")
+  
+  for (k in 1:options_sim0$K){
+    abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+    abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  }
+  #heatmap(z2comat(bmf.cb$c.uppervert),col=hmcols)
+  
+  # plot 5:
+  image(1:options_sim0$N,1:options_sim0$N,
+        z2comat(matrix(bmf.cb$c.lowervert,ncol=1)),col=hmcols,
+        main="Wade credible ball - lower vertical")
+  
+  for (k in 1:options_sim0$K){
+    abline(h=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+    abline(v=cumsum(rle(simu$Z)$lengths)[k]+0.5,lty=2)
+  }
+  #heatmap(z2comat(bmf.cb$c.lowervert),col=hmcols)
+  
+  
+  #
+  # summarize Q (first need to transpose it)
+  #
+  # Approach 1: compute the error |QQ' - E[QQ'|Y]|_Frobneious
+  # Approach 2: compute the marginal co-activation probability
+  #             P(\\sum_m Q_ml >= 1, \\sum_m Q_ml' >= 1) -
+  #             This is invariant to the relabeling of latent states, or cluster labels.
+  nsamp_Q <- dim(out$Q_merge_samp)[3]
+  EQQ     <- matrix(0,nrow=dim(out$Q_merge_samp)[2],
+                    ncol=dim(out$Q_merge_samp)[2]) # L by L.
+  EQQ_binary <- EQQ
+  # Approach 1:
+  for (iter in 1:nsamp_Q){
+    A   <- t(out$Q_merge_samp[,,iter])
+    EQQ <- (A\%*\%t(A)+EQQ*(iter-1))/iter # invariant to the row reordering of Q.
+    EQQ_binary <- 0+(A\%*\%t(A)>0)+EQQ_binary
+  }
+  
+  # Approach 2:
+  EQQ_percent <- EQQ_binary/nsamp_Q
+  image(EQQ_percent,col=hmcols,main="co-activation patterns across L dimensions")
+  
+  # Approach 1:
+  Q_Em <- rep(NA,nsamp_Q)
+  for (iter in 1:nsamp_Q){
+    A <- t(out$Q_merge_samp[,,iter])
+    Q_Em[iter] <- norm(A\%*\%t(A) - EQQ,"F")
+  }
+  plot(Q_Em,type="o",main="||QQ'-E[QQ'|Y]||")
+  
+  # choose the indices minimizing the errors:
+  ind_of_Q       <- which(Q_Em==min(Q_Em))
+  
+  #
+  # visualize truth:
+  #
+  pdf(file.path("inst/example_figure/","bmf_truth.pdf"),width=12,height=6)
+  plot_truth(simu,options_sim0)
   dev.off()
-  # issues: the order of the rows of Q at ind_of_Q might be different, so need to order them.
-}
+  
+  #
+  # visualize the individual latent states depending on whether Q is known or not.
+  #
+  if (!is.null(model_options0$Q)){ # <--- Q known.
+    H_res     <- matrix(0,nrow=nrow(simu$datmat),ncol=sum(rowSums(model_options0$Q)!=0))
+    H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=dim(out$H_star_merge_samp)[3])
+    for (l in 1:dim(out$H_star_merge_samp)[3]){
+      tmp_mylist <- out$mylist_samp[,l]
+      tmp0 <- out$H_star_samp[tmp_mylist[match(out$z_samp[,l],tmp_mylist)],,l]
+      #<------ could be simpler!!!
+      tmp1 <- tmp0[,colSums(tmp0)!=0,drop=FALSE]
+      tmp <- tmp1[,order_mat_byrow(model_options0$Q[rowSums(model_options0$Q)!=0,
+                                                    ,drop=FALSE])$ord,drop=FALSE]
+      H_pat_res[,l] <- bin2dec_vec(tmp,LOG=FALSE)
+      H_res <- (tmp + H_res*(l-1))/l
+    }
+    apply(H_pat_res,1,table)
+    image(f(H_res))
+  } else{   # <---- Q unknown.
+    #
+    # This is the best estimated Q:
+    #
+    Q_merged <- out$Q_merge_samp[,,ind_of_Q[1]] # just picked one.
+    NROW_Q_PLOT <- nrow(Q_merged) # sum(rowSums(Q_merged)!=0)
+    Q_PLOT <- f(order_mat_byrow(Q_merged)$res) # t(Q_merged)
+    #f(order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,drop=FALSE])$res)
+    image(1:ncol(simu$datmat),1:NROW_Q_PLOT,
+          Q_PLOT,
+          main="Best Q (merged & ordered)",col=hmcols,
+          xlab="Dimension (1:L)",
+          ylab="Latent State (1:M)",yaxt="n",cex.lab=1.2)
+    for (k in 1:NROW_Q_PLOT){
+      abline(h=NROW_Q_PLOT-k+0.5,
+             lty=2,col="grey",lwd=2)
+    }
+    
+    #
+    # Summarize H* and H*(Z) for individual predictions:
+    #
+    # If we compare it to H, then the clustering matters too, not
+    # just H^*.
+    #
+    # Approach: just obtain the H samples from those iterations with the best Q
+    #            obtained above.
+    #
+    H_res     <- matrix(0,nrow=nrow(simu$datmat),ncol=sum(rowSums(Q_merged)!=0))
+    H_pat_res <- matrix(0,nrow=nrow(simu$datmat),ncol=length(ind_of_Q))
+    # columns for the best indices.
+    # here ind_of_Q are those that minimized the Q loss.
+    for (l in seq_along(ind_of_Q)){
+      tmp_mylist <- out$mylist_samp[,ind_of_Q[l]]
+      tmp0 <- out$col_merged_H_star_samp[out$z_samp[,ind_of_Q[l]],,ind_of_Q[l]]
+      tmp1 <- tmp0[,colSums(tmp0)!=0,drop=FALSE]
+      tmp <- tmp1[,order_mat_byrow(Q_merged[rowSums(Q_merged)!=0,,
+                                            drop=FALSE])$ord,drop=FALSE]
+      H_pat_res[,l] <- bin2dec_vec(tmp,LOG=FALSE)
+      H_res <- (tmp + H_res*(l-1))/l
+    }
+    apply(H_pat_res,1,table)
+    pdf(file.path("inst/example_figure/","H_estimated_marginal_prob_vs_truth.pdf"),width=12,height=6)
+    par(mfrow=c(1,2))
+    image(f(H_res),col=hmcols,main="estimated marginal prob") # <--- get marg prob.
+    image(f(simu$Eta[,order_mat_byrow(simu$Q)$ord]),col=hmcols,main="truth")
+    dev.off()
+    # issues: the order of the rows of Q at ind_of_Q might be different, so need to order them.
+  }
+  
+  # posterior distribution over the number of pseudo-clusters T: <-- scientific clusters?
+  plot(out$t_samp,type="l",ylab="T: #pseudo-clusters")
+  
+  ## individual predictions:
+  pdf(file.path("inst/example_figure/","individual_pred_simulation.pdf"),height=15,width=12)
+  par(mar=c(2,8,8,0),mfrow=c(2,1),oma=c(5,5,5,5))
+  for (i in 1:nrow(simu_dat)){
+    plot_individual_pred(apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]]),
+                         1:model_options0$m_max,paste0("Obs ", i),asp=0.5)
+  }
+  dev.off()
+  
+  # check positive rate estimates:
+  pdf(file.path("inst/example_figure/","check_PR_post_vs_prior.pdf"),width=12,height=6)
+  par(mfrow=c(5,2))
+  for (l in 1:L0){
+    par(mar=c(1,1,1,2))
+    baker::beta_plot(model_options0$a_psi[1,l],model_options0$a_psi[2,l])
+    hist(out$psi_samp[l,],add=TRUE,freq=FALSE)
+    legend("topright",legend = l)
+    baker::beta_plot(model_options0$a_theta[1,l],model_options0$a_theta[2,l])
+    hist(out$theta_samp[l,],add=TRUE,freq=FALSE)
+  }
+  dev.off()
+  
+  pdf(file.path("inst/example_figure/","posterior_sci_cluster_number.pdf"),
+      width=10,height=6)
+  scatterhist(1:ncol(out$z_sci_samp),apply(out$z_sci_samp,2,
+                                           function(v){length(unique(v))}),
+              "Index","tilde{T}: #scientific clusters")
+  dev.off()
+  
+  # posterior distribution of active/effective dimensions (machines):
+  pdf(file.path("inst/example_figure/","posterior_effective_machines_number.pdf"),
+      width=10,height=6)
+  plot(table(apply(out$col_merged_H_star_samp,c(3),
+                   function(x) sum(colSums(x)>0)))/mcmc_options0$n_keep,
+       xlab = "Effect Number of Machines",xlim=c(1,model_options0$m_max),
+       ylab ="Posterior Probability",
+       main="",lwd=4)
+  dev.off()
+  
+  image(f(simu$Q),col=hmcols)
+  
+  image(f(simu$xi),col=hmcols)
+  pred_xi <- 0+(out$H_star_samp[out$z_samp[,ind_dahl],,ind_dahl]\%*\%
+                  apply(out$Q_samp[,,ind_dahl],c(1,2),mean))>0.5
+  image(f(pred_xi),col=hmcols)
+  image(f(pred_xi- simu$xi),col=hmcols)
 
-# posterior distribution over the number of pseudo-clusters T: <-- scientific clusters?
-plot(out$t_samp,type="l",ylab="T: #pseudo-clusters")
-
-## individual predictions:
-pdf(file.path("inst/example_figure/","individual_pred_simulation.pdf"),height=15,width=12)
-par(mar=c(2,8,8,0),mfrow=c(2,1),oma=c(5,5,5,5))
-for (i in 1:nrow(simu_dat)){
-  plot_individual_pred(apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]]),
-                       1:model_options0$m_max,paste0("Obs ", i),asp=0.5)
-}
-dev.off()
-
-# check positive rate estimates:
-pdf(file.path("inst/example_figure/","check_PR_post_vs_prior.pdf"),width=12,height=6)
-par(mfrow=c(5,2))
-for (l in 1:L0){
-  par(mar=c(1,1,1,2))
-  baker::beta_plot(model_options0$a_psi[1,l],model_options0$a_psi[2,l])
-  hist(out$psi_samp[l,],add=TRUE,freq=FALSE)
-  legend("topright",legend = l)
-  baker::beta_plot(model_options0$a_theta[1,l],model_options0$a_theta[2,l])
-  hist(out$theta_samp[l,],add=TRUE,freq=FALSE)
-}
-dev.off()
-
-pdf(file.path("inst/example_figure/","posterior_sci_cluster_number.pdf"),
-    width=10,height=6)
-scatterhist(1:ncol(out$z_sci_samp),apply(out$z_sci_samp,2,
-                                         function(v){length(unique(v))}),
-            "Index","tilde{T}: #scientific clusters")
-dev.off()
-
-# posterior distribution of active/effective dimensions (machines):
-pdf(file.path("inst/example_figure/","posterior_effective_machines_number.pdf"),
-    width=10,height=6)
-plot(table(apply(out$col_merged_H_star_samp,c(3),
-                 function(x) sum(colSums(x)>0)))/mcmc_options0$n_keep,
-     xlab = "Effect Number of Machines",xlim=c(1,model_options0$m_max),
-     ylab ="Posterior Probability",
-     main="",lwd=4)
-dev.off()
-
-image(f(simu$Q),col=hmcols)
-
-
-image(f(simu$xi),col=hmcols)
-pred_xi <- 0+(out$H_star_samp[out$z_samp[,100],,100]\%*\%apply(out$Q_samp[,,100],c(1,2),mean))>0.5
-image(f(pred_xi),col=hmcols)
-image(f(pred_xi- simu$xi),col=hmcols)
-
-}
+  
+  
+} # END OF DONT RUN.
 
 
 
