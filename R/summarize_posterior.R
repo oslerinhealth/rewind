@@ -348,7 +348,7 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
     cat(string_merge2)
   }
   if (!skip_Q){
-    if (nrow(H_star)>1 && length(ind_zero_col)>0){
+    if (nrow(H_star)>1 && sum(H_star)>0 && length(ind_zero_col)>0){
       Q_merge <- merge_Q(Q[-ind_zero_col,,drop=FALSE],curr_merge_col$map)
     } else {
       Q_merge <- merge_Q(Q,curr_merge_col$map)

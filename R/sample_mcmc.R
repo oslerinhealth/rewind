@@ -945,7 +945,7 @@ sampler <- function(dat,model_options,mcmc_options){
     if (VERBOSE){
       cat("\n[rewind] iteration ", iter, ":\n");
       cat("------------ \n");
-      if (do_update_partition && !is.null(MORE_SPLIT) && MORE_SPLIT){cat("> Biasing towards splitting.\n")}
+      if (do_update_partition && !is.null(MORE_SPLIT) && MORE_SPLIT){cat("> Biasing towards splitting while reaching the launch state.\n")}
       cat("> Latent state profiles for t=",t," pseudo-clusters of sizes: ",N[N!=0],"\n")
       cat("> Merging identical rows (pseudo-clusters) and columns (partner latent states):\n")
       cat(">> H^* Before:\n")
