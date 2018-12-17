@@ -148,7 +148,9 @@ simulate_data <- function(options_sim, SETSEED=FALSE){
     #                      0,0,1,1,1,0,0,1,1,1),nrow=K,ncol=M,byrow=TRUE)
     
     if (K==2^M){eta_atom <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)}
-  }
+  } # <---- all the special settings above are used during the package testing phase;
+  # <---- it is mostly common that in simulation studies you simulate saturated latent
+  #       space, i.e., # latent classes = 2^# latent states.
   
   Z  <- sample(1:K,N,prob=pop_frac,replace=TRUE) # component indicators.
   res_ord_tmp <- order_mat_byrow(eta_atom[Z,,drop=FALSE])
@@ -159,11 +161,27 @@ simulate_data <- function(options_sim, SETSEED=FALSE){
   xi <- (H%*%Q>0.5)+0 # NB: <<---- this is the DINO definition; will add others.
   
   res <- matrix(NA,nrow=N,ncol=L)
-  for (n in 1:N){
-    for (l in 1:L){
-      res[n,l] <- stats::rbinom(1,1,prob=xi[n,l]*theta[l]+(1-xi[n,l])*psi[l])
+  
+  eps_theta <- options_sim$eps_theta # <-- max magnitude to perturb the theta's by class.
+  eps_psi   <- options_sim$eps_psi   # <-- max magnitude to perturb the psi's by class.
+  
+  perturb_theta <- perturb_psi <- matrix(0,nrow=length(unique(Z)),ncol=L)
+  if (!is.null(eps_theta) & !is.null(eps_theta)){
+    for (k in 1:length(unique(Z))){
+      for (l in 1:L){
+        perturb_theta[k,l] <- runif(1,-eps_theta,eps_theta)
+        perturb_psi[k,l]   <- runif(1,-eps_psi,eps_psi)
+      }
     }
   }
+  
+  for (n in 1:N){
+    for (l in 1:L){
+      res[n,l] <- stats::rbinom(1,1,prob=xi[n,l]*(theta[l]+perturb_theta[Z[n],l])+
+                                  (1-xi[n,l])*(psi[l]+perturb_psi[Z[n],l]))
+    }
+  }
+  
   list(datmat = res, Q=Q, H_star= eta_atom,Z=Z,xi=xi,Eta=H)
 }
 
