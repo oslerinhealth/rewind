@@ -4,8 +4,8 @@
 \alias{plot_individual_pred}
 \title{Plot individual probabilities}
 \usage{
-plot_individual_pred(p_samp, state_nm, whoisthis, thedata = NULL, mycex = 1,
-  ...)
+plot_individual_pred(p_samp, state_nm, whoisthis, thedata = NULL,
+  mycex = 1, ...)
 }
 \arguments{
 \item{p_samp}{A vector of posterior probabilities for each individual}

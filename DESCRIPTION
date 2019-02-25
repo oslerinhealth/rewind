@@ -1,11 +1,14 @@
 Package: rewind
 Type: Package
 Title: Reconstructing Etiology with Binary Decomposition
-Version: 0.6.1
-Date: 2018-07-31
+Version: 0.6.2
+Date: 2019-02-25
 Authors@R: c(
      person("Zhenke", "Wu", email="zhenkewu@umich.edu",role=c("cre","aut","cph")),
-     person("Scott", "Zeger", email="sz@jhu.edu",role="aut"))
+     person("Scott", "Zeger", email="sz@jhu.edu",role="aut"),
+     person("John", "Muschelli", email="muschellij2@gmail.com", role="ctb", 
+     comment = c(ORCID = "0000-0001-6469-1750"))
+     )
 Maintainer: Zhenke Wu <zhenkewu@umich.edu>
 Description: This package implememnts a Bayesian hierarchical model that represents 
     observations as aggregation of a few unobserved binary machines where the aggregation 
@@ -42,7 +45,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 VignetteBuilder: knitr
-RoxygenNote: 6.0.1.9000
+RoxygenNote: 6.1.1
 URL: https://github.com/zhenkewu/rewind
 BugReports: https://github.com/zhenkewu/rewind/issues
 LinkingTo: Rcpp, RcppArmadillo

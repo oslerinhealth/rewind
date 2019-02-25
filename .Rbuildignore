@@ -1,5 +1,6 @@
-^.*\.Rproj$
+^rewind\.Rproj$
 ^\.Rproj\.user$
+^.*\.Rproj$
 R/rewind_junk.R
 .travis.yml
 simulations
