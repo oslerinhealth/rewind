@@ -1,8 +1,8 @@
 Package: rewind
 Type: Package
 Title: Reconstructing Etiology with Binary Decomposition
-Version: 0.6.1
-Date: 2018-07-31
+Version: 0.6.2
+Date: 2019-03-30
 Authors@R: c(
      person("Zhenke", "Wu", email="zhenkewu@umich.edu",role=c("cre","aut","cph")),
      person("Scott", "Zeger", email="sz@jhu.edu",role="aut"))
@@ -42,7 +42,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 VignetteBuilder: knitr
-RoxygenNote: 6.0.1.9000
+RoxygenNote: 6.1.1
 URL: https://github.com/zhenkewu/rewind
 BugReports: https://github.com/zhenkewu/rewind/issues
 LinkingTo: Rcpp, RcppArmadillo
