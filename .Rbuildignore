@@ -4,3 +4,4 @@
 R/rewind_junk.R
 .travis.yml
 simulations
+^appveyor\.yml$
