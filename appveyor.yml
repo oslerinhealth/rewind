@@ -14,10 +14,6 @@ cache:
   - C:\RLibrary
 
 environment:
-  NOT_CRAN: true
-
-
-environment:
   global:
     NOT_CRAN: true
     USE_RTOOLS: true
