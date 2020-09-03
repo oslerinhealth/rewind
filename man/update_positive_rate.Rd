@@ -13,7 +13,7 @@ update_positive_rate(Y, H, Q, a_theta, a_psi, old_theta_vec = NULL)
 
 \item{Q}{Q matrix}
 
-\item{a_theta, a_psi}{Beta hyperparameters for priors on \code{theta} and 
+\item{a_theta, a_psi}{Beta hyperparameters for priors on \code{theta} and
 \code{psi}, respectively. 2 by L matrices.}
 
 \item{old_theta_vec}{sampled \code{theta} parameters from the previous iteration (vector
@@ -23,6 +23,6 @@ of length L); to sample \code{psi} given the constraint}
 a list of true \code{theta} and false \code{psi} positive rates, each of length L.
 }
 \description{
-This function samples the true (theta) and false (psi) positive rates; 
+This function samples the true (theta) and false (psi) positive rates;
 Constraint: \code{theta[l]> 0.5 > psi[l]}
 }

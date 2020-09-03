@@ -33,7 +33,7 @@ simulate_Q <- function(M,L,p=0.1){
 #' @param dat binary data matrix (rows for observations, columns for dimensions)
 #' @param p Bernoulli probability of 1 in the Q matrix (except two diagonal matrices)
 #' @param frac A threshold - this function only initializes the dimensions with at least
-#' \code{frac}*100\% observed frequencies.
+#' \code{frac}*100 percent observed frequencies.
 #'
 #' @examples
 #' # simulate data:
@@ -54,8 +54,8 @@ simulate_Q <- function(M,L,p=0.1){
 #'
 #' @return a binary matrix of dimension M by L
 #' @export
-#' 
-#' 
+#'
+#'
 simulate_Q_dat <- function(M,dat,p=0.1,frac=1/4){
   ind_all <- which(colSums(dat)>nrow(dat)*frac) # this initial value helps MCMC sampling!.
   res <- matrix(0,nrow=M,ncol=ncol(dat))
@@ -75,13 +75,13 @@ simulate_Q_dat <- function(M,dat,p=0.1,frac=1/4){
 
 #' update true and false positive rates
 #'
-#' This function samples the true (theta) and false (psi) positive rates; 
+#' This function samples the true (theta) and false (psi) positive rates;
 #' Constraint: \code{theta[l]> 0.5 > psi[l]}
 #'
 #' @param Y binary data matrix
 #' @param H a binary matrix: rows for all individuals, columns for latent states
 #' @param Q Q matrix
-#' @param a_theta,a_psi Beta hyperparameters for priors on \code{theta} and 
+#' @param a_theta,a_psi Beta hyperparameters for priors on \code{theta} and
 #' \code{psi}, respectively. 2 by L matrices.
 #' @param old_theta_vec sampled \code{theta} parameters from the previous iteration (vector
 #' of length L); to sample \code{psi} given the constraint
@@ -104,7 +104,7 @@ update_positive_rate <- function(Y,H,Q,a_theta,a_psi,old_theta_vec=NULL){
   # theta_all_a1 <- sum(colSums(xi*Y))+a_theta[1,1]
   # theta_all_a2 <- sum(colSums(xi*(1-Y)))+a_theta[2,1]
   # theta_samp   <- rep(stats::rbeta(1,theta_all_a1,theta_all_a2), ncol(Q))
-  
+
   #theta_samp <- sapply(1:ncol(Q),function(i) {stats::rbeta(1,theta_a1[i],theta_a2[i])})
   theta_samp <- sapply(1:ncol(Q),function(i) {#stats::rbeta(1,theta_a1[i],theta_a2[i])
     trunc_rbeta(1,theta_a1[i],theta_a2[i],lower=max(0.51,psi_samp[i]))
@@ -132,22 +132,22 @@ update_positive_rate <- function(Y,H,Q,a_theta,a_psi,old_theta_vec=NULL){
 #' a1 <- 0.9
 #' n  <- 20
 #' p  <- rbeta(n, s*a1,s*(1-a1))
-#' 
+#'
 #' par(mfrow=c(1,3))
 #' plot(p,main="raw data: probabilities")
-#' 
+#'
 #' update_pseudo_n_PR(p,a1,e = 0.1,f=0.01,show_density =TRUE)
 #' abline(v=s/(1+s),col="blue")
 #' legend("topleft",c("True s/(1+s)","simulated s/(1+s)"),
 #'        col=c("blue","red"),lty=c(1,2))
 #' mtext(paste0("true s: ",as.character(s)),3)
-#' 
+#'
 #' update_mu_PR(p,s,a=2,b=1,show_density=TRUE)
 #' abline(v=a1,col="blue")
 #' legend("topleft",c("True a_theta1","simulated a_theta1"),
 #'        col=c("blue","red"),lty=c(1,2))
 #' mtext(paste0("true a_theta1: ",as.character(a1)),3)
-#' 
+#'
 #' \dontrun{
 #' par(mfrow=c(1,2))
 #' a10 <- 0.9
@@ -191,7 +191,7 @@ update_pseudo_n_PR <- function(theta_vec,a_theta_one,e=1,f=0.1,show_density=FALS
 #'@param theta_vec vector of positive rates that share a population mean
 #'@param s positive scalar; represents the current sampled value of pseudo-sample size
 #'@param a,b hyperparameter for Beta distribution over original a_theta_one.
-#'@param show_density Show the full conditional density 
+#'@param show_density Show the full conditional density
 #'given other unknown parameters; Default to \code{FALSE}
 #'
 #'@seealso \code{\link{update_pseudo_n_PR}} for examples.
@@ -220,8 +220,8 @@ update_mu_PR <- function(theta_vec,s,a=2,b=1,show_density=TRUE){
 #' sample alpha - hyperparameter for latent state prevalences p_m
 #'
 #' This function samples the parameters from a grid (this is used only for model
-#' with pre-specified latent state dimension M); 
-#' NB: currently it uses uniform prior or Beta prior for the reparameterized 
+#' with pre-specified latent state dimension M);
+#' NB: currently it uses uniform prior or Beta prior for the reparameterized
 #' hyperparameter; check if this is can be replaced by Gamma.
 #'
 #'@param H_star binary matrix of latent state profiles (row for clusters, column for
@@ -325,7 +325,7 @@ log_pr_Qml_cond <- function(Yl,eta_star,Ql,thetal,psil){
 #' updates within the identifiability constraint). Only used when Q is not known.
 #' NB: - do we need M here? do we modify M after collapsing partner machines.
 #'     - need to speed up.
-#'     
+#'
 #' @param Y binary data matrix
 #' @param Q_old the Q matrix from the last scan in Gibbs sampler (of dimension M by L)
 #' @param H matrix of latent state profiles, rows for N subjects,
@@ -344,11 +344,11 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
   M  <- nrow(Q_old)
   N  <- nrow(Y)
   L  <- ncol(Y)
-  
+
   H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), M)),ncol=M)
   if (constrained){ # constrained Gibbs sampling:
     for (k in sample(1:M,replace=FALSE)){ # begin iteration over elements of Q.
-      for (l in sample(1:L,replace=FALSE)){ 
+      for (l in sample(1:L,replace=FALSE)){
         if (do_update_Q_one(Q_old,k,l)){ # begin an update if needed.
           L0 <- L1   <- 0
           q_now <- Q_old[k,l]
@@ -379,7 +379,7 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
           }
           #L1 <- L1  #+ dbinom(sum(vec_interact),L-2*M,0.1,log=TRUE)# <-- encourage sparse columns.
           #L1 <- L1 - log(1+exp(-interact*ising_tmp)) # <-- encourage sparse columns.
-          curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1))) 
+          curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1)))
           #print(curr_prob)
           Q_old[k,l] <- stats::rbinom(1,1,prob = curr_prob)
           #Q_old[k,l] <- metrop_flip(q_now,curr_prob) #           <-- if doing metroplized flipping.
@@ -403,7 +403,7 @@ update_Q <- function(Y,Q_old,H,z,t,mylist,p,theta,psi,constrained=FALSE){
         }
         curr_prob <- exp(L1- matrixStats::logSumExp(c(L0,L1)))
         #print(curr_prob)
-        
+
         #Q_old[k,l] <- metrop_flip(q_now,curr_prob)
         Q_old[k,l] <- stats::rbinom(1,1,prob = curr_prob)
       }
@@ -470,13 +470,13 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 }
 
 #' Main function for model estimation
-#' 
-#' Estimating restricted latent class models (RLCM) by MCMC sampling 
-#' given pre-specified upper bound for (M) latent state dimension. This function performs MCMC sampling 
+#'
+#' Estimating restricted latent class models (RLCM) by MCMC sampling
+#' given pre-specified upper bound for (M) latent state dimension. This function performs MCMC sampling
 #' with user-specified options.
-#' NB: 
+#' NB:
 #' 1) add flexibility to specify other parameters as fixed (or partially
-#' fixed such as the rows of Q). 
+#' fixed such as the rows of Q).
 #'
 #' @param dat binary data matrix (row for observations and column for dimensions)
 #' @param model_options Specifying assumed model options:
@@ -491,30 +491,30 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' this package recommends so in the printed message;
 #' \item \code{a_theta, a_psi} hyperparameters for true and false positive rates;
 #' \code{a_theta} and \code{a_psi} are both 2 by L. If provided with these
-#' parameter values, the algorithm does not pool information across measurements. 
+#' parameter values, the algorithm does not pool information across measurements.
 #' It assumes independent priors for all true and false positive rates.
-#' 
+#'
 #' \item \code{pooling_pr} Set to \code{TRUE} if to pool theta and psi (must NOT
 #' set \code{a_theta} or \code{a_psi}; must set \code{a0_TPR},
 #' \code{a0_FPR},\code{e0_TPR},\code{f0_TPR},\code{e0_FPR},\code{f0_FPR} that are
-#' hyperparameters of the priors for TPR or FPR: 
-#' 
-#' \code{theta[1] <--Beta-- a_theta[1:2,l] <--deterministic-- 
-#' (a0_TPR, hyper_pseudo_n_TPR <--Gamma-- (e0_TPR, f0_TPR)) 
+#' hyperparameters of the priors for TPR or FPR:
+#'
+#' \code{theta[1] <--Beta-- a_theta[1:2,l] <--deterministic--
+#' (a0_TPR, hyper_pseudo_n_TPR <--Gamma-- (e0_TPR, f0_TPR))
 #' --deterministic--> a_theta[1:2,l] --Beta-->theta[2]}; (a_theta has duplicated
 #' columns, hence an arbitary column index l)
-#' 
-#' \item \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR} pseudo sample 
+#'
+#' \item \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR} pseudo sample
 #' size in \code{Beta(hyper_pseudo_n_TPR*a0_TPR,hyper_pseudo_n_TPR*(1-a0_TPR))};
-#' usually works well by setting this to a large number, say 10 or 50. Each 
+#' usually works well by setting this to a large number, say 10 or 50. Each
 #' is assigned a \code{Gamma(e0_XPR, f0_XPR)} prior
-#' 
+#'
 #' \item \code{a0_TPR} mean of a Beta prior TPR
 #' \item \code{a0_FPR} mean of a Beta prior FPR
-#' 
+#'
 #' The following four parameters are not needed if \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR}
 #' are specified.
-#' \item \code{e0_TPR,f0_TPR} the first, second Gamma parameter for the TPR 
+#' \item \code{e0_TPR,f0_TPR} the first, second Gamma parameter for the TPR
 #' pseudo sample size hyperparameter: \code{hyper_pseudo_n_TPR}
 #' \item \code{e0_FPR,f0_FPR} the first, second Gamma parameter for the FPR
 #'  pseudo sample size hyperparameter: \code{hyper_pseudo_n_FPR}
@@ -530,7 +530,7 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' \item \code{the_partition} Put a vector of z here if not to update
 #' the partition/clustering. The z must be 1) from 1 to t, which is
 #' the number of groups, 2) consecutive from 1 to t.
-#' \item \code{a_alpha, b_alpha} [To come]Just for infinite latent state dimension model  -
+#' \item \code{a_alpha, b_alpha} Just for infinite latent state dimension model  -
 #' Gamma hyperparameter for the hyperprior on \code{alpha}.
 #' (see slice_sampler to come)
 #' }
@@ -544,9 +544,9 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' for \code{Beta(alpha/m_max,1)} (can set to \code{m_max});
 #' For infinite dimension model, the hyperparameter for IBP (can set to 1).
 #' }
-#' 
-#' 
-#' 
+#'
+#'
+#'
 #' @param mcmc_options Options for MCMC algorithm:
 #' \itemize{
 #' \item \code{n_total} total number of MCMC iterations
@@ -567,7 +567,7 @@ update_Q_col_block <- function(Y,Q_old,H,z,t,mylist,p,theta,psi){
 #' \code{FALSE} by starting from a hierarchical agglomerative clustering (complete linkage) and cut
 #' to produce \code{floor(t_max/4)} clusters. Consider this as a warm start.
 #' \item \code{MORE_SPLIT} when getting to launch state of the partition,
-#' \code{TRUE} For biasing towards split when reaching a random launch state; 
+#' \code{TRUE} For biasing towards split when reaching a random launch state;
 #' \code{FALSE} for choosing a pair (i,j) uniformly and then merge (if they belong to distinct clusters)
 #' or split (if they belong to the identical cluster).
 #' }
@@ -598,14 +598,14 @@ sampler <- function(dat,model_options,mcmc_options){
   # model_options <- model_options0
   # mcmc_options  <- mcmc_options0
   # # <<<<------ end of testing data.
-  
+
   # # <<<<------ uncomment for testing:
   # dat <- simu_dat
   # model_options <- model_options_refit_given_partition
   # mcmc_options  <- mcmc_options_refit_given_partition
   # # <<<<------ end of testing data.
-  
-  
+
+
   #
   # read in data:
   #
@@ -614,7 +614,7 @@ sampler <- function(dat,model_options,mcmc_options){
   #hmcols         <- package_env$hmcols
   YlGnBu5   <- c('#ffffd9','#c7e9b4','#41b6c4','#225ea8','#081d58',"#092d94")
   hmcols    <- colorRampPalette(YlGnBu5)(256)
-  
+
   #
   # posterior sampling options:
   #
@@ -624,26 +624,26 @@ sampler <- function(dat,model_options,mcmc_options){
   keepers <- seq(ceiling(n_total/n_keep),n_total,len=n_keep)
   keep_index <- 0                 # the index to keep during MCMC inference.
   n_split    <- mcmc_options$n_split # number of intermediate GS scan to arrive at launch state.
-  
+
   init_frac <- mcmc_options$init_frac
-  
+
   block_update_Q <- !is.null(mcmc_options$block_update_Q) && mcmc_options$block_update_Q # TRUE for updating columns of Q. FALSE otherwise.
   block_update_H <- !is.null(mcmc_options$block_update_H) && mcmc_options$block_update_H # TRUE for updating rows of H. FALSE otherwise.
   constrained    <- !is.null(mcmc_options$constrained) && mcmc_options$constrained
   PPD            <- !is.null(mcmc_options$predictive_samp) && mcmc_options$predictive_samp
-  
+
   #
   # working model options: (call it "working" because one can use m_max larger
   # than its true value)
   #
   t_max <- model_options$t_max # maximum allowable number of clusters.
   m_max <- model_options$m_max # maximum number of machines (truncated to m_max).
-  b     <- model_options$b     # Gamma parameter in MFM - hyperparameter for Dirichlet distn. 
+  b     <- model_options$b     # Gamma parameter in MFM - hyperparameter for Dirichlet distn.
   log_v <- model_options$log_v # coefficients for MFM.
   do_update_partition <- is.null(model_options$the_partition)
   POOL_PR        <- !is.null(model_options$pooling_pr) && model_options$pooling_pr
- 
-  
+
+
   is_identity_Q <- NULL
   if (is.null(model_options$Q)){
     Q_samp <- array(0,c(m_max,L,n_keep))
@@ -653,11 +653,11 @@ sampler <- function(dat,model_options,mcmc_options){
     Q      <- model_options$Q # if Q is given.
     is_identity_Q <- (nrow(Q)==ncol(Q)) && sum(abs(Q-diag(nrow(Q))))<1e-3
   }
-  
+
   if (is.null(model_options$Q) | (!is.null(is_identity_Q) && !is_identity_Q) | block_update_H){ # <-- if Q may be non-diagonal; or if we block update H.
     H_star_enumerate <- as.matrix(expand.grid(rep(list(0:1), m_max)),ncol=m_max) # all binary patterns for latent state profiles. 2^m_max of them.
   }
-  
+
   # initialize clustering:
   if (ALL_IN_ONE_START){
     t <- 1        # number of clusters.
@@ -667,7 +667,7 @@ sampler <- function(dat,model_options,mcmc_options){
     # is 0 after that.
     c_next <- 2                    # an available cluster ID to be used next.
     N <- rep(0,t_max+3); N[1] <- n # N[c] is the size of cluster c. Note that N is different from n.
-    
+
     log_p <- rep(0,n+1) # probability for sampling z; n+1 because at most there could be n clusters;
     # and sometimes one needs to assign an observation to a new cluster - by current bookkeeping,
     # we are not efficient in memory and create a new cluster ID - hence +1.
@@ -684,22 +684,22 @@ sampler <- function(dat,model_options,mcmc_options){
     zs <- z
     S  <- rep(0,n)
   }
-  
+
   # deal with fixed clusters (this is to initialize):
   if (!is.null(model_options$partition_partial)){
     partition_partial <- model_options$partition_partial
     force_cl <- fix_cluster(partition_partial,z,N,t,mylist)
-    z <- force_cl$z  
-    N <- force_cl$N  
-    t <- force_cl$t  
-    mylist <- force_cl$mylist  
-    c_next <- force_cl$c_next  
+    z <- force_cl$z
+    N <- force_cl$N
+    t <- force_cl$t
+    mylist <- force_cl$mylist
+    c_next <- force_cl$c_next
     zs <- z
     S <- rep(0,n)
   }
-  
+
   log_Nb <- log(1:n)+b # the multipliers needed when assigning an observation to an existing cluster. Restaurant process.
-  
+
   #
   # create placeholders for storing posterior samples + initialize the values at the first iteration:
   #
@@ -708,12 +708,12 @@ sampler <- function(dat,model_options,mcmc_options){
   z_samp <- matrix(0,nrow=n,ncol=n_keep) # posterior samples of cluster indicators.
   H_star_samp <- array(0,c(t_max+3,m_max,n_keep))# component-specific machine profiles.
   mylist_samp <- matrix(0,nrow=length(mylist),ncol=n_keep) # need it to retrieve the correct latent state vector.
-  
+
   # true positive rates:
   if (is.null(model_options$theta)){
     theta_samp <- matrix(0,nrow=L,ncol=n_keep)
     if (POOL_PR){ # <-- If pool PRs:
-      if (is.null(model_options$hyper_pseudo_n_TPR)){ 
+      if (is.null(model_options$hyper_pseudo_n_TPR)){
         hyper_pesudo_n_TPR_samp <- rep(0,n_keep)
         hyper_pseudo_n_TPR      <- 10  # <--- initialization.
       } else{
@@ -725,7 +725,7 @@ sampler <- function(dat,model_options,mcmc_options){
       } else{
         a0_TPR      <- model_options$a0_TPR
       }
-      theta <- trunc_rbeta(L,hyper_pseudo_n_TPR*a0_TPR,hyper_pseudo_n_TPR*(1-a0_TPR),0.8,1)  
+      theta <- trunc_rbeta(L,hyper_pseudo_n_TPR*a0_TPR,hyper_pseudo_n_TPR*(1-a0_TPR),0.8,1)
     } else{ # <--- not pooling PRs:
       a_theta <- model_options$a_theta # <--------------------------- 2 by L matrix.
       theta   <- sapply(1:L,function(i){stats::rbeta(1,a_theta[1,i],a_theta[2,i])}) # initialization.
@@ -734,7 +734,7 @@ sampler <- function(dat,model_options,mcmc_options){
   } else{
     theta   <- model_options$theta # use specified true positive rates.
   }
-  
+
   # false positive rates:
   if (is.null(model_options$psi)){
     psi_samp   <- matrix(0,nrow=L,ncol=n_keep)
@@ -751,7 +751,7 @@ sampler <- function(dat,model_options,mcmc_options){
       } else{
         a0_FPR      <- model_options$a0_FPR
       }
-      psi <- trunc_rbeta(L,hyper_pseudo_n_FPR*a0_FPR,hyper_pseudo_n_FPR*(1-a0_FPR),0.001,0.2)  
+      psi <- trunc_rbeta(L,hyper_pseudo_n_FPR*a0_FPR,hyper_pseudo_n_FPR*(1-a0_FPR),0.001,0.2)
     } else{ # if not pooling positive rates:
       a_psi <- model_options$a_psi  # <--------------------------- 2 by L matrix.
       psi <- sapply(1:L,function(i){stats::rbeta(1,a_psi[1,i],a_psi[2,i])}) # initialization.
@@ -760,7 +760,7 @@ sampler <- function(dat,model_options,mcmc_options){
   } else{
     psi     <- model_options$psi # use specified false positive rates.
   }
-  
+
   # probability of a latent state being positive:
   if (is.null(model_options$p0)){
     p_samp <- matrix(0,nrow=m_max,ncol=n_keep)
@@ -768,14 +768,14 @@ sampler <- function(dat,model_options,mcmc_options){
   } else{
     p      <- model_options$p0 # fix prevalence as specified.
   }
-  
+
   if (is.null(model_options$alpha) && is.null(model_options$p0)){
     alpha_samp <- rep(0,n_keep)  # hyperparameter for latent state prevalence; Beta(alpha/M,1) for IBP.
     alpha      <- m_max           # initialization.
   }else{
     alpha    <- model_options$alpha # fix alpha.
   }
-  
+
   # when estimating Q, one can fix a "best" clustering estimate obtained
   # from an initial fit:
   if (!do_update_partition){
@@ -783,17 +783,17 @@ sampler <- function(dat,model_options,mcmc_options){
     t <- length(unique(z))
     mylist[1:t] <- 1:t
   }
-  
+
   # if to do posterior predictive sampling:
   if (PPD){Y_pred_samp <- array(NA,c(n,L,n_keep))}
-  
+
   #
   # begin MCMC iteration:
   #
   cat("[rewind] Begin MCMC for model with #latent states (M =", m_max, ")\n")
   if(!is.null(model_options$Q) && is_identity_Q){cat("> identity Q provided.\n")}
   if(!is.null(model_options$Q) && !is_identity_Q){cat("> Q provided; Not identity.\n")}
-  
+
   for (iter in 1:n_total){ # <---- BEGING MCMC ITERATIONS:
     VERBOSE <- iter%%mcmc_options$print_mod==0
     #
@@ -806,7 +806,7 @@ sampler <- function(dat,model_options,mcmc_options){
       if (!is.null(model_options$partition_partial)){
         set_change <- sample((1:n)[-unlist(model_options$partition_partial)])
       } else{
-        set_change <- sample(1:n)  
+        set_change <- sample(1:n)
       }
       for (i in set_change){ # iterate over subjects for cluster assignment:
         # remove obs i from its current cluster:
@@ -819,7 +819,7 @@ sampler <- function(dat,model_options,mcmc_options){
           mylist <- ordered_remove(c,mylist,t)
           t <- t-1 # total number of clusters is now reduced by one.
         }
-        
+
         #
         # compute probability for Gibbs updating - the probability of assigning a subject
         # to a cluster.
@@ -840,7 +840,7 @@ sampler <- function(dat,model_options,mcmc_options){
           log_p[t+1] <- log_v[t+1]-log_v[t] + log(b) + log_marginal(dat[i,,drop=FALSE],H_star_enumerate,Q,p,theta,psi) # new cluster.
         }
         j <- sample(t+1,1,prob = exp(log_p[1:(t+1)]))
-        
+
         # add obs i to its new cluster:
         if (j<=t){ # if not on its own:
           c <- mylist[j]
@@ -854,21 +854,21 @@ sampler <- function(dat,model_options,mcmc_options){
         z[i] <- c
         N[c] <- N[c] + 1
       }# END cluster assignment iteration over subjects.
-      
+
       # After iterate through other subjects not in partition_partial,
       # isolate the partition_partial (because other subjects may join
       # the clusters in partition_partial)
       if (!is.null(model_options$partition_partial)){
         partition_partial <- model_options$partition_partial
         force_cl <- fix_cluster(partition_partial,z,N,t,mylist)
-        z <- force_cl$z  
-        N <- force_cl$N  
-        t <- force_cl$t  
-        mylist <- force_cl$mylist  
-        c_next <- force_cl$c_next 
+        z <- force_cl$z
+        N <- force_cl$N
+        t <- force_cl$t
+        mylist <- force_cl$mylist
+        c_next <- force_cl$c_next
       }
     }# END IFELSE for doing partition update or not.
-    
+
     if (do_update_partition){
       # if (use_splitmerge){}
       MORE_SPLIT <- mcmc_options$MORE_SPLIT
@@ -885,7 +885,7 @@ sampler <- function(dat,model_options,mcmc_options){
     }
 
     if(t>t_max) {stop("[rewind] Sampled t has exceeded t_max. Increast t_max and retry.")}
-    
+
     ## Simulate xi for posterior predictive checking:
     # #if (is.null(model_options$Q)){
     # xi_samp <- array(0,c(t_max+3,L,n_total)) # add this to the results.
@@ -894,14 +894,14 @@ sampler <- function(dat,model_options,mcmc_options){
     # }
     # xi_star <- xi_samp[mylist[1:t],,iter]
     # #}
-    
-    
+
+
     ## TODO: determine a good frac threshold.
     if (iter>1 && sum(colSums(H_star)==0)>0){ # this is added..... useful or not??
      Q[colSums(H_star)==0,] <- simulate_Q_dat(sum(colSums(H_star)==0),dat,frac=init_frac[2])
     }
     #image(f(Q),col=hmcols)
-    
+
     #
     # update H: latent state profile given clusters: (check here for sampling H)
     #
@@ -926,9 +926,9 @@ sampler <- function(dat,model_options,mcmc_options){
         }
       }
     }
-    
+
     H_star <- H_star_redun[mylist[1:t],,drop=FALSE] # don't use Z to subset H_star!!! Do so for H_star_samp.
-    
+
     #
     # update Q:
     #
@@ -941,7 +941,7 @@ sampler <- function(dat,model_options,mcmc_options){
         Q <- update_Q(dat,Q,H_star,z,t,mylist,p,theta,psi,constrained)
       }
     }
-    
+
     if (VERBOSE){
       cat("\n[rewind] iteration ", iter, ":\n");
       cat("------------ \n");
@@ -958,7 +958,7 @@ sampler <- function(dat,model_options,mcmc_options){
       }
       if (!is.null(mcmc_options$print_Q) && mcmc_options$print_Q) {image(f(Q),col=hmcols)}
     }
-    
+
     #
     # update true/false positive rates - theta/psi:
     #
@@ -985,17 +985,17 @@ sampler <- function(dat,model_options,mcmc_options){
       theta <- res_update_pr$theta
       psi   <- res_update_pr$psi
     }
-    
+
     # update hyperparameter for {p_m}:
     if (is.null(model_options$alpha) && is.null(model_options$p0)){
       alpha <- update_alpha(H_star,t,m_max)
     }
-    
+
     # update prevalence vector {p_m}:
     if (is.null(model_options$p0)){
       p    <- update_prevalence(H_star,alpha,m_max)
     }
-    
+
     #
     # Record MCMC results:
     #
@@ -1048,9 +1048,9 @@ sampler <- function(dat,model_options,mcmc_options){
         Y_pred_samp[,,keep_index] <- Y_pred
       }
     }
-    
+
   }# ----------> END MCMC ITERATIONS:
-  
+
   res <- list(keepers=keepers,t_samp=t_samp,
               N_samp=N_samp,z_samp=z_samp,
               H_star_samp = H_star_samp,

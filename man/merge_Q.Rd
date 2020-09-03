@@ -7,7 +7,7 @@
 merge_Q(Q, map_id)
 }
 \arguments{
-\item{Q}{A Q matrix (row for ACTIVE factors that might be partners, 
+\item{Q}{A Q matrix (row for ACTIVE factors that might be partners,
 columns for dimension of multivariate binary data)}
 
 \item{map_id}{a vector taking possibly duplicated values in {1,...,M^+}, where M^+ is the number

@@ -14,7 +14,7 @@ simulate_Q_dat(M, dat, p = 0.1, frac = 1/4)
 \item{p}{Bernoulli probability of 1 in the Q matrix (except two diagonal matrices)}
 
 \item{frac}{A threshold - this function only initializes the dimensions with at least
-\code{frac}*100\% observed frequencies.}
+\code{frac}*100 percent observed frequencies.}
 }
 \value{
 a binary matrix of dimension M by L

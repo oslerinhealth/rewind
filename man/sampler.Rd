@@ -21,22 +21,22 @@ the maximum (guessed) latent state dimension during the posterior inference
 this package recommends so in the printed message;
 \item \code{a_theta, a_psi} hyperparameters for true and false positive rates;
 \code{a_theta} and \code{a_psi} are both 2 by L. If provided with these
-parameter values, the algorithm does not pool information across measurements. 
+parameter values, the algorithm does not pool information across measurements.
 It assumes independent priors for all true and false positive rates.
 
 \item \code{pooling_pr} Set to \code{TRUE} if to pool theta and psi (must NOT
 set \code{a_theta} or \code{a_psi}; must set \code{a0_TPR},
 \code{a0_FPR},\code{e0_TPR},\code{f0_TPR},\code{e0_FPR},\code{f0_FPR} that are
-hyperparameters of the priors for TPR or FPR: 
+hyperparameters of the priors for TPR or FPR:
 
-\code{theta[1] <--Beta-- a_theta[1:2,l] <--deterministic-- 
-(a0_TPR, hyper_pseudo_n_TPR <--Gamma-- (e0_TPR, f0_TPR)) 
+\code{theta[1] <--Beta-- a_theta[1:2,l] <--deterministic--
+(a0_TPR, hyper_pseudo_n_TPR <--Gamma-- (e0_TPR, f0_TPR))
 --deterministic--> a_theta[1:2,l] --Beta-->theta[2]}; (a_theta has duplicated
 columns, hence an arbitary column index l)
 
-\item \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR} pseudo sample 
+\item \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR} pseudo sample
 size in \code{Beta(hyper_pseudo_n_TPR*a0_TPR,hyper_pseudo_n_TPR*(1-a0_TPR))};
-usually works well by setting this to a large number, say 10 or 50. Each 
+usually works well by setting this to a large number, say 10 or 50. Each
 is assigned a \code{Gamma(e0_XPR, f0_XPR)} prior
 
 \item \code{a0_TPR} mean of a Beta prior TPR
@@ -44,10 +44,10 @@ is assigned a \code{Gamma(e0_XPR, f0_XPR)} prior
 
 The following four parameters are not needed if \code{hyper_pseudo_n_TPR},\code{hyper_pseudo_n_FPR}
 are specified.
-\item \code{e0_TPR,f0_TPR} the first, second Gamma parameter for the TPR 
+\item \code{e0_TPR,f0_TPR} the first, second Gamma parameter for the TPR
 pseudo sample size hyperparameter: \code{hyper_pseudo_n_TPR}
 \item \code{e0_FPR,f0_FPR} the first, second Gamma parameter for the FPR
- pseudo sample size hyperparameter: \code{hyper_pseudo_n_FPR}
+pseudo sample size hyperparameter: \code{hyper_pseudo_n_FPR}
 \item \code{log_v} The character string representing the prior
 distribution for the number of true clusters, e.g.,
 \code{"function(k) {log(0.1) + (k-1)*log(0.9)}"}. We pre-computed
@@ -60,7 +60,7 @@ model_options0$t_max+1)}
 \item \code{the_partition} Put a vector of z here if not to update
 the partition/clustering. The z must be 1) from 1 to t, which is
 the number of groups, 2) consecutive from 1 to t.
-\item \code{a_alpha, b_alpha} [To come]Just for infinite latent state dimension model  -
+\item \code{a_alpha, b_alpha} Just for infinite latent state dimension model  -
 Gamma hyperparameter for the hyperprior on \code{alpha}.
 (see slice_sampler to come)
 }
@@ -95,7 +95,7 @@ Then no identifiability constraint is imposed upon Q at any iterations.
 \code{FALSE} by starting from a hierarchical agglomerative clustering (complete linkage) and cut
 to produce \code{floor(t_max/4)} clusters. Consider this as a warm start.
 \item \code{MORE_SPLIT} when getting to launch state of the partition,
-\code{TRUE} For biasing towards split when reaching a random launch state; 
+\code{TRUE} For biasing towards split when reaching a random launch state;
 \code{FALSE} for choosing a pair (i,j) uniformly and then merge (if they belong to distinct clusters)
 or split (if they belong to the identical cluster).
 }}
@@ -120,12 +120,14 @@ to see which ones to use for inference after \code{n_burnin}.
 }
 }
 \description{
-Estimating restricted latent class models (RLCM) by MCMC sampling 
-given pre-specified upper bound for (M) latent state dimension. This function performs MCMC sampling 
+Estimating restricted latent class models (RLCM) by MCMC sampling
+given pre-specified upper bound for (M) latent state dimension. This function performs MCMC sampling
 with user-specified options.
-NB: 
-1) add flexibility to specify other parameters as fixed (or partially
+NB:
+\enumerate{
+\item add flexibility to specify other parameters as fixed (or partially
 fixed such as the rows of Q).
+}
 }
 \examples{
 \dontrun{
@@ -320,7 +322,7 @@ fixed such as the rows of Q).
   #
   # Approach 1: compute the error |QQ' - E[QQ'|Y]|_Frobneious
   # Approach 2: compute the marginal co-activation probability
-  #             P(\\sum_m Q_ml >= 1, \\sum_m Q_ml' >= 1) -
+  #             P(\sum_m Q_ml >= 1, \sum_m Q_ml' >= 1) -
   #             This is invariant to the relabeling of latent states, or cluster labels.
   nsamp_Q <- dim(out$Q_merge_samp)[3]
   EQQ     <- matrix(0,nrow=dim(out$Q_merge_samp)[2],

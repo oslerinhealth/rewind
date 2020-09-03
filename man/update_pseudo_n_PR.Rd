@@ -4,8 +4,13 @@
 \alias{update_pseudo_n_PR}
 \title{sample alpha_s - hyperparameter for positive rates theta_l, psi_l}
 \usage{
-update_pseudo_n_PR(theta_vec, a_theta_one, e = 1, f = 0.1,
-  show_density = FALSE)
+update_pseudo_n_PR(
+  theta_vec,
+  a_theta_one,
+  e = 1,
+  f = 0.1,
+  show_density = FALSE
+)
 }
 \arguments{
 \item{theta_vec}{vector of positive rates}

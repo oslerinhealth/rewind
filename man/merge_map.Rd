@@ -16,8 +16,8 @@ binary patterns that might not be unique}
 a list \itemize{
 \item \code{map} a vector of integer of identical length to \code{pseudo_pat}; takes values
 from 1 to \code{length(uniq_pat)}
-\item \code{uniq_pat} a matrix of unique binary patterns (# rows =  \code{length(uniq_pat)},
-# columns = number of 1/0s for each element in \code{uniq_pat})
+\item \code{uniq_pat} a matrix of unique binary patterns (number of rows =  \code{length(uniq_pat)},
+number of columns = number of 1/0s for each element in \code{uniq_pat})
 }
 }
 \description{

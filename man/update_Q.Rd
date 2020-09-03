@@ -34,5 +34,5 @@ A Q matrix with all its elements updated.
 This function updates Q matrix by Gibbs sampler (with option to do constrained
 updates within the identifiability constraint). Only used when Q is not known.
 NB: - do we need M here? do we modify M after collapsing partner machines.
-    - need to speed up.
+- need to speed up.
 }

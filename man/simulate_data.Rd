@@ -7,14 +7,14 @@
 simulate_data(options_sim, SETSEED = FALSE)
 }
 \arguments{
-\item{options_sim}{options for simulating data: 
+\item{options_sim}{options for simulating data:
 \itemize{
-\item \code{N} - sample size; 
+\item \code{N} - sample size;
 \item \code{M} - number of machines;
-\item \code{L} - number of protein landmarks; 
-\item \code{K} - number of ture components; 
+\item \code{L} - number of protein landmarks;
+\item \code{K} - number of ture components;
 \item \code{alpha1} - hyperparameter for determining the machine prevalence {p_m}; (NB: delete?)
-\item \code{theta} - true positive rates for all protein landmarks; 
+\item \code{theta} - true positive rates for all protein landmarks;
 \item \code{psi} - false positive rates for all protein landmarks.
 \item \code{frac} - Percentage of (L-2M) dimensions that are positive in \code{Q};
 See \code{\link{simulate_Q}}.
@@ -22,7 +22,7 @@ See \code{\link{simulate_Q}}.
 
 }}
 
-\item{SETSEED}{\code{FALSE} by default; Set to \code{TRUE} if to fix 
+\item{SETSEED}{\code{FALSE} by default; Set to \code{TRUE} if to fix
 random number generation.}
 }
 \value{
@@ -30,11 +30,11 @@ random number generation.}
 \item \code{datmat} a matrix for multivariate binary observations from the assumed boolean
 matrix factorization,
 \item \code{Q} A Q-matrix,
-\item \code{H_star} A binary matrix of dimension K by M, for K clusters, and M 
+\item \code{H_star} A binary matrix of dimension K by M, for K clusters, and M
 latent states,
 \item \code{Z} A vector of length N for individual cluster indicators,
 \item \code{xi} a binary matrix of dimension N by L for true presence or absence of proteins
-\item \code{Eta} A binary matrix of dimension N by M for presence or absence of 
+\item \code{Eta} A binary matrix of dimension N by M for presence or absence of
 latent states among all subjects.
 }
 }
@@ -42,6 +42,7 @@ latent states among all subjects.
 This function takes in \code{options_sim} and simulate as specified by the options.
 NB: currently only supports logical "Or", or DINO model. Other restricted latent
 class models need to be added.
+NB: alpha1 needs to be update
 }
 \examples{
 # simulate data:

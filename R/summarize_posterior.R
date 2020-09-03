@@ -1,17 +1,17 @@
-###### Compute the posterior co-clustering probability matrix (probability that i and j 
+###### Compute the posterior co-clustering probability matrix (probability that i and j
 ###### are clustered together).
 ######
 ###### This function is to evaluate the recovered clusters
-###### 
-###### @param z a matrix of posterior samples, with subjects and MCMC samples in 
+######
+###### @param z a matrix of posterior samples, with subjects and MCMC samples in
 ###### the rows and columns, respectively.
 ######
 ###### @return a matrix of empirical co-clustering frequencies based on the
 ###### posterior samples
-###### 
-###### @examples 
+######
+###### @examples
 ###### z2comat(matrix(c(1,1,2,2,3,4,5,6,5,7),ncol=1))
-###### 
+######
 ###### @export
 #####z2comat <- function(z){
 #####  if(!is.matrix(z)){z <- matrix(z,ncol=1)}
@@ -46,7 +46,7 @@ distAB <- function(A,B){
 #'
 #' This function maybe useful for marginalization or just to visualize the
 #' probability table.
-#' 
+#'
 #' @param p A vector of M probabilities
 #' @param LOG Default is TRUE; logarithm of probabilities.
 #'
@@ -83,10 +83,10 @@ plot_population_fractions <- function(p_samp,state_nm,mycex=1,...){
   M <- nrow(p_samp)
   log_eti_samp  <- apply(p_samp,2,compute_product_Bern_table)
   eti_samp_mean <- rowMeans(exp(log_eti_samp))
-  
+
   pat <-  as.matrix(expand.grid(rep(list(0:1),M)),ncol=M)
   pat <-  pat[order(rowSums(pat)),]
-  
+
   multiplier <- 2
   plot(rep(1:nrow(pat), each = ncol(pat)),
        rep(-(1:ncol(pat)), nrow(pat)),
@@ -99,7 +99,7 @@ plot_population_fractions <- function(p_samp,state_nm,mycex=1,...){
                          collapse="")),side = 3,line=-3)
   axis(2,at=-(1:ncol(pat)),
        labels=state_nm,las=2,xpd = NA,cex.axis=mycex)
-  
+
   segments(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.025))*ncol(pat)*multiplier,
            1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.975))*ncol(pat)*multiplier)
   segments(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.25))*ncol(pat)*multiplier,
@@ -109,14 +109,14 @@ plot_population_fractions <- function(p_samp,state_nm,mycex=1,...){
   points(1:nrow(pat),exp(apply(log_eti_samp,1,quantile,0.975))*ncol(pat)*multiplier,lwd=6,pch="-")
   axis(2,at=ncol(pat)*c(0,0.25,0.5,1)*multiplier,
        labels=c(0,0.25,0.5,1),las=2,xpd = NA)
-  
+
   mtext(text = expression(paste("", pi[eta],sep="")),line = 3,side=2,
         cex=2,las=2,padj=-8)
   #mtext(text = expression(paste(eta[1],",..., ", eta[M],collapse="")),line = 1,side=2,
   #      cex=1,adj = 0.5,las=0)
   legend("topright",legend = c("95% CI","50% CI"),col=c("black","dodgerblue2"),lwd=c(1,4),
          bty="n")
-  
+
   # # This is the best estimated Q:
   # #
   # NROW_Q_PLOT <- ncol(dat_rlcm_case) #sum(rowSums(Q_merged)!=0)
@@ -134,7 +134,7 @@ plot_population_fractions <- function(p_samp,state_nm,mycex=1,...){
   #
   # mtext(text = expression(paste(Q[1.],",..., ", Q[M.],collapse="")),line = 1,side=2,
   #       cex=1,adj = 0.15,las=0)
-  
+
 }
 
 #' Plot individual probabilities
@@ -155,13 +155,13 @@ plot_individual_pred <- function(p_samp,state_nm,whoisthis,thedata=NULL,mycex=1,
   # p_samp = apply(H_pat_res,1,table)[[i]]/sum(apply(H_pat_res,1,table)[[i]])
   # state_nm = analysis_list
   # thedata = dat_rlcm_case[i,,drop=FALSE]
-  
+
   M   <- length(state_nm)
   pat <-  as.matrix(expand.grid(rep(list(0:1),M)),ncol=M)
   pat <-  pat[order(rowSums(pat)),]
   pat_with_prob <- cbind(pat,rep(0,nrow(pat)))
   pat_with_prob[match(as.numeric(names(p_samp)),round(exp(bin2dec_vec(pat)))),M+1] <- p_samp
-  
+
   multiplier <- 2
   plot(rep(1:nrow(pat), each = M),
        rep(-(1:M), nrow(pat)),
@@ -183,19 +183,19 @@ plot_individual_pred <- function(p_samp,state_nm,whoisthis,thedata=NULL,mycex=1,
   }
   axis(2,at=-(1:M),
        labels=state_nm,las=2,xpd = NA,cex.axis=mycex)
-  
+
   points(1:nrow(pat),pat_with_prob[,M+1]*M*multiplier,pch=18,xpd = NA,type="h",lwd=2)
   axis(2,at=M*c(0,0.25,0.5,1)*multiplier,
        labels=c(0,0.25,0.5,1),las=2,xpd = NA)
-  
+
   thetitle <- bquote(paste(.(whoisthis),": P{",
                            eta[i],"=",eta,"|Data}",
                            collapse=""))
   mtext(thetitle,side = 3,line=0,cex=2)
 }
 
-#' Plot posterior sampling chain and the histogram on the right margin 
-#' 
+#' Plot posterior sampling chain and the histogram on the right margin
+#'
 #' NB: currently works for integer y; need to make it general.
 #'
 #' @param x numeric vector; usually iteration ids
@@ -211,7 +211,7 @@ plot_individual_pred <- function(p_samp,state_nm,whoisthis,thedata=NULL,mycex=1,
 #' x <- 1:1000
 #' y <- sample(1:10,1000,prob = c(1,2,3,4,5,5,4,3,2,1), replace=TRUE)
 #' scatterhist(x,y)
-#' 
+#'
 scatterhist = function(x, y, xlab="", ylab=""){
   zones=matrix(c(2,0,1,3), ncol=2, byrow=TRUE)
   layout(zones, widths=c(4/5,1/5), heights=c(1/5,4/5))
@@ -241,13 +241,13 @@ scatterhist = function(x, y, xlab="", ylab=""){
 #' \item merges partner latent states (identical non-zero columns in H);
 #' merge the corresponding rows in Q by \code{pmax}. Even though identifiability
 #' condition may prevent non-identical columns in H, because we specify
-#' a maximum latent state dimension \code{m_max}, MCMC may produce identical 
+#' a maximum latent state dimension \code{m_max}, MCMC may produce identical
 #' columns in some iterations.
 #' }
 #'
 #' @param H_star_redun A binary matrix of rows \code{t_max+3} by \code{m_max};
 #' It may be redundant because it has rows corresponding to empty pseudo-clusters,
-#' and if the matrix has at least one non-zero element, the zero columns indicate 
+#' and if the matrix has at least one non-zero element, the zero columns indicate
 #' inactive latent states
 #' @param mylist Cluster labels; A vector of length \code{t_max+3} comprised of
 #' integers that need not be consecutive.
@@ -256,10 +256,10 @@ scatterhist = function(x, y, xlab="", ylab=""){
 #' @param VERBOSE Default to \code{FALSE}: no print of the merged matrices; Otherwise
 #' set to \code{TRUE}.
 #' @param z_pseudo Default is \code{NULL}.
-#' A vector of pseudo-cluster indicators to be merged into scientific cluster 
+#' A vector of pseudo-cluster indicators to be merged into scientific cluster
 #' indicators \code{z_sci}.
 #' @param skip_Q Default is \code{FALSE} - merge the rows of Q that
-#' correspond to partner states; Set to \code{TRUE} if \code{Q} is given 
+#' correspond to partner states; Set to \code{TRUE} if \code{Q} is given
 #' in which case only rows of \code{H_star_redun} will be merged (keep
 #' the zero columns in H_star_redun, and not merging partner states).
 #'
@@ -295,7 +295,7 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
   if (!skip_Q){
     if (nrow(H_star)>1 && sum(H_star)>0 && length(ind_zero_col)>0){
       H_star <- H_star[,-ind_zero_col,drop=FALSE];
-      string_removed_zero_column <-  
+      string_removed_zero_column <-
         paste0(">> ignored ",length(ind_zero_col),
                " `non-active` latent states ---> ", ncol(H_star),
                " latent states. \n")
@@ -324,15 +324,15 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
   if (VERBOSE && nrow(H_star_merge)<nrow(H_star)){
     string_merge1 <- paste0(">> absorbed ",
                             nrow(H_star)-nrow(H_star_merge),
-                            " pseudo clusters ---> ", 
+                            " pseudo clusters ---> ",
                             nrow(H_star_merge)," scientific clusters.\n")
     cat(string_merge1)
   }
-  
+
   if (skip_Q){
     H_star_row_merge <- H_star_merge
   }
-  
+
   # merge columns (combine factors that are present or absent at the same time;
   # partner latent states):
   pat_H_star_merge <- apply(t(H_star_merge),1,paste,collapse="")
@@ -343,7 +343,7 @@ merge_H_Q <- function(H_star_redun,mylist,t,Q,VERBOSE=FALSE,z_pseudo=NULL,skip_Q
   if (VERBOSE && ncol(H_star_merge)<ncol(H_star)){
     string_merge2 <- paste0(">> absorbed ",
                             ncol(H_star)-ncol(H_star_merge),
-                            " `partner` latent states ---> ", 
+                            " `partner` latent states ---> ",
                             ncol(H_star_merge)," latent states. \n")
     cat(string_merge2)
   }
@@ -402,7 +402,7 @@ merge_H_col <- function(H_star_redun,VERBOSE=FALSE){
   # associated with a pseudo-cluster;
   ind_zero_col <- which(colSums(H_star)==0)
   if (nrow(H_star)>1 && sum(H_star)>0 && length(ind_zero_col)>0){H_star <- H_star[,-ind_zero_col]} #<<<<- removed zero columns here.
-  
+
   # merge columns (combine factors that are present or absent at the same time;
   # partner latent states):
   pat_H_star_merge <- apply(t(H_star),1,paste,collapse="")
@@ -419,7 +419,7 @@ merge_H_col <- function(H_star_redun,VERBOSE=FALSE){
   # } else {
   #   Q_merge <- merge_Q(Q,curr_merge_col$map)
   # }
-  
+
   #return(list(H_star_merge=H_star_merge,Q_merge=Q_merge))
   return(list(H_star_merge=H_star_merge))
 }
@@ -435,8 +435,8 @@ merge_H_col <- function(H_star_redun,VERBOSE=FALSE){
 #' @return a list \itemize{
 #' \item \code{map} a vector of integer of identical length to \code{pseudo_pat}; takes values
 #' from 1 to \code{length(uniq_pat)}
-#' \item \code{uniq_pat} a matrix of unique binary patterns (# rows =  \code{length(uniq_pat)},
-#' # columns = number of 1/0s for each element in \code{uniq_pat})
+#' \item \code{uniq_pat} a matrix of unique binary patterns (number of rows =  \code{length(uniq_pat)},
+#' number of columns = number of 1/0s for each element in \code{uniq_pat})
 #' }
 #' @export
 #'
@@ -476,7 +476,7 @@ merge_map <- function(pseudo_pat,uniq_pat){
 #' It is of scientific interest to combine them by taking the maximum for each column
 #' of Q among these rows.
 #'
-#' @param Q A Q matrix (row for ACTIVE factors that might be partners, 
+#' @param Q A Q matrix (row for ACTIVE factors that might be partners,
 #' columns for dimension of multivariate binary data)
 #' @param map_id a vector taking possibly duplicated values in {1,...,M^+}, where M^+ is the number
 #' of active factors. \code{map_id=c(1,1,2,2,2,3)} means factor 1 and 2 are partner factors, factor 3 to 5 are another group
@@ -515,7 +515,7 @@ merge_Q <- function(Q,map_id){
 #'
 #' NB: need to add another option to skip merge Q when Q is known, in
 #' which case, no col merging, no Q merging, just simple row-wise merging.
-#' Currently function merge_H_Q can deal with this. So just need to use that 
+#' Currently function merge_H_Q can deal with this. So just need to use that
 #' functionality by specifying skip_Q = TRUE.
 #'
 #' @param outres output from \code{\link{sampler}}
@@ -549,7 +549,7 @@ postprocess_H_Q <- function(outres,Q=NULL){
                               VERBOSE=FALSE,
                               outres$z_samp[,iter],TRUE)
     }
-    
+
     merged_H <- merged_res$H_star_merge
     merged_Q <- merged_res$Q_merge
     H_star_merge_samp[1:nrow(merged_H),1:ncol(merged_H),iter] <- merged_H
@@ -559,7 +559,7 @@ postprocess_H_Q <- function(outres,Q=NULL){
       col_merged_H_star_samp[,1:ncol(merged_H),iter] <- merge_H_col(
         outres$H_star_samp[,,iter])$H_star_merge # <-- may still have extra zeros.
     } else{
-      col_merged_H_star_samp[,1:ncol(merged_H),iter] <- 
+      col_merged_H_star_samp[,1:ncol(merged_H),iter] <-
         outres$H_star_samp[,,iter]
     }
   }
@@ -574,7 +574,7 @@ postprocess_H_Q <- function(outres,Q=NULL){
 #' Summarize individual latent state patterns given Q
 #'
 #' This function takes in posterior samples of individual latent states,
-#' orders latent states according to the rows of Q and output 
+#' orders latent states according to the rows of Q and output
 #' \itemize{
 #' \item 1) the
 #' marginal probabilities of each individual's latent states being active
@@ -619,7 +619,7 @@ summarize_latent_state_given_Q <- function(H_star_samp, z_samp, Q){
 
 
 #' Plot data, design matrix or co-clustering probabilities
-#' 
+#'
 #'
 #' @param x data, design matrix or coclustering probabilities
 #' @param simu simulated objects; see \code{\link{simulate_data}}
@@ -647,7 +647,7 @@ summarize_latent_state_given_Q <- function(H_star_samp, z_samp, Q){
 #'                       pop_frac = c(rep(2,4),rep(1,4)) # population prevalences.
 #'                       #pop_frac = c(rep(0.75/4,4),rep(0.25/4,4))
 #' )
-#' 
+#'
 #' simu     <- simulate_data(options_sim0, SETSEED=TRUE)
 #' plot_rewind(simu$datmat,simu,"data","Simulated Data")
 plot_rewind <- function(x,simu,type="data",title_val=type){

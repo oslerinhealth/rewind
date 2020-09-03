@@ -20,13 +20,13 @@ iteration for inference)}
 \item \code{marg_prob} the
 marginal probabilities of each individual's latent states being active
 \item \code{H_pat_ordered_samp} the posterior samples of individual
- latent states (after ordering
+latent states (after ordering
 by row of Q and converting the binary codes to decimal numbers)
 }
 }
 \description{
 This function takes in posterior samples of individual latent states,
-orders latent states according to the rows of Q and output 
+orders latent states according to the rows of Q and output
 \itemize{
 \item 1) the
 marginal probabilities of each individual's latent states being active

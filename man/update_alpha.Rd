@@ -24,7 +24,7 @@ an updated alpha value (positive)
 }
 \description{
 This function samples the parameters from a grid (this is used only for model
-with pre-specified latent state dimension M); 
-NB: currently it uses uniform prior or Beta prior for the reparameterized 
+with pre-specified latent state dimension M);
+NB: currently it uses uniform prior or Beta prior for the reparameterized
 hyperparameter; check if this is can be replaced by Gamma.
 }

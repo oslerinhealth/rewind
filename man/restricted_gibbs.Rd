@@ -4,8 +4,27 @@
 \alias{restricted_gibbs}
 \title{Restricted Gibbs scan to update assignment indicators in S.}
 \usage{
-restricted_gibbs(Y, zsa, zsb, cia, cib, cja, cjb, ni, nj, i, j, S, ns, b,
-  active, Q, p, theta, psi)
+restricted_gibbs(
+  Y,
+  zsa,
+  zsb,
+  cia,
+  cib,
+  cja,
+  cjb,
+  ni,
+  nj,
+  i,
+  j,
+  S,
+  ns,
+  b,
+  active,
+  Q,
+  p,
+  theta,
+  psi
+)
 }
 \arguments{
 \item{Y}{multivariate binary data (row for subjects, column for dimensions)}

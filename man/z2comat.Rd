@@ -2,13 +2,13 @@
 % Please edit documentation in R/RcppExports.R
 \name{z2comat}
 \alias{z2comat}
-\title{Compute the posterior co-clustering probability matrix (probability that i and j 
+\title{Compute the posterior co-clustering probability matrix (probability that i and j
 are clustered together).}
 \usage{
 z2comat(z)
 }
 \arguments{
-\item{z}{a matrix of posterior samples, with subjects and MCMC samples in 
+\item{z}{a matrix of posterior samples, with subjects and MCMC samples in
 the rows and columns, respectively.}
 }
 \value{

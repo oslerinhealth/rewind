@@ -30,6 +30,14 @@ Installation
 install.packages("devtools",repos="https://cloud.r-project.org")
 devtools::install_github("zhenkewu/rewind")
 ```
+
+If you have compiled locally prior to updating your system (e.g., OSX), you
+may encounter issues that cause `R` to crash. This is likely because the new
+system has caused a corrupted link of the package to the Rcpp functions. A quick
+fix is to delete the `.o` and `.so` files in the `src/` folder and rebuild the package.
+If this does not work, try `install.packages("Rcpp",type="source")`
+and `install.packages("RcppArmadillo",type="source")` first and re-build the package.
+
 <div id='id-section2'/>
 
 Overview

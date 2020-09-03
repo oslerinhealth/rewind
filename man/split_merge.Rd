@@ -4,8 +4,24 @@
 \alias{split_merge}
 \title{Split-merge type update of clusterings}
 \usage{
-split_merge(Y, z, zs, S, mylist, N, t, b, log_v, n_split, Q, p, theta, psi,
-  MORE_SPLIT = NULL, partition_partial = NULL)
+split_merge(
+  Y,
+  z,
+  zs,
+  S,
+  mylist,
+  N,
+  t,
+  b,
+  log_v,
+  n_split,
+  Q,
+  p,
+  theta,
+  psi,
+  MORE_SPLIT = NULL,
+  partition_partial = NULL
+)
 }
 \arguments{
 \item{Y}{multivariate binary data (row for subjects, column for dimensions)}

@@ -4,13 +4,20 @@
 \alias{merge_H_Q}
 \title{Merge latent state profile matrix (H_star) and Q matrix}
 \usage{
-merge_H_Q(H_star_redun, mylist, t, Q, VERBOSE = FALSE, z_pseudo = NULL,
-  skip_Q = FALSE)
+merge_H_Q(
+  H_star_redun,
+  mylist,
+  t,
+  Q,
+  VERBOSE = FALSE,
+  z_pseudo = NULL,
+  skip_Q = FALSE
+)
 }
 \arguments{
 \item{H_star_redun}{A binary matrix of rows \code{t_max+3} by \code{m_max};
 It may be redundant because it has rows corresponding to empty pseudo-clusters,
-and if the matrix has at least one non-zero element, the zero columns indicate 
+and if the matrix has at least one non-zero element, the zero columns indicate
 inactive latent states}
 
 \item{mylist}{Cluster labels; A vector of length \code{t_max+3} comprised of
@@ -24,11 +31,11 @@ integers that need not be consecutive.}
 set to \code{TRUE}.}
 
 \item{z_pseudo}{Default is \code{NULL}.
-A vector of pseudo-cluster indicators to be merged into scientific cluster 
+A vector of pseudo-cluster indicators to be merged into scientific cluster
 indicators \code{z_sci}.}
 
 \item{skip_Q}{Default is \code{FALSE} - merge the rows of Q that
-correspond to partner states; Set to \code{TRUE} if \code{Q} is given 
+correspond to partner states; Set to \code{TRUE} if \code{Q} is given
 in which case only rows of \code{H_star_redun} will be merged (keep
 the zero columns in H_star_redun, and not merging partner states).}
 }
@@ -44,7 +51,7 @@ This function
 \item merges partner latent states (identical non-zero columns in H);
 merge the corresponding rows in Q by \code{pmax}. Even though identifiability
 condition may prevent non-identical columns in H, because we specify
-a maximum latent state dimension \code{m_max}, MCMC may produce identical 
+a maximum latent state dimension \code{m_max}, MCMC may produce identical
 columns in some iterations.
 }
 }

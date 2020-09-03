@@ -13,7 +13,7 @@ update_mu_PR(theta_vec, s, a = 2, b = 1, show_density = TRUE)
 
 \item{a, b}{hyperparameter for Beta distribution over original a_theta_one.}
 
-\item{show_density}{Show the full conditional density 
+\item{show_density}{Show the full conditional density
 given other unknown parameters; Default to \code{FALSE}}
 }
 \value{

@@ -3,7 +3,6 @@
 \docType{package}
 \name{rewind}
 \alias{rewind}
-\alias{rewind-package}
 \title{rewind: \strong{R}constructing \strong{E}tiology \strong{w}ith
 B\strong{in}ary \strong{D}ecomposition}
 \description{

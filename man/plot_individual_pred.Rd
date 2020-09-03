@@ -4,8 +4,14 @@
 \alias{plot_individual_pred}
 \title{Plot individual probabilities}
 \usage{
-plot_individual_pred(p_samp, state_nm, whoisthis, thedata = NULL,
-  mycex = 1, ...)
+plot_individual_pred(
+  p_samp,
+  state_nm,
+  whoisthis,
+  thedata = NULL,
+  mycex = 1,
+  ...
+)
 }
 \arguments{
 \item{p_samp}{A vector of posterior probabilities for each individual}
@@ -19,7 +25,7 @@ plot_individual_pred(p_samp, state_nm, whoisthis, thedata = NULL,
 \item{mycex}{the cex parameter for the names of the latent states. Default is 1.}
 
 \item{...}{other parameters for adjusting the individual plots.
-length to `state_nm`}
+length to \code{state_nm}}
 }
 \value{
 a figure with population etiology fraction information (
