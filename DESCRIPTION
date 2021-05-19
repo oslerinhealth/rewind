@@ -3,45 +3,44 @@ Type: Package
 Title: Reconstructing Etiology with Binary Decomposition
 Version: 0.7.0
 Date: 2020-09-03
-Authors@R: c(
-     person("Zhenke", "Wu", email="zhenkewu@umich.edu",role=c("cre","aut","cph"),
-     comment = c(ORCID = "0000-0001-7582-669X")),
-     person("Scott", "Zeger", email="sz@jhu.edu",role="aut"),
-     person("John", "Muschelli", email="muschellij2@gmail.com", role="ctb", 
-     comment = c(ORCID = "0000-0001-6469-1750"))
-     )
+Authors@R: c( person("Zhenke", "Wu",
+        email="zhenkewu@umich.edu",role=c("cre","aut","cph"), comment =
+        c(ORCID = "0000-0001-7582-669X")), person("Scott", "Zeger",
+        email="sz@jhu.edu",role="aut"), person("John", "Muschelli",
+        email="muschellij2@gmail.com", role="ctb", comment = c(ORCID =
+        "0000-0001-6469-1750")) )
 Maintainer: Zhenke Wu <zhenkewu@umich.edu>
-Description: This package implememnts a Bayesian hierarchical model that represents 
-    observations as aggregation of a few unobserved binary machines where the aggregation 
-    varies by subjects. Our approach is to specify the model likelihood via factorization 
-    into two latent binary matrices: machine profiles and individual factors. 
-    Given latent factorization, we account for inherent errors in measurement using 
-    sensitivities and specificities of protein detection. 
-    We use a prior for the individual factor matrix (Indian Buffet Process for binary matrices) to 
-    encourage a small number of subject clusters each with distinct patterns of active machines. 
-    The posterior distribution for the numbers of patient clusters and machines are 
-    estimated from data and by design tend to concentrate on smaller values. 
-    The posterior distributions of model parameters are estimated via Markov chain 
-    Monte Carlo which makes a list of molecular machine profiles with uncertainty 
-    quantification as well as patient-specific posterior probability of having each machine.
-Depends:
-    R(>= 4.0.0)
-Imports:
-    matrixStats(>= 0.52.2),
-    Rcpp(>= 1.0.5),
-    stats(>= 3.4.1),
-    graphics(>= 3.4.1),
-    grDevices(>= 3.4.1)
-Suggests:
+Description: This package implememnts a Bayesian hierarchical model
+        that represents observations as aggregation of a few unobserved
+        binary machines where the aggregation varies by subjects. Our
+        approach is to specify the model likelihood via factorization
+        into two latent binary matrices: machine profiles and
+        individual factors. Given latent factorization, we account for
+        inherent errors in measurement using sensitivities and
+        specificities of protein detection. We use a prior for the
+        individual factor matrix (Indian Buffet Process for binary
+        matrices) to encourage a small number of subject clusters each
+        with distinct patterns of active machines. The posterior
+        distribution for the numbers of patient clusters and machines
+        are estimated from data and by design tend to concentrate on
+        smaller values. The posterior distributions of model parameters
+        are estimated via Markov chain Monte Carlo which makes a list
+        of molecular machine profiles with uncertainty quantification
+        as well as patient-specific posterior probability of having
+        each machine.
+Depends: R(>= 4.0.0)
+Imports: matrixStats(>= 0.52.2), Rcpp(>= 1.0.5), stats(>= 3.4.1),
+        graphics(>= 3.4.1), grDevices(>= 3.4.1)
+Suggests: 
     knitr,
     testthat,
     bibtex,
     knitcitations,
     rmarkdown,
-    ars(>= 0.5),
-    RcppArmadillo(>= 0.9.900.2.0),
-    mcclust.ext(>= 1.0)
-Remotes: muschellij2/mcclust.ext
+    ars (>= 0.5),
+    RcppArmadillo (>= 0.9.900.2.0),
+    mcclust.ext (>= 1.0),
+    covr
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -51,3 +50,7 @@ URL: https://github.com/zhenkewu/rewind
 BugReports: https://github.com/zhenkewu/rewind/issues
 LinkingTo: Rcpp, RcppArmadillo
 Roxygen: list(markdown = TRUE)
+Repository: Oslerinhealth
+Remotes:  
+    muschellij2/mcclust.ext
+biocViews: 
